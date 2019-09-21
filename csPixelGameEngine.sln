@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29306.81
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngine", "csPixelGameEngine\csPixelGameEngine.csproj", "{DB1E0A41-7033-48AE-9676-4538C9635223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngineTests", "csPixelGameEngineTests\csPixelGameEngineTests.csproj", "{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DB1E0A41-7033-48AE-9676-4538C9635223}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB1E0A41-7033-48AE-9676-4538C9635223}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB1E0A41-7033-48AE-9676-4538C9635223}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB1E0A41-7033-48AE-9676-4538C9635223}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5C1A314D-9766-483F-BFF0-07E3C4FB0612}
+	EndGlobalSection
+EndGlobal
