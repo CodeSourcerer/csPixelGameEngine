@@ -44,12 +44,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="enums\rcode.cs" />
     <Compile Include="HWButton.cs" />
     <Compile Include="Mesh.cs" />
     <Compile Include="Pixel.cs" />
     <Compile Include="ResourcePack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Triangle.cs" />
+    <Compile Include="util\FileStreamExtensions.cs" />
     <Compile Include="v2d_generic.cs" />
     <Compile Include="vec2d.cs" />
     <Compile Include="vec3d.cs" />

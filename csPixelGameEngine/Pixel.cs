@@ -8,6 +8,17 @@ namespace csPixelGameEngine
 {
     public class Pixel
     {
+        public static Pixel WHITE   = new Pixel(255, 255, 255);
+        public static Pixel GRAY    = new Pixel(192, 192, 192);
+        public static Pixel RED     = new Pixel(255, 0, 0);
+        public static Pixel YELLOW  = new Pixel(255, 255, 0);
+        public static Pixel GREEN   = new Pixel(0, 255, 0);
+        public static Pixel CYAN    = new Pixel(0, 255, 255);
+        public static Pixel BLUE    = new Pixel(0, 0, 255);
+        public static Pixel MAGENTA = new Pixel(255, 0, 255);
+        public static Pixel BLACK   = new Pixel(0, 0, 0);
+        public static Pixel BLANK   = new Pixel(0, 0, 0, 0);
+
         public byte r { get; set; }
         public byte g { get; set; }
         public byte b { get; set; }
