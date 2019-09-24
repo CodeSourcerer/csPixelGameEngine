@@ -294,15 +294,6 @@ namespace csPixelGameEngine
         #region Drawing Methods
 
         /// <summary>
-        /// Specify which Sprite should be the target of drawing functions, use null
-        /// to specify the primary screen
-        /// </summary>
-        public void SetDrawTarget(Sprite target)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
         /// Draws a single Pixel
         /// </summary>
         /// <param name="x"></param>
