@@ -12,12 +12,19 @@ namespace csPixelGameEngine
 
     public class PixelGameEngine
     {
-        public String   AppName             { get; private set; }
-        public int      ScreenWidth         { get; private set; }
-        public int      ScreenHeight        { get; private set; }
+        public string   AppName             { get; private set; }
+        public bool     FullScreen          { get; private set; }
+        public bool     EnableVSYNC         { get; private set; }
+        public uint     ScreenWidth         { get; private set; }
+        public uint     ScreenHeight        { get; private set; }
         public int      DrawTargetWidth     { get; private set; }
         public int      DrawTagetHeight     { get; private set; }
         public Sprite   DefaultDrawTarget   { get; private set; }
+        public uint     PixelWidth          { get; private set; }
+        public uint     PixelHeight         { get; private set; }
+        public int      MousePosX           { get; private set; }
+        public int      MousePosY           { get; private set; }
+        public int      MouseWheelDelta     { get; private set; }
         public float    PixelX              { get; set; }
         public float    PixelY              { get; set; }
 
@@ -111,23 +118,77 @@ namespace csPixelGameEngine
             }
         }
 
-        public PixelGameEngine()
-        {
-            this.AppName = "Undefined";
+        private Sprite fontSprite;
 
+        public PixelGameEngine(string appName)
+        {
+            if (string.IsNullOrEmpty(appName))
+                this.AppName = "Undefined";
+            else
+                this.AppName = appName;
         }
 
         public rcode Construct(uint screen_w, uint screen_h, uint pixel_w, uint pixel_h, bool full_screen = false, bool vsync = false)
         {
+            ScreenWidth = screen_w;
+            ScreenHeight = screen_h;
+            PixelWidth = pixel_w;
+            PixelHeight = pixel_h;
+            FullScreen = full_screen;
+            EnableVSYNC = vsync;
+            PixelX = 2.0f / (float)ScreenWidth;
+            PixelY = 2.0f / (float)ScreenHeight;
+
+            if (PixelWidth == 0 || PixelHeight == 0 || ScreenWidth == 0 || ScreenHeight == 0)
+                return rcode.FAIL;
 
             // Load the default font sheet
-            // ConstructFontSheet();
+            construct_fontSheet();
 
             // Create a sprite that represents the primary drawing target
             DefaultDrawTarget = new Sprite(ScreenWidth, ScreenHeight);
             drawTarget = DefaultDrawTarget;
 
             return rcode.OK;
+        }
+
+        private void construct_fontSheet()
+        {
+            StringBuilder data = new StringBuilder(1024);
+            data.Append("?Q`0001oOch0o01o@F40o0<AGD4090LAGD<090@A7ch0?00O7Q`0600>00000000");
+            data.Append("O000000nOT0063Qo4d8>?7a14Gno94AA4gno94AaOT0>o3`oO400o7QN00000400");
+            data.Append("Of80001oOg<7O7moBGT7O7lABET024@aBEd714AiOdl717a_=TH013Q>00000000");
+            data.Append("720D000V?V5oB3Q_HdUoE7a9@DdDE4A9@DmoE4A;Hg]oM4Aj8S4D84@`00000000");
+            data.Append("OaPT1000Oa`^13P1@AI[?g`1@A=[OdAoHgljA4Ao?WlBA7l1710007l100000000");
+            data.Append("ObM6000oOfMV?3QoBDD`O7a0BDDH@5A0BDD<@5A0BGeVO5ao@CQR?5Po00000000");
+            data.Append("Oc``000?Ogij70PO2D]??0Ph2DUM@7i`2DTg@7lh2GUj?0TO0C1870T?00000000");
+            data.Append("70<4001o?P<7?1QoHg43O;`h@GT0@:@LB@d0>:@hN@L0@?aoN@<0O7ao0000?000");
+            data.Append("OcH0001SOglLA7mg24TnK7ln24US>0PL24U140PnOgl0>7QgOcH0K71S0000A000");
+            data.Append("00H00000@Dm1S007@DUSg00?OdTnH7YhOfTL<7Yh@Cl0700?@Ah0300700000000");
+            data.Append("<008001QL00ZA41a@6HnI<1i@FHLM81M@@0LG81?O`0nC?Y7?`0ZA7Y300080000");
+            data.Append("O`082000Oh0827mo6>Hn?Wmo?6HnMb11MP08@C11H`08@FP0@@0004@000000000");
+            data.Append("00P00001Oab00003OcKP0006@6=PMgl<@440MglH@000000`@000001P00000000");
+            data.Append("Ob@8@@00Ob@8@Ga13R@8Mga172@8?PAo3R@827QoOb@820@0O`0007`0000007P0");
+            data.Append("O`000P08Od400g`<3V=P0G`673IP0`@3>1`00P@6O`P00g`<O`000GP800000000");
+            data.Append("?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020");
+
+            fontSprite = new Sprite(128, 48);
+            int px = 0, py = 0;
+            for (int b = 0; b < 1024; b += 4)
+            {
+                uint sym1 = (uint)data[b + 0] - 48;
+                uint sym2 = (uint)data[b + 1] - 48;
+                uint sym3 = (uint)data[b + 2] - 48;
+                uint sym4 = (uint)data[b + 3] - 48;
+                uint r = sym1 << 18 | sym2 << 12 | sym3 << 6 | sym4;
+
+                for (int i = 0; i < 24; i++)
+                {
+                    byte k = (r & (1 << i)) != 0 ? (byte)0xFF : (byte)0x00;
+                    fontSprite.SetPixel((uint)px, (uint)py, new Pixel(k, k, k, k));
+                    if (++py == 48) { px++; py = 0; }
+                }
+            }
         }
 
         public rcode Start()
@@ -143,7 +204,7 @@ namespace csPixelGameEngine
         /// <returns></returns>
         public virtual bool OnUserCreate()
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         /// <summary>
@@ -153,7 +214,7 @@ namespace csPixelGameEngine
         /// <returns></returns>
         public virtual bool OnUserUpdate(float elapsedTime)
         {
-            throw new NotImplementedException();
+            return false;
         }
 
         /// <summary>
@@ -162,7 +223,7 @@ namespace csPixelGameEngine
         /// <returns></returns>
         public virtual bool OnUserDestroy()
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         #endregion // Overridable Interfaces
@@ -234,31 +295,6 @@ namespace csPixelGameEngine
         /// to specify the primary screen
         /// </summary>
         public void SetDrawTarget(Sprite target)
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Change the pixel mode for different optimisations
-        /// olc::Pixel::NORMAL = No transparency
-        /// olc::Pixel::MASK   = Transparent if alpha is < 255
-        /// olc::Pixel::ALPHA  = Full transparency
-        /// </summary>
-        /// <param name="m">Pixel mode</param>
-        public void SetPixelMode(Mode m)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Mode GetPixelMode()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <summary>
-        /// Use a custom blend function
-        /// </summary>
-        public void SetPixelMode(PixelBlender blendFn)
         {
             throw new NotImplementedException();
         }
@@ -360,7 +396,46 @@ namespace csPixelGameEngine
             if (col == null)
                 col = Pixel.WHITE;
 
-            throw new NotImplementedException();
+            int sx = 0;
+            int sy = 0;
+            Pixel.BlendMode m = this.PixelBlendMode;
+            if (col.a != 255)
+                this.PixelBlendMode = Pixel.BlendMode.ALPHA;
+            else
+                this.PixelBlendMode = Pixel.BlendMode.MASK;
+
+            foreach (var c in sText)
+            {
+                if (c == '\n')
+                {
+                    sx = 0;
+                    sy += (int)(8 * scale);
+                }
+                else
+                {
+                    int ox = (c - 32) % 16;
+                    int oy = (c - 32) / 16;
+
+                    if (scale > 1)
+                    {
+                        for (uint i = 0; i < 8; i++)
+                            for (uint j = 0; j < 8; j++)
+                                if (fontSprite.GetPixel((uint)(i + ox * 8), (uint)(j + oy * 8)).r > 0)
+                                    for (uint is_ = 0; is_ < scale; is_ ++)
+                                        for (uint js = 0; js < scale; js++)
+                                            Draw((int)(x + sx + (i * scale) + is_), (int)(y + sy + (j * scale) + js), col);
+                    }
+                    else
+                    {
+                        for (uint i = 0; i < 8; i++)
+                            for (uint j = 0; j < 8; j++)
+                                if (fontSprite.GetPixel((uint)(i + ox * 8), (uint)(j + oy * 8)).r > 0)
+                                    Draw((int)(x + sx + i), (int)(y + sy + j), col);
+                    }
+                    sx += (int)(8 * scale);
+                }
+            }
+            PixelBlendMode = m;
         }
 
         // Clears entire draw target to Pixel

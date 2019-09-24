@@ -9,8 +9,8 @@ namespace csPixelGameEngine
 {
     public class Sprite
     {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
+        public uint Width   { get; private set; }
+        public uint Height  { get; private set; }
 
         public enum Mode { NORMAL, PERIODIC };
 
@@ -34,7 +34,7 @@ namespace csPixelGameEngine
             LoadFromPGESprFile(imageFile, pack);
         }
 
-        public Sprite(int w, int h)
+        public Sprite(uint w, uint h)
         {
             this.Width = w;
             this.Height = h;
@@ -66,12 +66,12 @@ namespace csPixelGameEngine
             this.modeSample = mode;
         }
 
-        public Pixel GetPixel(int x, int y)
+        public Pixel GetPixel(uint x, uint y)
         {
             throw new NotImplementedException();
         }
 
-        public bool SetPixel(int x, int y, Pixel p)
+        public bool SetPixel(uint x, uint y, Pixel p)
         {
             if (x >= 0 && x < Width && y >= 0 && y < Height)
             {
@@ -84,8 +84,8 @@ namespace csPixelGameEngine
 
         public Pixel Sample(float x, float y)
         {
-            int sx = Math.Min((int)((x * Width)), Width - 1);
-            int sy = Math.Min((int)((y * Height)), Height - 1);
+            uint sx = Math.Min((uint)((x * Width)), Width - 1);
+            uint sy = Math.Min((uint)((y * Height)), Height - 1);
             return GetPixel(sx, sy);
         }
 
@@ -93,8 +93,8 @@ namespace csPixelGameEngine
         {
             u = u * Width - 0.5f;
             v = v * Height - 0.5f;
-            int x = (int)Math.Floor(u); // cast to int rounds toward zero, not downward
-            int y = (int)Math.Floor(v); // Thanks @joshinils
+            uint y = (uint)Math.Floor(v); // Thanks @joshinils
+            uint x = (uint)Math.Floor(u); // cast to int rounds toward zero, not downward
             float u_ratio = u - x;
             float v_ratio = v - y;
             float u_opposite = 1 - u_ratio;
@@ -103,7 +103,7 @@ namespace csPixelGameEngine
             Pixel p1 = GetPixel(Math.Max(x, 0), Math.Max(y, 0));
             Pixel p2 = GetPixel(Math.Min(x + 1, Width - 1), Math.Max(y, 0));
             Pixel p3 = GetPixel(Math.Max(x, 0), Math.Min(y + 1, Height - 1));
-            Pixel p4 = GetPixel(Math.Min(x + 1, Width - 1), Math.Min(y + 1, (int)Height - 1));
+            Pixel p4 = GetPixel(Math.Min(x + 1, Width - 1), Math.Min(y + 1, Height - 1));
 
             return new Pixel(
                 (byte)((p1.r * u_opposite + p2.r * u_ratio) * v_opposite + (p3.r * u_opposite + p4.r * u_ratio) * v_ratio),
