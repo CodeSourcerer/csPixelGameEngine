@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace csPixelGameEngine
 {
-    class HWButton
+    public struct HWButton
     {
+        public bool pressed;
+        public bool released;
+        public bool held;
     }
 }

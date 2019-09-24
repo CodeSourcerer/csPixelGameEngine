@@ -19,6 +19,8 @@ namespace csPixelGameEngine
         public static Pixel BLACK   = new Pixel(0, 0, 0);
         public static Pixel BLANK   = new Pixel(0, 0, 0, 0);
 
+        public enum BlendMode { NORMAL, MASK, ALPHA, CUSTOM };
+
         public byte r { get; set; }
         public byte g { get; set; }
         public byte b { get; set; }

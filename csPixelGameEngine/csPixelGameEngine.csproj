@@ -44,10 +44,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="enums\Key.cs" />
     <Compile Include="enums\rcode.cs" />
     <Compile Include="HWButton.cs" />
     <Compile Include="Mesh.cs" />
     <Compile Include="Pixel.cs" />
+    <Compile Include="PixelGameEngine.cs" />
     <Compile Include="ResourcePack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sprite.cs" />
