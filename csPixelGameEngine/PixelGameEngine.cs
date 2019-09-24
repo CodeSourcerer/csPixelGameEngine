@@ -13,6 +13,7 @@ namespace csPixelGameEngine
     public class PixelGameEngine
     {
         public string   AppName             { get; private set; }
+        public GLWindow Window              { get; private set; }
         public bool     FullScreen          { get; private set; }
         public bool     EnableVSYNC         { get; private set; }
         public uint     ScreenWidth         { get; private set; }
@@ -128,26 +129,28 @@ namespace csPixelGameEngine
                 this.AppName = appName;
         }
 
-        public rcode Construct(uint screen_w, uint screen_h, uint pixel_w, uint pixel_h, bool full_screen = false, bool vsync = false)
+        public rcode Construct(uint pixel_w, uint pixel_h, GLWindow window)
         {
-            ScreenWidth = screen_w;
-            ScreenHeight = screen_h;
-            PixelWidth = pixel_w;
-            PixelHeight = pixel_h;
-            FullScreen = full_screen;
-            EnableVSYNC = vsync;
-            PixelX = 2.0f / (float)ScreenWidth;
-            PixelY = 2.0f / (float)ScreenHeight;
+            this.Window = window;
+            this.ScreenWidth = (uint)this.Window.Width;
+            this.ScreenHeight = (uint)this.Window.Height;
+            this.PixelWidth = pixel_w;
+            this.PixelHeight = pixel_h;
+            this.FullScreen = (window.WindowState == OpenTK.WindowState.Fullscreen);
+            this.EnableVSYNC = (window.VSync == OpenTK.VSyncMode.On);
+            this.PixelX = 2.0f / (float)this.ScreenWidth;
+            this.PixelY = 2.0f / (float)this.ScreenHeight;
 
-            if (PixelWidth == 0 || PixelHeight == 0 || ScreenWidth == 0 || ScreenHeight == 0)
+            if (this.PixelWidth == 0 || this.PixelHeight == 0 ||
+                this.ScreenWidth == 0 || this.ScreenHeight == 0)
                 return rcode.FAIL;
 
             // Load the default font sheet
             construct_fontSheet();
 
             // Create a sprite that represents the primary drawing target
-            DefaultDrawTarget = new Sprite(ScreenWidth, ScreenHeight);
-            drawTarget = DefaultDrawTarget;
+            this.DefaultDrawTarget = new Sprite(ScreenWidth, ScreenHeight);
+            this.drawTarget = this.DefaultDrawTarget;
 
             return rcode.OK;
         }
