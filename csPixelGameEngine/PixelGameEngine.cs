@@ -28,6 +28,8 @@ namespace csPixelGameEngine
         public int      MouseWheelDelta     { get; private set; }
         public float    PixelX              { get; set; }
         public float    PixelY              { get; set; }
+        //public int      ViewPortWidth       { get; private set; }
+        //public int      ViewPortHeight      { get; private set; }
 
         private Sprite drawTarget;
         public Sprite DrawTarget
