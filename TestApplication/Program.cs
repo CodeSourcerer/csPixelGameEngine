@@ -26,6 +26,8 @@ namespace TestApplication
                 for (uint x = 0; x < pge.ScreenWidth; x++)
                     for (uint y = 0; y < pge.ScreenHeight; y++)
                         pge.Draw(x, y, new Pixel((byte)rnd.Next(255), (byte)rnd.Next(255), (byte)rnd.Next(255)));
+
+                pge.DrawString(0, 0, "Sup?", Pixel.WHITE);
             };
             pge.Start();
         }

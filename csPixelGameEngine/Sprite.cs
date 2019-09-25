@@ -68,7 +68,17 @@ namespace csPixelGameEngine
 
         public Pixel GetPixel(uint x, uint y)
         {
-            throw new NotImplementedException();
+            if (modeSample == Mode.NORMAL)
+            {
+                if (x < Width && y < Height)
+                    return this.colorData[y * Width + x];
+                else
+                    return Pixel.BLANK;
+            }
+            else
+            {
+                return this.colorData[Math.Abs(y % Height) * Width + Math.Abs(x % Width)];
+            }
         }
 
         public bool SetPixel(uint x, uint y, Pixel p)
