@@ -28,8 +28,6 @@ namespace csPixelGameEngine
         public int      MouseWheelDelta     { get; private set; }
         public float    PixelX              { get; set; }
         public float    PixelY              { get; set; }
-        //public int      ViewPortWidth       { get; private set; }
-        //public int      ViewPortHeight      { get; private set; }
 
         private Sprite drawTarget;
         public Sprite DrawTarget
@@ -61,43 +59,15 @@ namespace csPixelGameEngine
             }
         }
 
-        private float subPixelOffsetX;
-        public float SubPixelOffsetX
-        {
-            get
-            {
-                return subPixelOffsetX;
-            }
-
-            set
-            {
-                subPixelOffsetX = value * PixelX;
-            }
-        }
-
-        private float subPixelOffsetY;
-        public float SubPixelOffsetY
-        {
-            get
-            {
-                return subPixelOffsetY;
-            }
-
-            set
-            {
-                subPixelOffsetY = value * PixelY;
-            }
-        }
-
-        private Pixel.BlendMode pixelBlendMode;
-        public Pixel.BlendMode PixelBlendMode
+        private BlendMode pixelBlendMode;
+        public BlendMode PixelBlendMode
         {
             get { return this.pixelBlendMode; }
 
             set
             {
                 // Don't allow custom blender if no blender function defined
-                if (funcPixelBlender == null && value == Pixel.BlendMode.CUSTOM)
+                if (funcPixelBlender == null && value == BlendMode.CUSTOM)
                     return;
 
                 this.pixelBlendMode = value;
@@ -113,13 +83,19 @@ namespace csPixelGameEngine
             {
                 // Reset blend mode to normal if blender function is removed
                 if (value == null)
-                    this.PixelBlendMode = Pixel.BlendMode.NORMAL;
+                    this.PixelBlendMode = BlendMode.NORMAL;
                 else
-                    this.PixelBlendMode = Pixel.BlendMode.CUSTOM;
+                    this.PixelBlendMode = BlendMode.CUSTOM;
 
                 this.funcPixelBlender = value;
             }
         }
+
+        #region Events
+
+        public event FrameUpdateEventHandler OnFrameUpdate;
+
+        #endregion // Events
 
         private Sprite fontSprite;
 
@@ -131,27 +107,27 @@ namespace csPixelGameEngine
                 this.AppName = appName;
         }
 
-        public rcode Construct(uint pixel_w, uint pixel_h, GLWindow window)
+        public rcode Construct(uint screen_w, uint screen_h, GLWindow window)
         {
             this.Window = window;
-            this.ScreenWidth = (uint)this.Window.Width;
-            this.ScreenHeight = (uint)this.Window.Height;
-            this.PixelWidth = pixel_w;
-            this.PixelHeight = pixel_h;
+            this.ScreenWidth = screen_w;
+            this.ScreenHeight = screen_h;
             this.FullScreen = (window.WindowState == OpenTK.WindowState.Fullscreen);
             this.EnableVSYNC = (window.VSync == OpenTK.VSyncMode.On);
+            this.PixelWidth = window.PixelWidth;
+            this.PixelHeight = window.PixelHeight;
             this.PixelX = 2.0f / (float)this.ScreenWidth;
             this.PixelY = 2.0f / (float)this.ScreenHeight;
 
-            if (this.PixelWidth == 0 || this.PixelHeight == 0 ||
-                this.ScreenWidth == 0 || this.ScreenHeight == 0)
-                return rcode.FAIL;
+            //if (this.PixelWidth == 0 || this.PixelHeight == 0 ||
+            //    this.ScreenWidth == 0 || this.ScreenHeight == 0)
+            //    return rcode.FAIL;
 
             // Load the default font sheet
             construct_fontSheet();
 
             // Create a sprite that represents the primary drawing target
-            this.DefaultDrawTarget = new Sprite(ScreenWidth, ScreenHeight);
+            this.DefaultDrawTarget = window.DrawTarget;
             this.drawTarget = this.DefaultDrawTarget;
 
             return rcode.OK;
@@ -198,6 +174,15 @@ namespace csPixelGameEngine
 
         public rcode Start()
         {
+            // Since Window already has an update loop with events, lets tap into that
+            Window.UpdateFrame += (sender, frameEventArgs) =>
+            {
+                if (this.OnFrameUpdate != null)
+                    this.OnFrameUpdate(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+            };
+
+            Window.Run(30);
+
             return rcode.OK;
         }
 
@@ -208,16 +193,6 @@ namespace csPixelGameEngine
         /// </summary>
         /// <returns></returns>
         public virtual bool OnUserCreate()
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// Called every frame
-        /// </summary>
-        /// <param name="elapsedTime"></param>
-        /// <returns></returns>
-        public virtual bool OnUserUpdate(float elapsedTime)
         {
             return false;
         }
@@ -302,72 +277,96 @@ namespace csPixelGameEngine
         /// <param name="y"></param>
         /// <param name="p">Pixel color (leave null for white)</param>
         /// <returns></returns>
-        public virtual bool Draw(int x, int y, Pixel p = null)
+        public virtual bool Draw(uint x, uint y, Pixel p)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
-            throw new NotImplementedException();
+            if (DrawTarget == null)
+                return false;
+
+            if (PixelBlendMode == BlendMode.NORMAL)
+            {
+                return DrawTarget.SetPixel(x, y, p);
+            }
+
+            if (PixelBlendMode == BlendMode.MASK)
+            {
+                if (p.a == 255)
+                    return DrawTarget.SetPixel(x, y, p);
+            }
+
+            if (PixelBlendMode == BlendMode.ALPHA)
+            {
+
+            }
+
+            if (PixelBlendMode == BlendMode.CUSTOM)
+            {
+
+            }
+
+            return false;
         }
 
         // Draws a line from (x1,y1) to (x2,y2)
-        public void DrawLine(int x1, int y1, int x2, int y2, Pixel p = null, uint pattern = 0xFFFFFFFF)
+        public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
         }
 
         // Draws a circle located at (x,y) with radius
-        public void DrawCircle(int x, int y, int radius, Pixel p = null, byte mask = 0xFF)
+        public void DrawCircle(int x, int y, int radius, Pixel p, byte mask = 0xFF)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
         }
 
         // Fills a circle located at (x,y) with radius
-        public void FillCircle(int x, int y, int radius, Pixel p = null)
+        public void FillCircle(int x, int y, int radius, Pixel p)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
         }
 
         // Draws a rectangle at (x,y) to (x+w,y+h)
-        public void DrawRect(int x, int y, int w, int h, Pixel p = null)
+        public void DrawRect(int x, int y, int w, int h, Pixel p)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
         }
 
         // Fills a rectangle at (x,y) to (x+w,y+h)
-        public void FillRect(int x, int y, int w, int h, Pixel p = null)
+        public void FillRect(int x, int y, int w, int h, Pixel p)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
         }
 
         // Draws a triangle between points (x1,y1), (x2,y2) and (x3,y3)
-        public void DrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p = null)
+        public void DrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
         }
 
         // Flat fills a triangle between points (x1,y1), (x2,y2) and (x3,y3)
-        public void FillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p = null)
+        public void FillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p)
         {
-            if (p == null)
+            if (p == default(Pixel))
                 p = Pixel.WHITE;
 
             throw new NotImplementedException();
@@ -387,18 +386,18 @@ namespace csPixelGameEngine
         }
 
         // Draws a single line of text
-        public void DrawString(int x, int y, string sText, Pixel col = null, uint scale = 1)
+        public void DrawString(int x, int y, string sText, Pixel col, uint scale = 1)
         {
-            if (col == null)
+            if (col == default(Pixel))
                 col = Pixel.WHITE;
 
             int sx = 0;
             int sy = 0;
-            Pixel.BlendMode m = this.PixelBlendMode;
+            BlendMode m = this.PixelBlendMode;
             if (col.a != 255)
-                this.PixelBlendMode = Pixel.BlendMode.ALPHA;
+                this.PixelBlendMode = BlendMode.ALPHA;
             else
-                this.PixelBlendMode = Pixel.BlendMode.MASK;
+                this.PixelBlendMode = BlendMode.MASK;
 
             foreach (var c in sText)
             {
@@ -419,19 +418,19 @@ namespace csPixelGameEngine
                                 if (fontSprite.GetPixel((uint)(i + ox * 8), (uint)(j + oy * 8)).r > 0)
                                     for (uint is_ = 0; is_ < scale; is_ ++)
                                         for (uint js = 0; js < scale; js++)
-                                            Draw((int)(x + sx + (i * scale) + is_), (int)(y + sy + (j * scale) + js), col);
+                                            Draw((uint)(x + sx + (i * scale) + is_), (uint)(y + sy + (j * scale) + js), col);
                     }
                     else
                     {
                         for (uint i = 0; i < 8; i++)
                             for (uint j = 0; j < 8; j++)
                                 if (fontSprite.GetPixel((uint)(i + ox * 8), (uint)(j + oy * 8)).r > 0)
-                                    Draw((int)(x + sx + i), (int)(y + sy + j), col);
+                                    Draw((uint)(x + sx + i), (uint)(y + sy + j), col);
                     }
                     sx += (int)(8 * scale);
                 }
             }
-            PixelBlendMode = m;
+            this.PixelBlendMode = m;
         }
 
         // Clears entire draw target to Pixel
