@@ -93,7 +93,12 @@ namespace csPixelGameEngine
 
         #region Events
 
+        /// <summary>
+        /// This event fires once per frame
+        /// </summary>
         public event FrameUpdateEventHandler OnFrameUpdate;
+
+        public event EventHandler OnCreate;
 
         #endregion // Events
 
@@ -118,10 +123,6 @@ namespace csPixelGameEngine
             this.PixelHeight = window.PixelHeight;
             this.PixelX = 2.0f / (float)this.ScreenWidth;
             this.PixelY = 2.0f / (float)this.ScreenHeight;
-
-            //if (this.PixelWidth == 0 || this.PixelHeight == 0 ||
-            //    this.ScreenWidth == 0 || this.ScreenHeight == 0)
-            //    return rcode.FAIL;
 
             // Load the default font sheet
             construct_fontSheet();
@@ -174,6 +175,11 @@ namespace csPixelGameEngine
 
         public rcode Start()
         {
+            if (this.OnCreate != null)
+            {
+                this.OnCreate(this, new EventArgs());
+            }
+
             // Since Window already has an update loop with events, lets tap into that
             Window.UpdateFrame += (sender, frameEventArgs) =>
             {
@@ -187,15 +193,6 @@ namespace csPixelGameEngine
         }
 
         #region Overridable Interfaces
-
-        /// <summary>
-        /// Called once on application startup. Use to load resources
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool OnUserCreate()
-        {
-            return false;
-        }
 
         /// <summary>
         /// Called once on application termination.
