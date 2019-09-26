@@ -98,6 +98,9 @@ namespace csPixelGameEngine
         /// </summary>
         public event FrameUpdateEventHandler OnFrameUpdate;
 
+        /// <summary>
+        /// Event that fires before starting main loop. Use to load resources
+        /// </summary>
         public event EventHandler OnCreate;
 
         #endregion // Events
@@ -175,16 +178,12 @@ namespace csPixelGameEngine
 
         public rcode Start()
         {
-            if (this.OnCreate != null)
-            {
-                this.OnCreate(this, new EventArgs());
-            }
+            this.OnCreate?.Invoke(this, new EventArgs());
 
             // Since Window already has an update loop with events, lets tap into that
             Window.UpdateFrame += (sender, frameEventArgs) =>
             {
-                if (this.OnFrameUpdate != null)
-                    this.OnFrameUpdate(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+                this.OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
             };
 
             Window.Run(30);
@@ -433,7 +432,9 @@ namespace csPixelGameEngine
         // Clears entire draw target to Pixel
         public void Clear(Pixel p)
         {
-            throw new NotImplementedException();
+            int pixelCount = DrawTarget.colorData.Length;
+            for (int i = 0; i < pixelCount; i++)
+                DrawTarget.colorData[i] = p;
         }
 
         // Resize the primary screen sprite

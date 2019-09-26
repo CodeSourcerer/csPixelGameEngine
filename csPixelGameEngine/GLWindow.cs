@@ -20,9 +20,11 @@ namespace csPixelGameEngine
         public uint     ViewY           { get; private set; }
 
         public GLWindow(uint screen_width, uint screen_height, uint pixel_w, uint pixel_h, string title)
-            : base((int)((screen_width / 2) * pixel_w), (int)((screen_height / 2) * pixel_h), GraphicsMode.Default, title, GameWindowFlags.Default,
+            : base((int)(screen_width * pixel_w), (int)(screen_height * pixel_h), GraphicsMode.Default, title, GameWindowFlags.Default,
                   DisplayDevice.Default, 2, 1, GraphicsContextFlags.ForwardCompatible)
         {
+            this.Width = (int)(screen_width * pixel_w);
+            this.Height = (int)(screen_height * pixel_h);
             this.ScreenWidth = screen_width;
             this.ScreenHeight = screen_height;
             this.DrawTarget = new Sprite(screen_width, screen_height);
