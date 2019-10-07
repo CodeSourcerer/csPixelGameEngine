@@ -508,7 +508,23 @@ namespace csPixelGameEngine
         // Draws an entire sprite at location (x,y)
         public void DrawSprite(int x, int y, Sprite sprite, uint scale = 1)
         {
-            throw new NotImplementedException();
+            if (sprite == null)
+                return;
+
+            if (scale > 1)
+            {
+                for (uint i = 0; i < sprite.Width; i++)
+                    for (uint j = 0; j < sprite.Height; j++)
+                        for (uint _is = 0; _is < scale; _is++)
+                            for (uint js = 0; js < scale; js++)
+                                Draw((uint)(x + (i * scale) + _is), (uint)(y + (j * scale) + js), sprite.GetPixel(i, j));
+            }
+            else
+            {
+                for (uint i = 0; i < sprite.Width; i++)
+                    for (uint j = 0; j < sprite.Height; j++)
+                        Draw((uint)(x + i), (uint)(y + j), sprite.GetPixel(i, j));
+            }
         }
 
         // Draws an area of a sprite at location (x,y), where the
