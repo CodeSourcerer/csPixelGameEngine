@@ -305,13 +305,124 @@ namespace csPixelGameEngine
             return false;
         }
 
+        private void swap<T>(ref T v1, ref T v2)
+        {
+            T temp = v1;
+            v1 = v2;
+            v2 = temp;
+        }
+
         // Draws a line from (x1,y1) to (x2,y2)
         public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
         {
             if (p == default(Pixel))
                 p = Pixel.WHITE;
 
-            throw new NotImplementedException();
+            int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
+            dx = x2 - x1; dy = y2 - y1;
+
+            Func<uint, uint> rol = (pat) =>
+		    {
+                pat = (pat << 1) | (pat >> 31);
+                return pat;
+            };
+
+            // straight lines idea by gurkanctn
+            if (dx == 0) // Line is vertical
+            {
+                if (y2 < y1) swap(ref y1, ref y2);
+                for (y = y1; y <= y2; y++)
+                {
+                    pattern = rol(pattern);
+                    if ((pattern & 1) == 1)
+                        Draw((uint)x1, (uint)y, p);
+                }
+                return;
+            }
+
+            if (dy == 0) // Line is horizontal
+            {
+                if (x2 < x1) swap(ref x1, ref x2);
+                for (x = x1; x <= x2; x++)
+                {
+                    pattern = rol(pattern);
+                    if ((pattern & 1) == 1)
+                        Draw((uint)x, (uint)y1, p);
+                }
+                return;
+            }
+
+            // Line is Funk-aye
+            dx1 = Math.Abs(dx);
+            dy1 = Math.Abs(dy);
+            px = 2 * dy1 - dx1;
+            py = 2 * dx1 - dy1;
+            if (dy1 <= dx1)
+            {
+                if (dx >= 0)
+                {
+                    x = x1; y = y1; xe = x2;
+                }
+                else
+                {
+                    x = x2; y = y2; xe = x1;
+                }
+
+                pattern = rol(pattern);
+                if ((pattern & 1) == 1)
+                    Draw((uint)x, (uint)y, p);
+
+                for (i = 0; x < xe; i++)
+                {
+                    x = x + 1;
+                    if (px < 0)
+                        px = px + 2 * dy1;
+                    else
+                    {
+                        if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
+                            y = y + 1;
+                        else
+                            y = y - 1;
+                        px = px + 2 * (dy1 - dx1);
+                    }
+                    pattern = rol(pattern);
+                    if ((pattern & 1) == 1)
+                        Draw((uint)x, (uint)y, p);
+                }
+            }
+            else
+            {
+                if (dy >= 0)
+                {
+                    x = x1; y = y1; ye = y2;
+                }
+                else
+                {
+                    x = x2; y = y2; ye = y1;
+                }
+
+                pattern = rol(pattern);
+                if ((pattern & 1) == 1)
+                    Draw((uint)x, (uint)y, p);
+
+                for (i = 0; y < ye; i++)
+                {
+                    y = y + 1;
+                    if (py <= 0)
+                        py = py + 2 * dx1;
+                    else
+                    {
+                        if ((dx < 0 && dy < 0) || (dx > 0 && dy > 0))
+                            x = x + 1;
+                        else
+                            x = x - 1;
+                        py = py + 2 * (dx1 - dy1);
+                    }
+                    pattern = rol(pattern);
+                    if ((pattern & 1) == 1)
+                        Draw((uint)x, (uint)y, p);
+                }
+            }
         }
 
         // Draws a circle located at (x,y) with radius
@@ -338,7 +449,10 @@ namespace csPixelGameEngine
             if (p == default(Pixel))
                 p = Pixel.WHITE;
 
-            throw new NotImplementedException();
+            DrawLine(x, y, x + w, y, p);
+            DrawLine(x + w, y, x + w, y + h, p);
+            DrawLine(x + w, y + h, x, y + h, p);
+            DrawLine(x, y + h, x, y, p);
         }
 
         // Fills a rectangle at (x,y) to (x+w,y+h)
@@ -347,7 +461,30 @@ namespace csPixelGameEngine
             if (p == default(Pixel))
                 p = Pixel.WHITE;
 
-            throw new NotImplementedException();
+            int x2 = x + w;
+            int y2 = y + h;
+
+            if (x < 0)
+                x = 0;
+            if (x >= (int)ScreenWidth)
+                x = (int)ScreenWidth;
+            if (y < 0)
+                y = 0;
+            if (y >= (int)ScreenHeight)
+                y = (int)ScreenHeight;
+
+            if (x2 < 0)
+                x2 = 0;
+            if (x2 >= (int)ScreenWidth)
+                x2 = (int)ScreenWidth;
+            if (y2 < 0)
+                y2 = 0;
+            if (y2 >= (int)ScreenHeight)
+                y2 = (int)ScreenHeight;
+
+            for (int i = x; i < x2; i++)
+                for (int j = y; j < y2; j++)
+                    Draw((uint)i, (uint)j, p);
         }
 
         // Draws a triangle between points (x1,y1), (x2,y2) and (x3,y3)
