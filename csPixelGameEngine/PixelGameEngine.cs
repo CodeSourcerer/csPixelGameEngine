@@ -186,7 +186,7 @@ namespace csPixelGameEngine
                 this.OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
             };
 
-            Window.Run(30);
+            Window.Run(120);
 
             return rcode.OK;
         }
@@ -275,11 +275,11 @@ namespace csPixelGameEngine
         /// <returns></returns>
         public virtual bool Draw(uint x, uint y, Pixel p)
         {
-            if (p == default(Pixel))
-                p = Pixel.WHITE;
-
             if (DrawTarget == null)
                 return false;
+
+            if (p == default(Pixel))
+                p = Pixel.WHITE;
 
             if (PixelBlendMode == BlendMode.NORMAL)
             {
@@ -458,6 +458,8 @@ namespace csPixelGameEngine
         // Fills a rectangle at (x,y) to (x+w,y+h)
         public void FillRect(int x, int y, int w, int h, Pixel p)
         {
+            // drawTarget.FillRect((uint)x, (uint)y, (uint)w, (uint)h, p);
+
             if (p == default(Pixel))
                 p = Pixel.WHITE;
 
@@ -515,9 +517,12 @@ namespace csPixelGameEngine
             {
                 for (uint i = 0; i < sprite.Width; i++)
                     for (uint j = 0; j < sprite.Height; j++)
+                    {
+                        Pixel p = sprite.GetPixel(i, j);
                         for (uint _is = 0; _is < scale; _is++)
                             for (uint js = 0; js < scale; js++)
-                                Draw((uint)(x + (i * scale) + _is), (uint)(y + (j * scale) + js), sprite.GetPixel(i, j));
+                                Draw((uint)(x + (i * scale) + _is), (uint)(y + (j * scale) + js), p);
+                    }
             }
             else
             {
@@ -531,7 +536,36 @@ namespace csPixelGameEngine
         // selected area is (ox,oy) to (ox+w,oy+h)
         public void DrawPartialSprite(int x, int y, Sprite sprite, int ox, int oy, int w, int h, uint scale = 1)
         {
-            throw new NotImplementedException();
+            if (sprite == null)
+                return;
+
+            if (scale > 1)
+            {
+                for (int i = 0; i < w; i++)
+                {
+                    for (int j = 0; j < h; j++)
+                    {
+                        Pixel p = sprite.GetPixel((uint)(i + ox), (uint)(j + oy));
+                        for (uint _is = 0; _is < scale; _is++)
+                        {
+                            for (uint js = 0; js < scale; js++)
+                            {
+                                Draw((uint)(x + (i * scale) + _is), (uint)(y + (j * scale) + js), p);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < w; i++)
+                {
+                    for (int j = 0; j < h; j++)
+                    {
+                        Draw((uint)(x + i), (uint)(y + j), sprite.GetPixel((uint)(i + ox), (uint)(j + oy)));
+                    }
+                }
+            }
         }
 
         // Draws a single line of text

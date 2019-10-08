@@ -83,13 +83,47 @@ namespace csPixelGameEngine
 
         public bool SetPixel(uint x, uint y, Pixel p)
         {
-            if (x >= 0 && x < Width && y >= 0 && y < Height)
+            if (x < Width && y < Height)
             {
                 colorData[y * Width + x] = p;
                 return true;
             }
-            else
-                return false;
+
+            return false;
+        }
+
+        public void FillRect(uint x, uint y, uint width, uint height, Pixel p)
+        {
+            if (p == default(Pixel))
+                p = Pixel.WHITE;
+
+            uint x2 = x + width;
+            uint y2 = y + height;
+
+            if (x < 0)
+                x = 0;
+            if (y < 0)
+                y = 0;
+            if (x > Width)
+                x = Width;
+            if (y > Height)
+                y = Height;
+            if (x2 < 0)
+                x2 = 0;
+            if (y2 < 0)
+                y2 = 0;
+            if (x2 >= Width)
+                x2 = Width;
+            if (y2 >= Height)
+                y2 = Height;
+
+            for (uint x1 = x; x1 < x2; x1++)
+            {
+                for (uint y1 = y; y1 < y2; y1++)
+                {
+                    colorData[y1 * Width + x1] = p;
+                }
+            }
         }
 
         public Pixel Sample(float x, float y)

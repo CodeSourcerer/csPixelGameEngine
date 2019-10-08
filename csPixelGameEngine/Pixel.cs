@@ -21,33 +21,46 @@ namespace csPixelGameEngine
         public static Pixel BLACK   = new Pixel(0, 0, 0);
         public static Pixel BLANK   = new Pixel(0, 0, 0, 0);
 
-        public byte r { get; set; }
-        public byte g { get; set; }
-        public byte b { get; set; }
-        public byte a { get; set; }
+        public uint color { get; set; }
+
+        public byte r
+        {
+            get { return (byte)(color >> 24); }
+            set { this.color = (this.color & 0x00FFFFFF) | (uint)(value << 24); }
+        }
+        public byte g
+        {
+            get { return (byte)((color & 0x00FF0000) >> 16); }
+            set { this.color = (this.color & 0xFF00FFFF) | (uint)(value << 16); }
+        }
+        public byte b
+        {
+            get { return (byte)((this.color & 0x0000FF00) >> 8); }
+            set { this.color = (this.color & 0xFFFF00FF) | (uint)(value << 8); }
+        }
+        public byte a
+        {
+            get { return (byte)(this.color & 0x00000000FF); }
+            set { this.color = (this.color & 0xFFFFFF00) | value; }
+        }
 
         public Pixel(byte r = 0, byte g = 0, byte b = 0, byte a = 255)
         {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.a = a;
+            this.color = (uint)((r << 24) | (g << 16) | (b << 8) | a);
         }
 
         public Pixel(uint p)
         {
-            this.r = (byte)(p >> 24);
-            this.g = (byte)((p & 0x00FF0000) >> 16);
-            this.b = (byte)((p & 0x0000FF00) >> 8);
-            this.a = (byte)(p & 0x000000FF);
+            this.color = p;
+            //this.r = (byte)(p >> 24);
+            //this.g = (byte)((p & 0x00FF0000) >> 16);
+            //this.b = (byte)((p & 0x0000FF00) >> 8);
+            //this.a = (byte)(p & 0x000000FF);
         }
 
         public bool Equals(Pixel other)
         {
-            return (this.r == other.r &&
-                    this.g == other.g &&
-                    this.b == other.b &&
-                    this.a == other.a);
+            return (this.color == other.color);
         }
 
         public override bool Equals(object obj)
