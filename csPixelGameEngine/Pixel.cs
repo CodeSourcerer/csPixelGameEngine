@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace csPixelGameEngine
 {
-    public enum BlendMode { NORMAL, MASK, ALPHA, CUSTOM };
-
     public struct Pixel
     {
         public static Pixel WHITE   = new Pixel(255, 255, 255);
@@ -46,16 +44,12 @@ namespace csPixelGameEngine
 
         public Pixel(byte r = 0, byte g = 0, byte b = 0, byte a = 255)
         {
-            this.color = (uint)((r << 24) | (g << 16) | (b << 8) | a);
+            this.color = (((uint)r << 24) | ((uint)g << 16) | ((uint)b << 8) | a);
         }
 
         public Pixel(uint p)
         {
             this.color = p;
-            //this.r = (byte)(p >> 24);
-            //this.g = (byte)((p & 0x00FF0000) >> 16);
-            //this.b = (byte)((p & 0x0000FF00) >> 8);
-            //this.a = (byte)(p & 0x000000FF);
         }
 
         public bool Equals(Pixel other)

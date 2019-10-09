@@ -98,6 +98,8 @@ namespace csPixelGameEngine
         /// </summary>
         public event FrameUpdateEventHandler OnFrameUpdate;
 
+        public event FrameUpdateEventHandler OnFrameRender;
+
         /// <summary>
         /// Event that fires before starting main loop. Use to load resources
         /// </summary>
@@ -185,8 +187,11 @@ namespace csPixelGameEngine
             {
                 this.OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
             };
-
-            Window.Run(120);
+            Window.RenderFrame += (sender, frameEventArgs) =>
+            {
+                this.OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+            };
+            Window.Run(60, 40);
 
             return rcode.OK;
         }

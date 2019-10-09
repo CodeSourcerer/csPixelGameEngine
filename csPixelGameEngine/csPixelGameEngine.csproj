@@ -61,6 +61,7 @@
     <Compile Include="vec3d.cs" />
     <Compile Include="GLWindow.cs" />
     <Compile Include="FrameUpdateEventArgs.cs" />
+    <Compile Include="enums\BlendMode.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="OpenTK.dll.config" />
