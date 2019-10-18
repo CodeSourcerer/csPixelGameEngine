@@ -191,7 +191,7 @@ namespace csPixelGameEngine
             {
                 this.OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
             };
-            Window.Run(60, 40);
+            Window.Run(120, 60);
 
             return rcode.OK;
         }
@@ -518,15 +518,19 @@ namespace csPixelGameEngine
             if (sprite == null)
                 return;
 
+            Pixel p;
+            uint iScale, jScale;
             if (scale > 1)
             {
                 for (uint i = 0; i < sprite.Width; i++)
                     for (uint j = 0; j < sprite.Height; j++)
                     {
-                        Pixel p = sprite.GetPixel(i, j);
+                        p = sprite.GetPixel(i, j);
+                        iScale = (uint)x + i * scale;
+                        jScale = (uint)y + j * scale;
                         for (uint _is = 0; _is < scale; _is++)
                             for (uint js = 0; js < scale; js++)
-                                Draw((uint)(x + (i * scale) + _is), (uint)(y + (j * scale) + js), p);
+                                Draw(iScale + _is, jScale + js, p);
                     }
             }
             else
