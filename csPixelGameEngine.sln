@@ -9,6 +9,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngineTests", "c
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApplication", "TestApplication\TestApplication.csproj", "{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngineCore", "csPixelGameEngineCore\csPixelGameEngineCore.csproj", "{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngineCoreTests", "csPixelGameEngineCoreTests\csPixelGameEngineCoreTests.csproj", "{F6C3BCAE-FE56-442F-BD81-B6F82958F68C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7DD8E592-EF55-4D93-817C-C96B8A12AE4A}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +36,14 @@ Global
 		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6C3BCAE-FE56-442F-BD81-B6F82958F68C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6C3BCAE-FE56-442F-BD81-B6F82958F68C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6C3BCAE-FE56-442F-BD81-B6F82958F68C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6C3BCAE-FE56-442F-BD81-B6F82958F68C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

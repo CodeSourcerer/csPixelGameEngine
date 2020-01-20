@@ -63,6 +63,9 @@
     <Compile Include="enums\BlendMode.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
   </ItemGroup>
