@@ -70,6 +70,9 @@ namespace csPixelGameEngineCore
 
         public bool Equals(Pixel other)
         {
+            // Boxing necessary to prevent calling of operator == overload
+            if ((object)other == null) return false;
+
             return (color == other.color);
         }
 
@@ -85,11 +88,19 @@ namespace csPixelGameEngineCore
 
         public static bool operator ==(Pixel p1, Pixel p2)
         {
+            // Boxing necessary to prevent recursive calling of this operator
+            if ((object)p1 == null && (object)p2 == null) return true;
+            if ((object)p1 == null || (object)p2 == null) return false;
+
             return p1.Equals(p2);
         }
 
         public static bool operator !=(Pixel p1, Pixel p2)
         {
+            // Boxing necessary to prevent recursive calling of this operator
+            if ((object)p1 == null && (object)p2 == null) return false;
+            if ((object)p1 == null || (object)p2 == null) return true;
+            
             return !p1.Equals(p2);
         }
     }

@@ -27,5 +27,31 @@ namespace csPixelGameEngineCoreTests
             Assert.AreEqual<byte>(0, p1.b, "unexpected blue value");
             Assert.AreEqual<byte>(0xFF, p1.a, "unexpected alpha value");
         }
+
+        [TestMethod]
+        public void WhenComparingEqualityOfTwoPixels_AndOneIsNull_HandleGracefully()
+        {
+            Pixel p1 = new Pixel(0xC001C010);
+            Pixel p2 = null;
+
+            bool areEqual = p2 == p1;
+            Assert.IsFalse(areEqual);
+
+            areEqual = p1 == p2;
+            Assert.IsFalse(areEqual);
+        }
+
+        [TestMethod]
+        public void WhenComparingInequalityOfTwoPixels_AndOneIsNull_HandleGracefully()
+        {
+            Pixel p1 = new Pixel(0xC001C010);
+            Pixel p2 = null;
+
+            bool areNotEqual = p1 != p2;
+            Assert.IsTrue(areNotEqual);
+
+            areNotEqual = p2 != p1;
+            Assert.IsTrue(areNotEqual);
+        }
     }
 }
