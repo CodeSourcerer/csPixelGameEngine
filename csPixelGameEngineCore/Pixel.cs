@@ -70,14 +70,14 @@ namespace csPixelGameEngineCore
 
         public bool Equals(Pixel other)
         {
-            // Boxing necessary to prevent calling of operator == overload
-            if ((object)other == null) return false;
-
-            return (color == other.color);
+            return (color == other?.color);
         }
 
         public override bool Equals(object obj)
         {
+            if (obj is Pixel)
+                return Equals((Pixel)obj);
+
             return base.Equals(obj);
         }
 
