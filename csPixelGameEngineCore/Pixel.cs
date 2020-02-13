@@ -102,5 +102,7 @@ namespace csPixelGameEngineCore
             
             return !p1.Equals(p2);
         }
+
+        public static implicit operator uint(Pixel p) => p.color;
     }
 }
