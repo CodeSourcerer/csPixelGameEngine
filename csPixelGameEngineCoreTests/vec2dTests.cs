@@ -10,13 +10,13 @@ namespace csPixelGameEngineCoreTests
     public class vec2dTests
     {
         [TestMethod]
-        public void CreatingVec2d_WithoutArgumentsToConstructor_SetsU_and_V_To_0_and_W_To_1()
+        public void CreatingVec2d_WithoutArgumentsToConstructor_SetsU_and_V_and_W_To_0()
         {
             vec2d actualvec2d = new vec2d();
 
             Assert.AreEqual(0.0f, actualvec2d.u, "Unexpected u value");
             Assert.AreEqual(0.0f, actualvec2d.v, "Unexpected v value");
-            Assert.AreEqual(1.0f, actualvec2d.w, "Unexpected w value");
+            Assert.AreEqual(0.0f, actualvec2d.w, "Unexpected w value");
         }
     }
 }

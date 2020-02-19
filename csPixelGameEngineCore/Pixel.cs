@@ -69,7 +69,7 @@ namespace csPixelGameEngineCore
 
         public bool Equals(Pixel other)
         {
-            return (color == other?.color);
+            return (color == other.color);
         }
 
         public override bool Equals(object obj)

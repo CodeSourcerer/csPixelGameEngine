@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace csPixelGameEngineCore
 {
-    public class vec2d
+    public struct vec2d
     {
+        public static vec2d Unit = new vec2d(0, 0, 1);
+
         public float u;
         public float v;
         public float w;
