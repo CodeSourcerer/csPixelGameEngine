@@ -25,14 +25,25 @@ namespace csPixelGameEngineCoreTests
             Assert.AreEqual<byte>(0, p1.r, "unexpected red value");
             Assert.AreEqual<byte>(0, p1.g, "unexpected green value");
             Assert.AreEqual<byte>(0, p1.b, "unexpected blue value");
-            Assert.AreEqual<byte>(0xFF, p1.a, "unexpected alpha value");
+            Assert.AreEqual<byte>(0, p1.a, "unexpected alpha value");
+        }
+
+        [TestMethod]
+        public void WhenConstructed_WithSomeParams_ParamsNotGivenAreZeroAndAlphaIs255()
+        {
+            Pixel p1 = new Pixel(0, b: 0);
+
+            Assert.AreEqual<byte>(0, p1.r, "unexpected red value");
+            Assert.AreEqual<byte>(0, p1.g, "unexpected green value");
+            Assert.AreEqual<byte>(0, p1.b, "unexpected blue value");
+            Assert.AreEqual<byte>(255, p1.a, "unexpected alpha value");
         }
 
         [TestMethod]
         public void WhenComparingEqualityOfTwoPixels_AndOneIsNull_HandleGracefully()
         {
             Pixel p1 = new Pixel(0xC001C010);
-            Pixel p2 = null;
+            Pixel? p2 = null;
 
             bool areEqual = p2 == p1;
             Assert.IsFalse(areEqual);
@@ -45,7 +56,7 @@ namespace csPixelGameEngineCoreTests
         public void WhenComparingInequalityOfTwoPixels_AndOneIsNull_HandleGracefully()
         {
             Pixel p1 = new Pixel(0xC001C010);
-            Pixel p2 = null;
+            Pixel? p2 = null;
 
             bool areNotEqual = p1 != p2;
             Assert.IsTrue(areNotEqual);

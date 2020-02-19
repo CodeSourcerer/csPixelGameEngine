@@ -31,7 +31,7 @@ namespace csPixelGameEngineCore
 
             for (int i = 0; i < Width * Height; i++)
             {
-                ColorData[i] = new Pixel();
+                ColorData[i] = Pixel.BLACK;
             }
         }
 

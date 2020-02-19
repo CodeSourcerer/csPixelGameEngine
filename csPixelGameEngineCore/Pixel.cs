@@ -5,7 +5,7 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
-    public class Pixel
+    public struct Pixel
     {
         #region Predefined colors
         public static Pixel WHITE               = new Pixel(255, 255, 255);

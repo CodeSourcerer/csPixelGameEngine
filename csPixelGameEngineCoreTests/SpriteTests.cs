@@ -58,7 +58,22 @@ namespace csPixelGameEngineCoreTests
 
             Pixel actualPixel = testSprite.GetPixel(x, y);
 
+            Pixel expectedPixel = new Pixel(0, 0, (byte)(y * 10 + x));
+
             Assert.AreNotEqual(Pixel.BLANK, actualPixel, "Invalid pixel returned");
+            Assert.AreEqual(expectedPixel, actualPixel);
+        }
+
+        [DataTestMethod]
+        [DataRow((uint)10, (uint)2)]
+        [DataRow((uint)1, (uint)50)]
+        public void GetPixel_WithCoordsOutsideOfBounds_ReturnsBlankPixel(uint x, uint y)
+        {
+            Sprite testSprite = new Sprite(10, 10);
+
+            Pixel actualPixel = testSprite.GetPixel(x, y);
+
+            Assert.AreEqual(Pixel.BLANK, actualPixel);
         }
     }
 }
