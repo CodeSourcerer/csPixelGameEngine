@@ -102,5 +102,20 @@ namespace csPixelGameEngineCoreTests
             Assert.AreEqual(Pixel.BLUE, testSprite.GetPixel(0, 0));
             Assert.AreEqual(Pixel.BLUE, testSprite.GetPixel(9, 9));
         }
+
+        [DataTestMethod]
+        [DataRow((uint)10, (uint)0, (uint)1, (uint)1)]
+        [DataRow((uint)0, (uint)10, (uint)1, (uint)1)]
+        [DataRow((uint)0, (uint)0, (uint)20, (uint)1)]
+        [DataRow((uint)0, (uint)0, (uint)1, (uint)20)]
+        [DataRow((uint)10, (uint)10, (uint)10, (uint)20)]
+        public void FillRect_OutsideOfSpriteBounds_DoesNotBlowUp(uint x, uint y, uint width, uint height)
+        {
+            Sprite testSprite = new Sprite(10, 10);
+
+            testSprite.FillRect(x, y, width, height, Pixel.BLUE);
+
+            // Asserting anything useful is difficult - we just don't want exceptions thrown.
+        }
     }
 }

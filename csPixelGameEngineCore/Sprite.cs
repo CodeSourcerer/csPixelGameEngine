@@ -96,14 +96,15 @@ namespace csPixelGameEngineCore
             uint x2 = x + width;
             uint y2 = y + height;
 
-            if (x > Width)
-                x = Width;
-            if (y > Height)
-                y = Height;
+            // TODO: Write unit tests for below...its kinda suspect
+            if (x >= Width)
+                x = (Width - 1);
+            if (y >= Height)
+                y = (Height - 1);
             if (x2 >= Width)
-                x2 = Width;
+                x2 = (Width - 1);
             if (y2 >= Height)
-                y2 = Height;
+                y2 = (Height - 1);
 
             for (uint y1 = y; y1 < y2; y1++)
             {
