@@ -75,5 +75,20 @@ namespace csPixelGameEngineCoreTests
 
             Assert.AreEqual(Pixel.BLANK, actualPixel);
         }
+
+        [DataTestMethod]
+        [DataRow((uint)1, (uint)1, (float)0.0, (float)0.0)]
+        [DataRow((uint)1, (uint)1, (float)1.0, (float)1.0)]
+        [DataRow((uint)10, (uint)10, (float)0.0, (float)10.01)]
+        [DataRow((uint)10, (uint)10, (float)-20.32, (float)3.14)]
+        public void Sample_UsingVariousXYAndSpriteSizes_DoesNotBlowUp(uint w, uint h, float x, float y)
+        {
+            Sprite testSprite = new Sprite(w, h);
+
+            Pixel actualPixel = testSprite.Sample(x, y);
+
+            Assert.IsNotNull(actualPixel);
+            Assert.AreEqual(Pixel.BLACK, actualPixel);
+        }
     }
 }

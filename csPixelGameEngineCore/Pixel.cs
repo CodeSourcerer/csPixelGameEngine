@@ -59,7 +59,6 @@ namespace csPixelGameEngineCore
 
         public Pixel(byte r = 0, byte g = 0, byte b = 0, byte a = 255)
         {
-            Console.WriteLine($"a = {a}");
             color = (((uint)r << 24) | ((uint)g << 16) | ((uint)b << 8) | a);
         }
 
@@ -70,14 +69,14 @@ namespace csPixelGameEngineCore
 
         public bool Equals(Pixel other)
         {
-            // Boxing necessary to prevent calling of operator == overload
-            if ((object)other == null) return false;
-
-            return (color == other.color);
+            return (color == other?.color);
         }
 
         public override bool Equals(object obj)
         {
+            if (obj is Pixel)
+                return Equals((Pixel)obj);
+
             return base.Equals(obj);
         }
 
@@ -103,5 +102,7 @@ namespace csPixelGameEngineCore
             
             return !p1.Equals(p2);
         }
+
+        public static implicit operator uint(Pixel p) => p.color;
     }
 }
