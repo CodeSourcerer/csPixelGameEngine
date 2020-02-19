@@ -90,5 +90,17 @@ namespace csPixelGameEngineCoreTests
             Assert.IsNotNull(actualPixel);
             Assert.AreEqual(Pixel.BLACK, actualPixel);
         }
+
+        [TestMethod]
+        public void Fill_SetsAllPixels_ToGivenPixel()
+        {
+            Sprite testSprite = new Sprite(10, 10);
+
+            testSprite.Fill(Pixel.BLUE);
+
+            Assert.AreEqual(Pixel.BLUE, testSprite.GetPixel(5, 2));
+            Assert.AreEqual(Pixel.BLUE, testSprite.GetPixel(0, 0));
+            Assert.AreEqual(Pixel.BLUE, testSprite.GetPixel(9, 9));
+        }
     }
 }

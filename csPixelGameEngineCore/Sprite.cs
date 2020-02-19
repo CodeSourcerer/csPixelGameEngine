@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace csPixelGameEngineCore
@@ -35,16 +37,43 @@ namespace csPixelGameEngineCore
             }
         }
 
+        public void Fill(Pixel col)
+        {
+            Span<Pixel> dest = ColorData;
+            dest.Fill(col);
+        }
+
+        /// <summary>
+        /// Get the pixel value at the given x and y coordinates within this sprite.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <returns>The pixel value. If x and y coordinates are outside of the sprite boundaries, Pixel.BLANK is returned.</returns>
         public Pixel GetPixel(uint x, uint y)
         {
+            // Not sure if I really want assertions or not....
+            Debug.Assert(x < Width, "Attempt to get pixel outside of sprite boundaries");
+            Debug.Assert(y < Height, "Attempt to get pixel outside of sprite boundaries");
+
             if (x < Width && y < Height)
                 return ColorData[y * Width + x];
             else
                 return Pixel.BLANK;
         }
 
+        /// <summary>
+        /// Set a pixel in this sprite to the given pixel value
+        /// </summary>
+        /// <param name="x">x coordinate in sprite to set</param>
+        /// <param name="y">y coordinate in sprite to set</param>
+        /// <param name="p">Pixel value to use</param>
+        /// <returns>true if set, false if not (outside of sprite boundaries)</returns>
         public bool SetPixel(uint x, uint y, Pixel p)
         {
+            // Not sure if I really want assertions or not....
+            Debug.Assert(x < Width, "Attempt to set pixel outside of sprite boundaries");
+            Debug.Assert(y < Height, "Attempt to set pixel outside of sprite boundaries");
+
             if (x < Width && y < Height)
             {
                 ColorData[y * Width + x] = p;
@@ -54,11 +83,16 @@ namespace csPixelGameEngineCore
             return false;
         }
 
+        /// <summary>
+        /// Fills a rect within this sprite with a given pixel.
+        /// </summary>
+        /// <param name="x">Left x coordinate of rectangle in sprite to start filling at</param>
+        /// <param name="y">Upper y coordinate of rectangle in sprite to start filling at</param>
+        /// <param name="width">Width of rectangle to fill</param>
+        /// <param name="height">Height of rectangle to fill</param>
+        /// <param name="p">Pixel value to fill with</param>
         public void FillRect(uint x, uint y, uint width, uint height, Pixel p)
         {
-            if (p == default)
-                p = Pixel.WHITE;
-
             uint x2 = x + width;
             uint y2 = y + height;
 
@@ -71,13 +105,19 @@ namespace csPixelGameEngineCore
             if (y2 >= Height)
                 y2 = Height;
 
-            for (uint x1 = x; x1 < x2; x1++)
+            for (uint y1 = y; y1 < y2; y1++)
             {
-                for (uint y1 = y; y1 < y2; y1++)
-                {
-                    ColorData[y1 * Width + x1] = p;
-                }
+                Span<Pixel> row = new Span<Pixel>(ColorData, (int)(y1 * Width + x), (int)(x2 - x));
+                row.Fill(p);
             }
+
+            //for (uint x1 = x; x1 < x2; x1++)
+            //{
+            //    for (uint y1 = y; y1 < y2; y1++)
+            //    {
+            //        ColorData[y1 * Width + x1] = p;
+            //    }
+            //}
         }
 
         public Pixel Sample(float x, float y)
