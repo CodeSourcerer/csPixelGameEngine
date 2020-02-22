@@ -58,7 +58,7 @@ namespace csPixelGameEngineCore
 
             //GL.Viewport((int)ViewX, (int)ViewY, (int)ViewWidth, (int)ViewHeight);
 
-            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, (int)ScreenWidth, (int)ScreenHeight, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData.Cast<uint>().ToArray());
+            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, (int)ScreenWidth, (int)ScreenHeight, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData);
 
             GL.Begin(PrimitiveType.Quads);
             GL.TexCoord2(0.0, 1.0); GL.Vertex3(-1.0f, -1.0f, 0.0f);
@@ -106,7 +106,7 @@ namespace csPixelGameEngineCore
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new int[] { (int)All.Nearest });
             GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new int[] { (int)All.Nearest });
             GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)All.Decal);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)ScreenWidth, (int)ScreenHeight, 0, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData.Cast<uint>().ToArray());
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)ScreenWidth, (int)ScreenHeight, 0, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData);
 
             base.OnLoad(e);
         }

@@ -94,6 +94,11 @@ namespace csPixelGameEngineCore
         /// </summary>
         public event EventHandler OnCreate;
 
+        /// <summary>
+        /// Event that fires after window closes.
+        /// </summary>
+        public event EventHandler OnDestroy;
+
         #endregion // Events
 
         public PixelGameEngine(string appName)
@@ -166,6 +171,10 @@ namespace csPixelGameEngineCore
         {
             OnCreate?.Invoke(this, new EventArgs());
 
+            Window.Closed += (sender, cancelEventArgs) =>
+            {
+                OnDestroy?.Invoke(sender, EventArgs.Empty);
+            };
             // Since Window already has an update loop with events, lets tap into that
             Window.UpdateFrame += (sender, frameEventArgs) =>
             {
@@ -535,18 +544,5 @@ namespace csPixelGameEngineCore
         }
 
         #endregion // Drawing Methods
-
-        #region Overridable Interfaces
-
-        /// <summary>
-        /// Called once on application termination.
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool OnUserDestroy()
-        {
-            return true;
-        }
-
-        #endregion // Overridable Interfaces
     }
 }
