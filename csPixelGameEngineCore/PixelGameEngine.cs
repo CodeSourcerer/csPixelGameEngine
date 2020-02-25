@@ -203,9 +203,6 @@ namespace csPixelGameEngineCore
             if (DrawTarget == null)
                 return false;
 
-            if (p == default)
-                p = Pixel.WHITE;
-
             return PixelBlendMode switch
             {
                 BlendMode.NORMAL => DrawTarget.SetPixel(x, y, p),
@@ -484,9 +481,6 @@ namespace csPixelGameEngineCore
         // Draws a single line of text
         public void DrawString(int x, int y, string sText, Pixel col, uint scale = 1)
         {
-            if (col == default)
-                col = Pixel.WHITE;
-
             int sx = 0;
             int sy = 0;
             BlendMode m = PixelBlendMode;

@@ -62,9 +62,9 @@ namespace csPixelGameEngineCore
 
             GL.Begin(PrimitiveType.Quads);
             GL.TexCoord2(0.0, 1.0); GL.Vertex3(-1.0f, -1.0f, 0.0f);
-            GL.TexCoord2(0.0, 0.0); GL.Vertex3(-1.0f, 1.0f, 0.0f);
-            GL.TexCoord2(1.0, 0.0); GL.Vertex3(1.0f, 1.0f, 0.0f);
-            GL.TexCoord2(1.0, 1.0); GL.Vertex3(1.0f, -1.0f, 0.0f);
+            GL.TexCoord2(0.0, 0.0); GL.Vertex3(-1.0f,  1.0f, 0.0f);
+            GL.TexCoord2(1.0, 0.0); GL.Vertex3( 1.0f,  1.0f, 0.0f);
+            GL.TexCoord2(1.0, 1.0); GL.Vertex3( 1.0f, -1.0f, 0.0f);
             GL.End();
 
             SwapBuffers();
