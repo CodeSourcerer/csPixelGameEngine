@@ -26,8 +26,8 @@ namespace csPixelGameEngineCore
             : base ((int)(screen_width * pixel_w), (int)(screen_height * pixel_h), GraphicsMode.Default, title,
                     GameWindowFlags.Default, DisplayDevice.Default, 2, 1, GraphicsContextFlags.ForwardCompatible)
         {
-            Width           = (int)(screen_width + pixel_w);
-            Height          = (int)(screen_height + pixel_h);
+            Width           = (int)(screen_width * pixel_w);
+            Height          = (int)(screen_height * pixel_h);
             ScreenWidth     = screen_width;
             ScreenHeight    = screen_height;
             DrawTarget      = new Sprite(screen_width, screen_height);
