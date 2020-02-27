@@ -6,8 +6,8 @@ namespace csPixelGameEngineCore
 {
     public interface Ivec2d<T>
     {
-        float x { get; set; }
-        float y { get; set; }
+        T x { get; set; }
+        T y { get; set; }
 
         T mag();
         T mag2();
