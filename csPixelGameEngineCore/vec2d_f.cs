@@ -57,7 +57,7 @@ namespace csPixelGameEngineCore
 
             set
             {
-                if (i > 1) throw new IndexOutOfRangeException("Index must be 0 or 1");
+                if (i > 1 || i < 0) throw new IndexOutOfRangeException("Index must be 0 or 1");
 
                 if (i == 0)
                     x = value;
