@@ -160,25 +160,7 @@
 #define OLC_PGE_DEF
 
 #if defined(_WIN32) // WINDOWS specific includes ==============================================
-// Link to libraries
-#ifndef __MINGW32__
-#pragma comment(lib, "user32.lib")		// Visual Studio Only
-#pragma comment(lib, "gdi32.lib")		// For other Windows Compilers please add
-#pragma comment(lib, "opengl32.lib")	// these libs to your linker input
-#pragma comment(lib, "gdiplus.lib")
-#pragma comment(lib, "Shlwapi.lib")
-#else
-	// In Code::Blocks
-#if !defined _WIN32_WINNT
-#ifdef HAVE_MSMF
-#define _WIN32_WINNT 0x0600 // Windows Vista
-#else
-#define _WIN32_WINNT 0x0500 // Windows 2000
-#endif
-#endif
-#endif
-	// Include WinAPI
-	//#define WIN32_LEAN_AND_MEAN
+
 #include <windows.h>
 #include <gdiplus.h>
 #include <Shlwapi.h>
@@ -187,16 +169,6 @@
 #include <GL/gl.h>
 typedef BOOL(WINAPI wglSwapInterval_t) (int interval);
 static wglSwapInterval_t* wglSwapInterval;
-#endif
-
-#ifdef __linux__ // LINUX specific includes ==============================================
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <png.h>
-typedef int(glSwapInterval_t)(Display* dpy, GLXDrawable drawable, int interval);
-static glSwapInterval_t* glSwapIntervalEXT;
 #endif
 
 
@@ -218,32 +190,7 @@ static glSwapInterval_t* glSwapIntervalEXT;
 #include <functional>
 #include <algorithm>
 
-#if defined(_WIN32)
-#if _MSVC_LANG >= 201703L // Thanks @slavka
-	// C++17 onwards
-#include <filesystem>
-namespace _gfs = std::filesystem;
-#else
-	// Older "Modern" C++ :P
-#include <experimental/filesystem>
-namespace _gfs = std::experimental::filesystem::v1;
-#endif
-#endif
 
-#if defined(__linux__) || defined(__MINGW32__)
-#if __cplusplus >= 201703L
-// C++17 onwards
-#include <filesystem>
-namespace _gfs = std::filesystem;
-#else
-// Older "Modern" C++ :P
-#include <experimental/filesystem>
-namespace _gfs = std::experimental::filesystem::v1;
-#endif
-#endif
-
-#undef min
-#undef max
 #define UNUSED(x) (void)(x)
 
 namespace olc // All OneLoneCoder stuff will now exist in the "olc" namespace

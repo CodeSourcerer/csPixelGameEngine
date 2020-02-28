@@ -8,16 +8,29 @@ namespace csPixelGameEngineCore
     public class ResourcePack
     {
         private Dictionary<string, ResourceFile> _mapFiles;
-        private BinaryReader _fileReader;
 
-        public ResourcePack(BinaryReader reader)
+        public ResourcePack()
         {
             _mapFiles = new Dictionary<string, ResourceFile>();
-            _fileReader = reader;
         }
 
         public bool AddFile(string sFile)
         {
+            if (File.Exists(sFile))
+            {
+                FileInfo fi = new FileInfo(sFile);
+
+                //BinaryReader br = new BinaryReader(File.OpenRead(sFile));
+
+                ResourceFile rf = new ResourceFile
+                {
+                    nSize = (uint)fi.Length,
+                    nOffset = 0
+                };
+
+                return true;
+            }
+
             return false;
         }
 
@@ -44,8 +57,8 @@ namespace csPixelGameEngineCore
 
         private struct ResourceFile
         {
-            uint nSize;
-            uint nOffset;
+            public uint nSize;
+            public uint nOffset;
         }
     }
 }
