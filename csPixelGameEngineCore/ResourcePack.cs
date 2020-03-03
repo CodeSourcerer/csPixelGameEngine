@@ -15,19 +15,25 @@ namespace csPixelGameEngineCore
             _mapFiles = new Dictionary<string, ResourceFile>();
         }
 
+        /// <summary>
+        /// This adds a file to the pack to be savd by SavePack later.
+        /// </summary>
+        /// <param name="sFile"></param>
+        /// <returns></returns>
         public bool AddFile(string sFile)
         {
             if (File.Exists(sFile))
             {
+                string file = makeposix(sFile);
                 FileInfo fi = new FileInfo(sFile);
-
-                //BinaryReader br = new BinaryReader(File.OpenRead(sFile));
 
                 ResourceFile rf = new ResourceFile
                 {
                     nSize = (uint)fi.Length,
-                    nOffset = 0
+                    nOffset = 0                 // We'll figure this out in SavePack()
                 };
+
+                _mapFiles[file] = rf;
 
                 return true;
             }
@@ -119,7 +125,7 @@ namespace csPixelGameEngineCore
                     }
 
                     byte[] scrambledBytes;
-                    // 3. Scramble crap for fun and profit
+                    // 3. Scramble the image meta-data for fun and profit
                     using (var binWriterMangled = new BinaryWriter(new MemoryStream(512)))
                     {
                         binWriterMangled.Write(nMapSize);
