@@ -167,8 +167,6 @@ namespace csPixelGameEngineCore
 
         public bool Loaded() => _baseFile != null;
 
-  //      std::ifstream baseFile;
-  //      const std::string scramble(const std::string& data, const std::string& key);
 		private string makeposix(string path) => path.Replace('\\', '/');
 
         public string scramble(string data, string key)
