@@ -73,7 +73,61 @@ namespace csPixelGameEngineCore
             {
                 using(var binWriter = new BinaryWriter(File.Open(sFile, FileMode.Open)))
                 {
+                    uint nIndexSize = 0;
+                    binWriter.Write(nIndexSize);
+                    uint nMapSize = (uint)_mapFiles.Count;
+                    binWriter.Write(nMapSize);
+                    foreach (var mapFile in _mapFiles)
+                    {
+                        // Write the path of the file
+                        binWriter.Write(mapFile.Key.Length);
+                        binWriter.Write(mapFile.Key);
 
+                        // Write the file entry properties
+                        binWriter.Write(mapFile.Value.nSize);
+                        binWriter.Write(mapFile.Value.nOffset);
+                    }
+
+                    // 2. Write the data
+                    var offset = binWriter.BaseStream.Position;
+                    nIndexSize = (uint)offset;
+                    foreach (var mapFilename in _mapFiles.Keys)
+                    {
+                        // Store beginning of file offset within resource pack file
+                        var mapData = _mapFiles[mapFilename];
+                        mapData.nOffset = (uint)offset;
+                        _mapFiles[mapFilename] = mapData;
+
+                        // Load the file to be added
+                        using (var binReader = new BinaryReader(File.Open(mapFilename, FileMode.Open)))
+                        {
+                            binWriter.Write(binReader.ReadBytes((int)_mapFiles[mapFilename].nSize));
+                        }
+                        offset += _mapFiles[mapFilename].nSize;
+                    }
+
+                    byte[] scrambledBytes;
+                    // 3. Scramble crap for fun and profit
+                    using (var binWriterMangled = new BinaryWriter(new MemoryStream(512)))
+                    {
+                        binWriterMangled.Write(nMapSize);
+                        foreach (var mapFile in _mapFiles)
+                        {
+                            // Write the path of the file
+                            binWriterMangled.Write(mapFile.Key.Length);
+                            binWriterMangled.Write(mapFile.Key);
+
+                            // Write the file entry properties
+                            binWriterMangled.Write(mapFile.Value.nSize);
+                            binWriterMangled.Write(mapFile.Value.nOffset);
+                        }
+                        scrambledBytes = scramble(((MemoryStream)binWriterMangled.BaseStream).ToArray(), sKey);
+                    }
+
+                    // 4. Write out the scrambly bits
+                    binWriter.Seek(0, SeekOrigin.Begin);
+                    binWriter.Write(scrambledBytes);
+                    binWriter.Close();
                 }
             }
             catch (Exception)
@@ -81,7 +135,7 @@ namespace csPixelGameEngineCore
                 return false;
             }
 
-            return false;
+            return true;
         }
 
 		public BinaryReader GetFileBuffer(string sFile)
@@ -105,6 +159,18 @@ namespace csPixelGameEngineCore
             }
 
             return new string(o);
+        }
+
+        public byte[] scramble(byte[] data, string key)
+        {
+            uint c = 0;
+            byte[] o = new byte[data.Length];
+            foreach (var s in data)
+            {
+                o[c] = (byte)(s ^ key[(int)((c++) % key.Length)]);
+            }
+
+            return o;
         }
 
         private struct ResourceFile
