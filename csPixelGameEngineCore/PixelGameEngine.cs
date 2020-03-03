@@ -3,6 +3,51 @@ using System.Collections.Generic;
 using System.Text;
 using csPixelGameEngineCore.Enums;
 
+/*
+	+-------------------------------------------------------------+
+	|           OneLoneCoder Pixel Game Engine v1.23              |
+	| "Like the command prompt console one, but not..." - javidx9 |
+	+-------------------------------------------------------------+
+    ... ported to C#!
+
+License (OLC-3)
+~~~~~~~~~~~~~~~
+Copyright 2018 - 2019 OneLoneCoder.com
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions or derivations of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+2. Redistributions or derivative works in binary form must reproduce the above
+copyright notice. This list of conditions and the following disclaimer must be
+reproduced in the documentation and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors may
+be used to endorse or promote products derived from this software without specific
+prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	"AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.
+
+Notes from the Porting Author
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+I have tried to keep this as true to the original as I can, but I have taken the liberty
+of making some changes. I deviate from the original in the following cases:
+    - It doesn't affect portability between the original
+        Ex: Checking inputs to functions and throwing exceptions
+            Using different, but similar data types
+    - Something isn't supported in C# that is in C++
+        Ex: Generics in C# are not the same as templates in C++, so some changes
+                had to be made there.
+    - Easier to use with C# conventions than C++ conventions
+        Ex: Using delegates vs lambdas, using properties vs attributes
+*/
 namespace csPixelGameEngineCore
 {
     public delegate void PixelBlender(int x, int y, Pixel pSrc, Pixel pDst);

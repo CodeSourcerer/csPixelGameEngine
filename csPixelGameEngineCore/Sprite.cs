@@ -1,8 +1,11 @@
-﻿using System;
+﻿using csPixelGameEngineCore.Enums;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace csPixelGameEngineCore
 {
@@ -34,6 +37,47 @@ namespace csPixelGameEngineCore
             for (int i = 0; i < Width * Height; i++)
             {
                 ColorData[i] = Pixel.BLACK;
+            }
+        }
+
+        private delegate void DataReader(BinaryReader br);
+
+        public RCode LoadFromPGESprFile(string sImageFile, ResourcePack pack)
+        {
+            DataReader ReadData = (br) =>
+            {
+                Width = (uint)br.ReadInt32();
+                Height = (uint)br.ReadInt32();
+                ColorData = new Pixel[Width * Height];
+                for (int i = 0; i < (Width * Height); i++)
+                {
+                    ColorData[i] = br.ReadUInt32();
+                }
+            };
+
+            try
+            {
+                if (pack == null)
+                {
+                    using (BinaryReader br = new BinaryReader(File.OpenRead(sImageFile)))
+                    {
+                        ReadData(br);
+                        return RCode.OK;
+                    }
+                }
+                else
+                {
+                    ResourceBuffer rb = pack.GetFileBuffer(sImageFile);
+                    using (BinaryReader br = new BinaryReader(new MemoryStream(rb.Memory.ToArray())))
+                    {
+                        ReadData(br);
+                    }
+                    return RCode.OK;
+                }
+            }
+            catch (Exception)
+            {
+                return RCode.FAIL;
             }
         }
 

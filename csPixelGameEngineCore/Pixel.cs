@@ -104,5 +104,6 @@ namespace csPixelGameEngineCore
         }
 
         public static implicit operator uint(Pixel p) => p.color;
+        public static implicit operator Pixel(uint p) => new Pixel(p);
     }
 }
