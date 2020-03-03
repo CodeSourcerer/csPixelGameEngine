@@ -44,20 +44,32 @@ namespace csPixelGameEngineCore
                 // 1. Read scrambled index
                 uint nIndexSize = 0;
                 nIndexSize = _baseFile.ReadUInt32();
-                char[] buffer = _baseFile.ReadChars((int)nIndexSize);
+                byte[] scramblyBytes = _baseFile.ReadBytes((int)nIndexSize);
+                byte[] mapData = scramble(scramblyBytes, sKey);
 
-                string decoded = scramble(new string(buffer), sKey);
-
-                using (StringReader iss = new StringReader(decoded))
+                using (BinaryReader binReader = new BinaryReader(new MemoryStream(mapData)))
                 {
                     int streamPtr = 0;
                     // 2. Read map
-                    uint nMapEntries = 0;
-                    char[] chMapEntries = new char[4];
-                    streamPtr += iss.Read(chMapEntries, 0, 4);
+                    uint nMapEntries = binReader.ReadUInt32();
 
-                    //nMapEntries = uint.Parse()
+                    // Run through all the map entries reading in paths and offsets
+                    for (uint i = 0; i < nMapEntries; i++)
+                    {
+                        uint nFilePathSize = binReader.ReadUInt32();
+                        string fileName = new string(binReader.ReadChars((int)nFilePathSize));
+
+                        ResourceFile resourceFile = new ResourceFile
+                        {
+                            nSize = binReader.ReadUInt32(),
+                            nOffset = binReader.ReadUInt32()
+                        };
+                        _mapFiles[fileName] = resourceFile;
+                    }
                 }
+
+                // We're going to leave _baseFile open just dangling its file handle around so we can
+                // use it later
             }
             catch (Exception)
             {
