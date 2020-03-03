@@ -5,6 +5,9 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Allows you to store files in one large scrambled file.
+    /// </summary>
     public class ResourcePack : IDisposable
     {
         private Dictionary<string, ResourceFile> _mapFiles;
@@ -156,12 +159,13 @@ namespace csPixelGameEngineCore
             return true;
         }
 
-		public BinaryReader GetFileBuffer(string sFile)
+		public ResourceBuffer GetFileBuffer(string sFile)
         {
-            return null;
+            string file = makeposix(sFile);
+            return new ResourceBuffer(_baseFile, _mapFiles[file].nOffset, _mapFiles[file].nSize);
         }
 
-        public bool Loaded() => false;
+        public bool Loaded() => _baseFile != null;
 
   //      std::ifstream baseFile;
   //      const std::string scramble(const std::string& data, const std::string& key);
@@ -206,7 +210,11 @@ namespace csPixelGameEngineCore
             {
                 if (disposing)
                 {
-                    if (_baseFile != null) _baseFile.Dispose();
+                    if (_baseFile != null)
+                    {
+                        _baseFile.Dispose();
+                        _baseFile = null;
+                    }
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
