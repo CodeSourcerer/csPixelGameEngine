@@ -153,7 +153,7 @@ namespace csPixelGameEngineCore
             {
                 for (int y = 0; y < Height; y++)
                 {
-                    Color p = bmp.GetPixel((int)x, (int)y);
+                    Color p = bmp.GetPixel(x, y);
                     SetPixel((uint)x, (uint)y, new Pixel(p.R, p.G, p.B, p.A));
                 }
             }

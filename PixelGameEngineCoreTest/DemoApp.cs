@@ -1,5 +1,9 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using csPixelGameEngineCore;
+using log4net;
+using log4net.Config;
 
 namespace PixelGameEngineCoreTest
 {
@@ -14,6 +18,9 @@ namespace PixelGameEngineCoreTest
 
         static void Main(string[] args)
         {
+            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+
             DemoApp app = new DemoApp();
             app.Run();
         }
