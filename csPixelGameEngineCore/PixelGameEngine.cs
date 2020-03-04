@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using csPixelGameEngineCore.Enums;
+using log4net;
 
 /*
 	+-------------------------------------------------------------+
@@ -50,10 +51,12 @@ of making some changes. I deviate from the original in the following cases:
 */
 namespace csPixelGameEngineCore
 {
-    public delegate void PixelBlender(int x, int y, Pixel pSrc, Pixel pDst);
+    public delegate Pixel PixelBlender(uint x, uint y, Pixel pSrc, Pixel pDst);
 
     public class PixelGameEngine
     {
+        private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
+
         public string   AppName             { get; private set; }
         public GLWindow Window              { get; private set; }
         public bool     FullScreen          { get; private set; }
@@ -83,15 +86,12 @@ namespace csPixelGameEngineCore
         {
             get => blendFactor;
 
-            set
-            {
-                if (value < 0.0f)
-                    blendFactor = 0.0f;
-                else if (value > 1.0f)
-                    blendFactor = 1.0f;
-                else
-                    blendFactor = value;
-            }
+            set => blendFactor = value switch
+                {
+                    _ when value < 0.0f => 0.0f,
+                    _ when value > 1.0f => 1.0f,
+                    _ => value
+                };
         }
 
         private PixelBlender funcPixelBlender;
@@ -151,6 +151,13 @@ namespace csPixelGameEngineCore
             AppName = string.IsNullOrWhiteSpace(appName) ? "Undefined" : appName;
         }
 
+        /// <summary>
+        /// Build the engine object with the given window.
+        /// </summary>
+        /// <param name="screen_w"></param>
+        /// <param name="screen_h"></param>
+        /// <param name="window"></param>
+        /// <returns>0 on success, -1 on failure</returns>
         public int Construct(uint screen_w, uint screen_h, GLWindow window)
         {
             Window          = window;
@@ -163,6 +170,12 @@ namespace csPixelGameEngineCore
             PixelX          = 2.0f / ScreenWidth;
             PixelY          = 2.0f / ScreenHeight;
 
+            if (PixelWidth == 0 || PixelHeight == 0 || ScreenWidth == 0 || ScreenHeight == 0)
+            {
+                Log.Error("WTF man.... set a width and height!");
+                // FAIL!
+                return -1;
+            }
             // Load the default font sheet
             construct_fontSheet();
 
@@ -212,6 +225,37 @@ namespace csPixelGameEngineCore
             }
         }
 
+        /// <summary>
+        /// Set the screen size
+        /// </summary>
+        /// <param name="w">Width, in pixels</param>
+        /// <param name="h">Height, in pixels</param>
+        public void SetScreenSize(uint w, uint h)
+        {
+            ScreenWidth = w;
+            ScreenHeight = h;
+            Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
+            updateViewPort();
+        }
+
+        private void updateViewPort()
+        {
+            uint windowWidth = ScreenWidth * PixelWidth;
+            uint windowHeight = ScreenHeight * PixelHeight;
+            float windowAsp = (float)windowWidth / windowHeight;
+            Window.ViewWidth = windowWidth;
+            Window.ViewHeight = (uint)(windowWidth / windowAsp);
+
+            if (Window.ViewHeight > windowHeight)
+            {
+                Window.ViewHeight = windowHeight;
+                Window.ViewWidth = (uint)(windowHeight * windowAsp);
+            }
+
+            Window.ViewX = (windowWidth - Window.ViewWidth) / 2;
+            Window.ViewY = (windowHeight - Window.ViewHeight) / 2;
+        }
+
         public int Start()
         {
             OnCreate?.Invoke(this, new EventArgs());
@@ -236,6 +280,11 @@ namespace csPixelGameEngineCore
 
         #region Drawing Methods
 
+        public bool Draw(vec2d_i pos, Pixel p)
+        {
+            return Draw((uint)pos.x, (uint)pos.y, p);
+        }
+
         /// <summary>
         /// Draws a single Pixel
         /// </summary>
@@ -252,8 +301,21 @@ namespace csPixelGameEngineCore
             {
                 BlendMode.NORMAL => DrawTarget.SetPixel(x, y, p),
                 BlendMode.MASK when p.a == 255 => DrawTarget.SetPixel(x, y, p),
+                BlendMode.ALPHA => DrawTarget.SetPixel(x, y, alphaBlend(x, y, p)),
+                BlendMode.CUSTOM => DrawTarget.SetPixel(x, y, CustomPixelBlender(x, y, DrawTarget.GetPixel(x, y), p)),
                 _ => false
             };
+        }
+
+        private Pixel alphaBlend(uint x, uint y, Pixel p)
+        {
+            Pixel d = DrawTarget.GetPixel(x, y);
+            float a = (p.a / 255.0f) * BlendFactor;
+            float c = 1.0f - a;
+            float r = a * p.r + c * d.r;
+            float g = a * p.g + c * d.g;
+            float b = a * p.b + c * d.b;
+            return new Pixel((byte)r, (byte)g, (byte)b);
         }
 
         private void swap<T>(ref T v1, ref T v2)
@@ -576,12 +638,40 @@ namespace csPixelGameEngineCore
                 DrawTarget.ColorData[i] = p;
         }
 
-        // Resize the primary screen sprite
-        public void SetScreenSize(int w, int h)
+        #endregion // Drawing Methods
+
+        #region Overrideable methods you should not override
+        
+        // I would not recommend doing things this way, but if you must (cause you want to do things the OLC way)
+        // then I have provided them here. I would consider using the events instead, when possible.
+
+        /// <summary>
+        /// Override if you must do it the OLC way
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool OnUserCreate()
         {
-            throw new NotImplementedException();
+            return false;
         }
 
-        #endregion // Drawing Methods
+        /// <summary>
+        /// Override if you must do it the OLC way
+        /// </summary>
+        /// <param name="fElapsedTime"></param>
+        /// <returns></returns>
+        protected virtual bool OnUserUpdate(float fElapsedTime)
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Override if you must do it the OLC way
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool OnUserDestroy()
+        {
+            return true;
+        }
+        #endregion // Overrideable methods you should not override
     }
 }
