@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
 using log4net;
 
@@ -160,6 +161,10 @@ namespace csPixelGameEngineCore
         /// <returns>0 on success, -1 on failure</returns>
         public int Construct(uint screen_w, uint screen_h, GLWindow window)
         {
+            if (window == null) throw new ArgumentNullException(nameof(window));
+            if (screen_w == 0) throw new ArgumentException("Must be at least 1", nameof(screen_w));
+            if (screen_h == 0) throw new ArgumentException("Must be at least 1", nameof(screen_h));
+
             Window          = window;
             ScreenWidth     = screen_w;
             ScreenHeight    = screen_h;
@@ -256,7 +261,7 @@ namespace csPixelGameEngineCore
             Window.ViewY = (windowHeight - Window.ViewHeight) / 2;
         }
 
-        public int Start()
+        public int Start(double? maxUpdateRate = null)
         {
             OnCreate?.Invoke(this, new EventArgs());
 
@@ -264,7 +269,7 @@ namespace csPixelGameEngineCore
             {
                 OnDestroy?.Invoke(sender, EventArgs.Empty);
             };
-            // Since Window already has an update loop with events, lets tap into that
+            // Since GLWindow already has an update loop with events, lets tap into that
             Window.UpdateFrame += (sender, frameEventArgs) =>
             {
                 OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
@@ -273,7 +278,11 @@ namespace csPixelGameEngineCore
             {
                 OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
             };
-            Window.Run(120, 60);
+
+            if (maxUpdateRate.HasValue)
+                Window.Run(maxUpdateRate.Value);
+            else
+                Window.Run(); // go as fast as possible
 
             return 0;
         }
@@ -438,22 +447,65 @@ namespace csPixelGameEngineCore
             }
         }
 
+        public void DrawCircle(vec2d_i pos, int radius, Pixel p, byte mask = 0xFF)
+        {
+            DrawCircle(pos.x, pos.y, radius, p, mask);
+        }
+
         // Draws a circle located at (x,y) with radius
         public void DrawCircle(int x, int y, int radius, Pixel p, byte mask = 0xFF)
         {
-            if (p == default)
-                p = Pixel.WHITE;
+            if (radius == 0) return;
 
-            throw new NotImplementedException();
+            int x0 = 0;
+            int y0 = radius;
+            int d = 3 - 2 * radius;
+
+            while (y0 >= x0) // only formulate 1/8 of circle
+            {
+                if ((mask & 0x01) != 0) Draw((uint)(x + x0), (uint)(y - y0), p);
+                if ((mask & 0x02) != 0) Draw((uint)(x + y0), (uint)(y - x0), p);
+                if ((mask & 0x04) != 0) Draw((uint)(x + y0), (uint)(y + x0), p);
+                if ((mask & 0x08) != 0) Draw((uint)(x + x0), (uint)(y + y0), p);
+                if ((mask & 0x10) != 0) Draw((uint)(x - x0), (uint)(y + y0), p);
+                if ((mask & 0x20) != 0) Draw((uint)(x - y0), (uint)(y + x0), p);
+                if ((mask & 0x40) != 0) Draw((uint)(x - y0), (uint)(y - x0), p);
+                if ((mask & 0x80) != 0) Draw((uint)(x - x0), (uint)(y - y0), p);
+                if (d < 0) d += 4 * x0++ + 6;
+                else d += 4 * (x0++ - y0--) + 10;
+            }
+        }
+
+        public void FillCircle(vec2d_i pos, int radius, Pixel p)
+        {
+            FillCircle(pos.x, pos.y, radius, p);
         }
 
         // Fills a circle located at (x,y) with radius
         public void FillCircle(int x, int y, int radius, Pixel p)
         {
-            if (p == default)
-                p = Pixel.WHITE;
+            if (radius == 0) return;
 
-            throw new NotImplementedException();
+            // Taken from wikipedia
+            int x0 = 0;
+            int y0 = radius;
+            int d = 3 - 2 * radius;
+
+            Action<int, int, int> drawline = (sx, ex, ny) =>
+            {
+                Parallel.For(sx, ex, (i) => Draw((uint)i, (uint)ny, p));
+            };
+
+            while (y0 >= x0)
+            {
+                // Modified to draw scan-lines instead of edges
+                drawline(x - x0, x + x0, y - y0);
+                drawline(x - y0, x + y0, y - x0);
+                drawline(x - x0, x + x0, y + y0);
+                drawline(x - y0, x + y0, y + x0);
+                if (d < 0) d += 4 * x0++ + 6;
+                else d += 4 * (x0++ - y0--) + 10;
+            }
         }
 
         // Draws a rectangle at (x,y) to (x+w,y+h)

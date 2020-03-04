@@ -1,4 +1,5 @@
 ﻿using csPixelGameEngineCore.Enums;
+using log4net;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ namespace csPixelGameEngineCore
     /// </summary>
     public class Sprite
     {
+        private static readonly ILog Log = LogManager.GetLogger(typeof(Sprite));
+
         public enum Mode { NORMAL, PERIODIC };
 
         public uint Width { get; private set; }
@@ -43,6 +46,11 @@ namespace csPixelGameEngineCore
             {
                 ColorData[i] = Pixel.BLACK;
             }
+        }
+
+        public Sprite(string sImageFile, ResourcePack pack)
+        {
+            LoadFromFile(sImageFile, pack);
         }
 
         private delegate void DataReader(BinaryReader br);
@@ -123,7 +131,8 @@ namespace csPixelGameEngineCore
                 {
                     // Load sprite from input stream
                     ResourceBuffer rb = pack.GetFileBuffer(sImageFile);
-                    bmp = new Bitmap(new MemoryStream(rb.Memory.ToArray()));
+                    var imageData = rb.Memory.ToArray();
+                    bmp = new Bitmap(new MemoryStream(imageData));
                 }
                 else
                 {
@@ -131,22 +140,23 @@ namespace csPixelGameEngineCore
                     bmp = new Bitmap(sImageFile);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.Warn($"Unable to load image {sImageFile}", ex);
                 return RCode.NO_FILE;
             }
 
             Width = (uint)bmp.Width;
             Height = (uint)bmp.Height;
             ColorData = new Pixel[Width * Height];
-            Parallel.For(0, Width - 1, (x) =>
+            for (int x = 0; x < Width; x++)
             {
-                Parallel.For(0, Height - 1, (y) =>
+                for (int y = 0; y < Height; y++)
                 {
                     Color p = bmp.GetPixel((int)x, (int)y);
                     SetPixel((uint)x, (uint)y, new Pixel(p.R, p.G, p.B, p.A));
-                });
-            });
+                }
+            }
 
             bmp.Dispose();
 
