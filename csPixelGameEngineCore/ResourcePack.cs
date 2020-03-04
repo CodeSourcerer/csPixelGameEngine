@@ -210,6 +210,7 @@ namespace csPixelGameEngineCore
                 {
                     if (_baseFile != null)
                     {
+                        _baseFile.Close();
                         _baseFile.Dispose();
                         _baseFile = null;
                     }

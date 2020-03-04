@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,9 +15,13 @@ namespace csPixelGameEngineCore
     /// </summary>
     public class Sprite
     {
+        public enum Mode { NORMAL, PERIODIC };
+
         public uint Width { get; private set; }
         public uint Height { get; private set; }
         public Pixel[] ColorData { get; private set; }
+
+        public Mode ModeSample { get; private set; } = Mode.NORMAL;
 
         private Sprite()
         {
@@ -81,6 +86,73 @@ namespace csPixelGameEngineCore
             }
         }
 
+        public RCode SaveToPGESprFile(string sImageFile)
+        {
+            if (ColorData == null)
+            {
+                return RCode.FAIL;
+            }
+
+            try
+            {
+                using (BinaryWriter bw = new BinaryWriter(File.OpenWrite(sImageFile)))
+                {
+                    bw.Write((int)Width);
+                    bw.Write((int)Height);
+                    for (int i = 0; i < (Width * Height); i++)
+                    {
+                        bw.Write(ColorData[i]);
+                    }
+                    bw.Close();
+                }
+                return RCode.OK;
+            }
+            catch (Exception)
+            {
+                return RCode.FAIL;
+            }
+        }
+
+        public RCode LoadFromFile(string sImageFile, ResourcePack pack)
+        {
+            Bitmap bmp;
+
+            try
+            {
+                if (pack != null)
+                {
+                    // Load sprite from input stream
+                    ResourceBuffer rb = pack.GetFileBuffer(sImageFile);
+                    bmp = new Bitmap(new MemoryStream(rb.Memory.ToArray()));
+                }
+                else
+                {
+                    // Load sprite from file
+                    bmp = new Bitmap(sImageFile);
+                }
+            }
+            catch (Exception)
+            {
+                return RCode.NO_FILE;
+            }
+
+            Width = (uint)bmp.Width;
+            Height = (uint)bmp.Height;
+            ColorData = new Pixel[Width * Height];
+            Parallel.For(0, Width - 1, (x) =>
+            {
+                Parallel.For(0, Height - 1, (y) =>
+                {
+                    Color p = bmp.GetPixel((int)x, (int)y);
+                    SetPixel((uint)x, (uint)y, new Pixel(p.R, p.G, p.B, p.A));
+                });
+            });
+
+            bmp.Dispose();
+
+            return RCode.OK;
+        }
+
         public void Fill(Pixel col)
         {
             Span<Pixel> dest = ColorData;
@@ -99,10 +171,18 @@ namespace csPixelGameEngineCore
             Debug.Assert(x < Width, "Attempt to get pixel outside of sprite boundaries");
             Debug.Assert(y < Height, "Attempt to get pixel outside of sprite boundaries");
 
-            if (x < Width && y < Height)
-                return ColorData[y * Width + x];
+            if (ModeSample == Mode.NORMAL)
+            {
+                if (x < Width && y < Height)
+                    return ColorData[y * Width + x];
+                else
+                    return Pixel.BLANK;
+            }
             else
-                return Pixel.BLANK;
+            {
+                // "Periodic" mode
+                return ColorData[Math.Abs(y % Height) * Width + Math.Abs(x % Width)];
+            }
         }
 
         /// <summary>
