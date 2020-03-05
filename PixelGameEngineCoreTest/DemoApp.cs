@@ -47,7 +47,8 @@ namespace PixelGameEngineCoreTest
         private void updateFrame(object sender, FrameUpdateEventArgs frameUpdateArgs)
         {
             pge.Clear(Pixel.BLUE);
-            pge.DrawSprite(0, 0, testAnimation[1]);
+            testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
+            //pge.DrawSprite(0, 0, testAnimation[1]);
 
             _curFrameCount++;
             if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))

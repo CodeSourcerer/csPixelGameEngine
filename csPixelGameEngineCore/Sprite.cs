@@ -283,5 +283,46 @@ namespace csPixelGameEngineCore
                 (byte)((p1.g * u_opposite + p2.g * u_ratio) * v_opposite + (p3.g * u_opposite + p4.g * u_ratio) * v_ratio),
                 (byte)((p1.b * u_opposite + p2.b * u_ratio) * v_opposite + (p3.b * u_opposite + p4.b * u_ratio) * v_ratio));
         }
+
+        /// <summary>
+        /// If you need to do a fast copy of sprites, use this. Note that it cannot
+        /// utilize pixel blending, so this is best used for backgrounds or sprites
+        /// that do not utilize a mask.
+        /// </summary>
+        /// <param name="dest"></param>
+        /// <param name="src_x"></param>
+        /// <param name="src_y"></param>
+        /// <param name="dst_x"></param>
+        /// <param name="dst_y"></param>
+        public void CopyTo(Sprite dest, uint src_x, uint src_y, int dst_x, int dst_y)
+        {
+            if (src_x >= Width) return;
+            if (src_y >= Height) return;
+            if (dst_x >= dest.Width) return;
+            if (dst_y >= dest.Height) return;
+            if (dst_x + dest.Width <= 0) return;
+            if (dst_y + dest.Height <= 0) return;
+
+            if (dst_x < 0)
+            {
+                src_x += (uint)Math.Abs(dst_x);
+                dst_x = 0;
+            }
+            if (dst_y < 0)
+            {
+                src_y += (uint)Math.Abs(dst_y);
+                dst_y = 0;
+            }
+
+            uint w = (uint)Math.Min((Width - src_x) - 1, (dest.Width - dst_x) - 1);
+            uint h = (uint)Math.Min((Height - src_y) - 1, (dest.Height - dst_y) - 1);
+
+            for (int sy = (int)src_y, dy = dst_y; sy < (src_y + h); sy++, dy++)
+            {
+                Memory<Pixel> srcPixelsRow = new Memory<Pixel>(ColorData, (int)(Width * sy + src_x), (int)w);
+                Memory<Pixel> dstPixelsRow = new Memory<Pixel>(dest.ColorData, (int)(dest.Width * dy + dst_x), (int)w);
+                srcPixelsRow.CopyTo(dstPixelsRow);
+            }
+        }
     }
 }
