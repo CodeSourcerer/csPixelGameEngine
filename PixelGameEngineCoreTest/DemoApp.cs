@@ -56,7 +56,7 @@ namespace PixelGameEngineCoreTest
                 _curFrameCount = 0;
                 _dtStartFrame = DateTime.Now;
             }
-            pge.DrawString(0, 0, $"FPS: {_fps}", Pixel.WHITE);
+            pge.DrawString(0, 0, $"FPS: {_fps}", Pixel.BLACK);
         }
 
         private void drawRandomPixels()
