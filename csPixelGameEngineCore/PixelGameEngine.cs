@@ -334,6 +334,23 @@ namespace csPixelGameEngineCore
             v2 = temp;
         }
 
+        private List<int> interpolate(int i0, int d0, int i1, int d1)
+        {
+            var values = new List<int>();
+
+            if (i0 == i1) {
+                return new List<int>(new int[] { d0 });
+            }
+            int a = (d1 - d0) / (i1 - i0);
+            int d = d0;
+            for (int i = i0; i <= i1; i++)
+            {
+                values.Add(d);
+                d = d + a;
+            }
+            return values;
+        }
+
         // Draws a line from (x1,y1) to (x2,y2)
         public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
         {
@@ -584,8 +601,60 @@ namespace csPixelGameEngineCore
         }
 
         // Draws a triangle between points (x1,y1), (x2,y2) and (x3,y3)
-        // https://www.avrfreaks.net/sites/default/files/triangles.c
         public void DrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p)
+        {
+        }
+
+        public void DrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel color)
+        {
+            // Sort the points so that y1 <= y2 <= y3
+            if (y2 < y1) { swap(ref y2, ref y1); swap(ref x2, ref x1); }
+            if (y3 < y1) { swap(ref y3, ref y1); swap(ref x3, ref x1); }
+            if (y3 < y2) { swap(ref y3, ref y2); swap(ref x3, ref x2); }
+
+            // Compute the x coordinates of the triangle edges
+            var x12 = interpolate(y1, x1, y2, x2);
+            var x23 = interpolate(y2, x2, y3, x3);
+            var x13 = interpolate(y1, x1, y3, x3);
+
+            // Concatenate the short sides
+            x12.RemoveAt(x12.Count - 1);
+            var x123 = new List<int>(x12);
+            x123.AddRange(x23);
+
+            // Determine which is left and which is right
+            List<int> x_left, x_right;
+            var m = x123.Count / 2;
+            if (x13[m] < x123[m])
+            {
+                x_left = x13;
+                x_right = x123;
+            }
+            else
+            {
+                x_left = x123;
+                x_right = x13;
+            }
+
+            // Draw the horizontal segments
+            for (int y = y1; y <= y3; y++)
+            {
+                for (int x = x_left[y - y1]; x <= x_right[y - y1]; x++)
+                {
+                    Draw((uint)x, (uint)y, color);
+                }
+            }
+        }
+
+        public void FillTriangle(vec2d_i pos1, vec2d_i pos2, vec2d_i pos3, Pixel p)
+        {
+            //FillTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
+            DrawFilledTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
+        }
+
+        // Flat fills a triangle between points (x1,y1), (x2,y2) and (x3,y3)
+        // https://www.avrfreaks.net/sites/default/files/triangles.c
+        public void FillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p)
         {
             Action<int, int, int> drawline = (sx, ex, ny) =>
             {
@@ -629,7 +698,7 @@ namespace csPixelGameEngineCore
 
             e2 = (dx2 >> 1);
             // Flat top, just process the second half
-            if (y1 == y2)
+            if (y1 != y2)
             {
                 //goto next;
                 e1 = (dx1 >> 1);
@@ -727,7 +796,7 @@ namespace csPixelGameEngineCore
                         }//t1x += signx1;
                         else
                             break;
-                            //goto next3;
+                        //goto next3;
                     }
                     if (changed1) break;
                     else t1x += signx1;
@@ -745,7 +814,7 @@ namespace csPixelGameEngineCore
                             t2xp = signx2;
                         else
                             break;
-                            //goto next4;
+                        //goto next4;
                     }
                     if (changed2) break;
                     else t2x += signx2;
@@ -763,15 +832,6 @@ namespace csPixelGameEngineCore
                 y += 1;
                 if (y > y3) return;
             }
-        }
-
-        // Flat fills a triangle between points (x1,y1), (x2,y2) and (x3,y3)
-        public void FillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p)
-        {
-            if (p == default)
-                p = Pixel.WHITE;
-
-            throw new NotImplementedException();
         }
 
         // Draws an entire sprite at location (x,y)

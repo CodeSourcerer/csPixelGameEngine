@@ -296,12 +296,13 @@ namespace csPixelGameEngineCore
         /// <param name="dst_y"></param>
         public void CopyTo(Sprite dest, uint src_x, uint src_y, int dst_x, int dst_y)
         {
+            // Check that src and dst positions are valid
             if (src_x >= Width) return;
             if (src_y >= Height) return;
             if (dst_x >= dest.Width) return;
             if (dst_y >= dest.Height) return;
-            if (dst_x + dest.Width <= 0) return;
-            if (dst_y + dest.Height <= 0) return;
+            if ((dst_x + dest.Width) <= 0) return;
+            if ((dst_y + dest.Height) <= 0) return;
 
             if (dst_x < 0)
             {

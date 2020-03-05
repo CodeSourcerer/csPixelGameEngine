@@ -50,6 +50,13 @@ namespace PixelGameEngineCoreTest
             testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
             //pge.DrawSprite(0, 0, testAnimation[1]);
 
+            //pge.DrawCircle(100, 100, 100, Pixel.RED);
+            //pge.FillCircle(500, 500, 30, Pixel.GREEN);
+            pge.FillTriangle(new vec2d_i(304, 200),
+                             new vec2d_i(544, 381),
+                             new vec2d_i(444, 500),
+                             Pixel.MAGENTA);
+
             _curFrameCount++;
             if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
             {
