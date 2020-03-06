@@ -334,23 +334,6 @@ namespace csPixelGameEngineCore
             v2 = temp;
         }
 
-        private List<int> interpolate(int i0, int d0, int i1, int d1)
-        {
-            var values = new List<int>();
-
-            if (i0 == i1) {
-                return new List<int>(new int[] { d0 });
-            }
-            int a = (d1 - d0) / (i1 - i0);
-            int d = d0;
-            for (int i = i0; i <= i1; i++)
-            {
-                values.Add(d);
-                d = d + a;
-            }
-            return values;
-        }
-
         // Draws a line from (x1,y1) to (x2,y2)
         public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
         {
@@ -605,51 +588,10 @@ namespace csPixelGameEngineCore
         {
         }
 
-        public void DrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel color)
-        {
-            // Sort the points so that y1 <= y2 <= y3
-            if (y2 < y1) { swap(ref y2, ref y1); swap(ref x2, ref x1); }
-            if (y3 < y1) { swap(ref y3, ref y1); swap(ref x3, ref x1); }
-            if (y3 < y2) { swap(ref y3, ref y2); swap(ref x3, ref x2); }
-
-            // Compute the x coordinates of the triangle edges
-            var x12 = interpolate(y1, x1, y2, x2);
-            var x23 = interpolate(y2, x2, y3, x3);
-            var x13 = interpolate(y1, x1, y3, x3);
-
-            // Concatenate the short sides
-            x12.RemoveAt(x12.Count - 1);
-            var x123 = new List<int>(x12);
-            x123.AddRange(x23);
-
-            // Determine which is left and which is right
-            List<int> x_left, x_right;
-            var m = x123.Count / 2;
-            if (x13[m] < x123[m])
-            {
-                x_left = x13;
-                x_right = x123;
-            }
-            else
-            {
-                x_left = x123;
-                x_right = x13;
-            }
-
-            // Draw the horizontal segments
-            for (int y = y1; y <= y3; y++)
-            {
-                for (int x = x_left[y - y1]; x <= x_right[y - y1]; x++)
-                {
-                    Draw((uint)x, (uint)y, color);
-                }
-            }
-        }
-
         public void FillTriangle(vec2d_i pos1, vec2d_i pos2, vec2d_i pos3, Pixel p)
         {
-            //FillTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
-            DrawFilledTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
+            FillTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
+            //DrawFilledTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
         }
 
         // Flat fills a triangle between points (x1,y1), (x2,y2) and (x3,y3)
@@ -700,7 +642,6 @@ namespace csPixelGameEngineCore
             // Flat top, just process the second half
             if (y1 != y2)
             {
-                //goto next;
                 e1 = (dx1 >> 1);
 
                 for (int i = 0; i < dx1;)
@@ -708,7 +649,7 @@ namespace csPixelGameEngineCore
                     t1xp = 0; t2xp = 0;
                     if (t1x < t2x) { minx = t1x; maxx = t2x; }
                     else { minx = t2x; maxx = t1x; }
-                    // process first line until y value is about to change
+
                     while (i < dx1)
                     {
                         i++;
@@ -719,8 +660,7 @@ namespace csPixelGameEngineCore
                             if (changed1)
                                 t1xp = signx1;//t1x += signx1;
                             else
-                                break;
-                            //goto next1;
+                                goto next1;// break;
                         }
                         if (changed1)
                             break;
@@ -728,7 +668,7 @@ namespace csPixelGameEngineCore
                             t1x += signx1;
                     }
                     // Move line
-
+                next1:
                     // process second line until y value is about to change
                     while (true)
                     {
@@ -739,13 +679,14 @@ namespace csPixelGameEngineCore
                             if (changed2)
                                 t2xp = signx2;//t2x += signx2;
                             else
-                                break;
-                            //goto next2;
+                                //break;
+                                goto next2;
                         }
                         if (changed2)
                             break;
                         else t2x += signx2;
                     }
+                next2:
 
                     if (minx > t1x) minx = t1x;
                     if (minx > t2x) minx = t2x;
@@ -795,13 +736,14 @@ namespace csPixelGameEngineCore
                             break;
                         }//t1x += signx1;
                         else
-                            break;
-                        //goto next3;
+                            //break;
+                            goto next3;
                     }
                     if (changed1) break;
                     else t1x += signx1;
                     if (i < dx1) i++;
                 }
+            next3:
 
                 // process second line until y value is about to change
                 while (t2x != x3)
@@ -813,12 +755,13 @@ namespace csPixelGameEngineCore
                         if (changed2)
                             t2xp = signx2;
                         else
-                            break;
-                        //goto next4;
+                            //break;
+                            goto next4;
                     }
                     if (changed2) break;
                     else t2x += signx2;
                 }
+            next4:
 
                 if (minx > t1x) minx = t1x;
                 if (minx > t2x) minx = t2x;

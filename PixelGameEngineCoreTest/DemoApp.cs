@@ -47,7 +47,7 @@ namespace PixelGameEngineCoreTest
         private void updateFrame(object sender, FrameUpdateEventArgs frameUpdateArgs)
         {
             pge.Clear(Pixel.BLUE);
-            testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
+            //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
             //pge.DrawSprite(0, 0, testAnimation[1]);
 
             //pge.DrawCircle(100, 100, 100, Pixel.RED);
