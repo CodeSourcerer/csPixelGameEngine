@@ -94,6 +94,9 @@ namespace csPixelGameEngineCore.Extensions
                 _matrix[1,0,0] = 1.0f; _matrix[1,1,0] = 0.0f; _matrix[1,2,0] = 0.0f;
                 _matrix[1,0,1] = 0.0f; _matrix[1,1,1] = 1.0f; _matrix[1,2,1] = 0.0f;
                 _matrix[1,0,2] = 0.0f; _matrix[1,1,2] = 0.0f; _matrix[1,2,2] = 1.0f;
+
+                // Matrix 2 is a cache matrix to hold the immediate transform operation
+                // Matrix 3 is a cache matrix to hold the inverted transform
             }
 
             public void Multiply()
