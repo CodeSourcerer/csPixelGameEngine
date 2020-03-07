@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
+using csPixelGameEngineCore.Extensions;
 using log4net;
 
 /*
@@ -327,13 +328,6 @@ namespace csPixelGameEngineCore
             return new Pixel((byte)r, (byte)g, (byte)b);
         }
 
-        private void swap<T>(ref T v1, ref T v2)
-        {
-            T temp = v1;
-            v1 = v2;
-            v2 = temp;
-        }
-
         // Draws a line from (x1,y1) to (x2,y2)
         public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
         {
@@ -352,7 +346,7 @@ namespace csPixelGameEngineCore
             // straight lines idea by gurkanctn
             if (dx == 0) // Line is vertical
             {
-                if (y2 < y1) swap(ref y1, ref y2);
+                if (y2 < y1) PGEMath.Swap(ref y1, ref y2);
                 for (y = y1; y <= y2; y++)
                 {
                     pattern = rol(pattern);
@@ -364,7 +358,7 @@ namespace csPixelGameEngineCore
 
             if (dy == 0) // Line is horizontal
             {
-                if (x2 < x1) swap(ref x1, ref x2);
+                if (x2 < x1) PGEMath.Swap(ref x1, ref x2);
                 for (x = x1; x <= x2; x++)
                 {
                     pattern = rol(pattern);
@@ -612,9 +606,9 @@ namespace csPixelGameEngineCore
             int signx1, signx2, dx1, dy1, dx2, dy2;
             int e1, e2;
             // Sort vertices
-            if (y1 > y2) { swap(ref y1, ref y2); swap(ref x1, ref x2); }
-            if (y1 > y3) { swap(ref y1, ref y3); swap(ref x1, ref x3); }
-            if (y2 > y3) { swap(ref y2, ref y3); swap(ref x2, ref x3); }
+            if (y1 > y2) { PGEMath.Swap(ref y1, ref y2); PGEMath.Swap(ref x1, ref x2); }
+            if (y1 > y3) { PGEMath.Swap(ref y1, ref y3); PGEMath.Swap(ref x1, ref x3); }
+            if (y2 > y3) { PGEMath.Swap(ref y2, ref y3); PGEMath.Swap(ref x2, ref x3); }
 
             t1x = t2x = x1; y = y1;   // Starting points
             dx1 = x2 - x1;
@@ -629,12 +623,12 @@ namespace csPixelGameEngineCore
 
             if (dy1 > dx1)
             {   // swap values
-                swap(ref dx1, ref dy1);
+                PGEMath.Swap(ref dx1, ref dy1);
                 changed1 = true;
             }
             if (dy2 > dx2)
             {   // swap values
-                swap(ref dy2, ref dx2);
+                PGEMath.Swap(ref dy2, ref dx2);
                 changed2 = true;
             }
 
@@ -711,7 +705,7 @@ namespace csPixelGameEngineCore
 
             if (dy1 > dx1)
             {   // swap values
-                swap(ref dy1, ref dx1);
+                PGEMath.Swap(ref dy1, ref dx1);
                 changed1 = true;
             }
             else changed1 = false;
