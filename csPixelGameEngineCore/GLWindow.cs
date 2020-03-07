@@ -36,6 +36,7 @@ namespace csPixelGameEngineCore
             PixelHeight     = pixel_h;
             ViewX           = 0;
             ViewY           = 0;
+            this.VSync = VSyncMode.Off;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)

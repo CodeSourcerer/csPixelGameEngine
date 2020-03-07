@@ -806,6 +806,11 @@ namespace csPixelGameEngineCore
             }
         }
 
+        public void DrawPartialSprite(vec2d_i pos, Sprite sprite, vec2d_i sourcepos, vec2d_i size, uint scale = 1)
+        {
+            DrawPartialSprite(pos.x, pos.y, sprite, sourcepos.x, sourcepos.y, size.x, size.y, scale);
+        }
+
         // Draws an area of a sprite at location (x,y), where the
         // selected area is (ox,oy) to (ox+w,oy+h)
         public void DrawPartialSprite(int x, int y, Sprite sprite, int ox, int oy, int w, int h, uint scale = 1)

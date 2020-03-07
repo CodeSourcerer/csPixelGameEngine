@@ -9,7 +9,7 @@ namespace PixelGameEngineCoreTest
 {
     class DemoApp
     {
-        public  const string AppName        = "Test Application";
+        public  const string AppName        = "csPixelGameEngine Demo";
         private const uint   screenWidth    = 1024;
         private const uint   screenHeight   = 768;
 
@@ -41,21 +41,26 @@ namespace PixelGameEngineCoreTest
             window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
             pge.OnFrameUpdate += updateFrame;
             pge.Construct(screenWidth, screenHeight, window);
+            pge.BlendFactor = 0.5f;
             pge.Start();
         }
 
         private void updateFrame(object sender, FrameUpdateEventArgs frameUpdateArgs)
         {
             pge.Clear(Pixel.BLUE);
+            pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.MASK;
             //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
-            //pge.DrawSprite(0, 0, testAnimation[1]);
+            pge.DrawSprite(0, 0, testAnimation[1]);
+            //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
             //pge.DrawCircle(100, 100, 100, Pixel.RED);
             //pge.FillCircle(500, 500, 30, Pixel.GREEN);
-            pge.FillTriangle(new vec2d_i(304, 200),
-                             new vec2d_i(544, 381),
-                             new vec2d_i(444, 500),
-                             Pixel.MAGENTA);
+            //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.ALPHA;
+            //pge.FillTriangle(new vec2d_i(304, 200),
+            //                 new vec2d_i(544, 381),
+            //                 new vec2d_i(444, 500),
+            //                 Pixel.MAGENTA);
+            //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
             _curFrameCount++;
             if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
