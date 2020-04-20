@@ -59,22 +59,25 @@ namespace csPixelGameEngineCore
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
 
-        public string   AppName             { get; private set; }
-        public GLWindow Window              { get; private set; }
-        public bool     FullScreen          { get; private set; }
-        public bool     EnableVSYNC         { get; private set; }
-        public uint     ScreenWidth         { get; private set; }
-        public uint     ScreenHeight        { get; private set; }
-        public int      DrawTargetWidth     { get; private set; }
-        public int      DrawTargetHeight     { get; private set; }
-        public Sprite   DefaultDrawTarget   { get; private set; }
-        public uint     PixelWidth          { get; private set; }
-        public uint     PixelHeight         { get; private set; }
-        public int      MousePosX           { get; private set; }
-        public int      MousePosY           { get; private set; }
-        public int      MouseWheelDelta     { get; private set; }
-        public float    PixelX              { get; set; }
-        public float    PixelY              { get; set; }
+        public string AppName { get; private set; }
+        public GLWindow Window { get; private set; }
+        public bool FullScreen { get; private set; }
+        public bool EnableVSYNC { get; private set; }
+        public uint ScreenWidth { get; private set; }
+        public uint ScreenHeight { get; private set; }
+        public int DrawTargetWidth { get; private set; }
+        public int DrawTargetHeight { get; private set; }
+        public Sprite DefaultDrawTarget { get; private set; }
+        public uint PixelWidth { get; private set; }
+        public uint PixelHeight { get; private set; }
+        public int MousePosX { get; private set; }
+        public int MousePosY { get; private set; }
+        public int MouseWheelDelta { get; private set; }
+        public float PixelX { get; set; }
+        public float PixelY { get; set; }
+        public uint FPS { get; private set; }
+
+        public List<LayerDesc> Layers { get; private set; }
 
         private Sprite drawTarget;
         public Sprite DrawTarget
@@ -89,11 +92,11 @@ namespace csPixelGameEngineCore
             get => blendFactor;
 
             set => blendFactor = value switch
-                {
-                    _ when value < 0.0f => 0.0f,
-                    _ when value > 1.0f => 1.0f,
-                    _ => value
-                };
+            {
+                _ when value < 0.0f => 0.0f,
+                _ when value > 1.0f => 1.0f,
+                _ => value
+            };
         }
 
         private PixelBlender funcPixelBlender;
@@ -166,15 +169,15 @@ namespace csPixelGameEngineCore
             if (screen_w == 0) throw new ArgumentException("Must be at least 1", nameof(screen_w));
             if (screen_h == 0) throw new ArgumentException("Must be at least 1", nameof(screen_h));
 
-            Window          = window;
-            ScreenWidth     = screen_w;
-            ScreenHeight    = screen_h;
-            FullScreen      = (window.WindowState == OpenTK.WindowState.Fullscreen);
-            EnableVSYNC     = (window.VSync == OpenTK.VSyncMode.On);
-            PixelWidth      = window.PixelWidth;
-            PixelHeight     = window.PixelHeight;
-            PixelX          = 2.0f / ScreenWidth;
-            PixelY          = 2.0f / ScreenHeight;
+            Window = window;
+            ScreenWidth = screen_w;
+            ScreenHeight = screen_h;
+            FullScreen = (window.WindowState == OpenTK.WindowState.Fullscreen);
+            EnableVSYNC = (window.VSync == OpenTK.VSyncMode.On);
+            PixelWidth = window.PixelWidth;
+            PixelHeight = window.PixelHeight;
+            PixelX = 2.0f / ScreenWidth;
+            PixelY = 2.0f / ScreenHeight;
 
             if (PixelWidth == 0 || PixelHeight == 0 || ScreenWidth == 0 || ScreenHeight == 0)
             {
@@ -287,6 +290,50 @@ namespace csPixelGameEngineCore
 
             return 0;
         }
+
+        #region Configuration Methods
+
+        /// <summary>
+        /// Enable / disable layer
+        /// </summary>
+        /// <param name="layer"></param>
+        /// <param name="b"></param>
+        public void EnableLayer(byte layer, bool b)
+        {
+
+        }
+
+        public void SetLayerOffset(byte layer, vec2d_f offset)
+        {
+
+        }
+
+        public void SetLayerOffset(byte layer, float x, float y)
+        {
+
+        }
+
+        public void SetLayerScale(byte layer, vec2d_f scale)
+        {
+
+        }
+
+        public void SetLayerScale(byte layer, float x, float y)
+        {
+
+        }
+
+        public void SetLayerTint(byte layer, Pixel tint)
+        {
+
+        }
+
+        public void SetLayerCustomRenderFunction(byte layer, Action f)
+        {
+
+        }
+
+        #endregion // Configuration Methods
 
         #region Drawing Methods
 
@@ -662,7 +709,7 @@ namespace csPixelGameEngineCore
                             t1x += signx1;
                     }
                     // Move line
-                next1:
+                    next1:
                     // process second line until y value is about to change
                     while (true)
                     {
@@ -680,7 +727,7 @@ namespace csPixelGameEngineCore
                             break;
                         else t2x += signx2;
                     }
-                next2:
+                    next2:
 
                     if (minx > t1x) minx = t1x;
                     if (minx > t2x) minx = t2x;
@@ -737,7 +784,7 @@ namespace csPixelGameEngineCore
                     else t1x += signx1;
                     if (i < dx1) i++;
                 }
-            next3:
+                next3:
 
                 // process second line until y value is about to change
                 while (t2x != x3)
@@ -755,7 +802,7 @@ namespace csPixelGameEngineCore
                     if (changed2) break;
                     else t2x += signx2;
                 }
-            next4:
+                next4:
 
                 if (minx > t1x) minx = t1x;
                 if (minx > t2x) minx = t2x;
@@ -897,6 +944,75 @@ namespace csPixelGameEngineCore
             int pixelCount = DrawTarget.ColorData.Length;
             for (int i = 0; i < pixelCount; i++)
                 DrawTarget.ColorData[i] = p;
+        }
+
+        //=====================================================================
+        // Decal Drawing
+        //=====================================================================
+
+        /// <summary>
+        /// Draws a whole decal, with optional scale and tinting
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="decal"></param>
+        /// <param name="scale">If null, will use vec2d_f.UNIT</param>
+        /// <param name="tint">If null, will use Pixel.WHITE</param>
+        public void DrawDecal(vec2d_f pos, Decal decal, vec2d_f? scale = null, Pixel? tint = null)
+        {
+            if (!scale.HasValue) scale = vec2d_f.UNIT;
+            if (!tint.HasValue) tint = Pixel.WHITE;
+
+            // TODO: Finish...
+        }
+
+        /// <summary>
+        /// Draws a region of a decal, with optional scale and tinting
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="decal"></param>
+        /// <param name="source_pos"></param>
+        /// <param name="source_size"></param>
+        /// <param name="scale">If null, will use vec2d_f.UNIT</param>
+        /// <param name="tint">If null, will use Pixel.WHITE</param>
+        public void DrawPartialDecal(vec2d_f pos, Decal decal, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
+        {
+            if (!scale.HasValue) scale = vec2d_f.UNIT;
+            if (!tint.HasValue) tint = Pixel.WHITE;
+
+            // TODO: Finish...
+        }
+
+        /// <summary>
+        /// Draw a decal with arbitrary bounds.
+        /// </summary>
+        /// <param name="decal"></param>
+        /// <param name="pos">Must be an array of 4 elements (x1, y1, x2, y2)</param>
+        /// <param name="tint">If null, will use Pixel.WHITE</param>
+        public void DrawWarpedDecal(Decal decal, vec2d_f[] pos, Pixel? tint = null)
+        {
+            if (!tint.HasValue) tint = Pixel.WHITE;
+
+            // TODO: Finish...
+        }
+
+        public void DrawRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f? center = null, vec2d_f? scale = null, Pixel? tint = null)
+        {
+
+        }
+
+		public void DrawStringDecal(vec2d_f pos, string sText, Pixel? col = null, vec2d_f? scale = null)
+        {
+
+        }
+
+		public void DrawPartialRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
+        {
+
+        }
+
+		public void DrawPartialWarpedDecal(Decal decal, vec2d_f[] pos, vec2d_f source_pos, vec2d_f source_size, Pixel? tint = null)
+        {
+
         }
 
         #endregion // Drawing Methods

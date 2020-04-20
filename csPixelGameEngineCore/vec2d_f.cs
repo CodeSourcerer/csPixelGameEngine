@@ -8,6 +8,9 @@ namespace csPixelGameEngineCore
 {
     public struct vec2d_f : Ivec2d<float>
     {
+        public static readonly vec2d_f ZERO = new vec2d_f(0.0f, 0.0f);
+        public static readonly vec2d_f UNIT = new vec2d_f(1.0f, 1.0f);
+
         public float x { get; set; }
         public float y { get; set; }
 
