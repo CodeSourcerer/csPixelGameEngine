@@ -205,8 +205,8 @@ namespace csPixelGameEngineCore
         public bool SetPixel(uint x, uint y, Pixel p)
         {
             // Not sure if I really want assertions or not....
-            Debug.Assert(x < Width, "Attempt to set pixel outside of sprite boundaries");
-            Debug.Assert(y < Height, "Attempt to set pixel outside of sprite boundaries");
+            //Debug.Assert(x < Width, "Attempt to set pixel outside of sprite boundaries");
+            //Debug.Assert(y < Height, "Attempt to set pixel outside of sprite boundaries");
 
             if (x < Width && y < Height)
             {
