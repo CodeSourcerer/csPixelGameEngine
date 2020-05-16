@@ -786,8 +786,6 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | START OF OLC_PGE_APPLICATION                                                 |
 // O------------------------------------------------------------------------------O
-#ifdef OLC_PGE_APPLICATION
-#undef OLC_PGE_APPLICATION
 
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine INTERFACE IMPLEMENTATION (CORE)                           |
@@ -803,7 +801,6 @@ namespace olc
 
 	Pixel::Pixel(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha)
 	{ n = red | (green << 8) | (blue << 16) | (alpha << 24); } // Thanks jarekpelczar 
-
 
 	Pixel::Pixel(uint32_t p)
 	{ n = p; }
@@ -839,7 +836,6 @@ namespace olc
 
 	Sprite::~Sprite()
 	{ if (pColData) delete[] pColData; }
-
 
 	olc::rcode Sprite::LoadFromPGESprFile(const std::string& sImageFile, olc::ResourcePack *pack)
 	{
@@ -3144,7 +3140,6 @@ namespace olc
 	}
 }
 
-#endif // End olc namespace
 
 // O------------------------------------------------------------------------------O
 // | END OF OLC_PGE_APPLICATION                                                   |
