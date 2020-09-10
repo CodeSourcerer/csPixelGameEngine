@@ -51,6 +51,11 @@ namespace PixelGameEngineCoreTest
             pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.MASK;
             //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
             pge.DrawSprite(0, 0, testAnimation[1]);
+            showCursorPos(0, 10);
+            showMouseWheelDelta(0, 20);
+            showMouseButtonState(0, 30, 0);
+            showMouseButtonState(0, 40, 1);
+            showMouseButtonState(0, 50, 2);
             //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
             //pge.DrawCircle(100, 100, 100, Pixel.RED);
@@ -70,6 +75,24 @@ namespace PixelGameEngineCoreTest
                 _dtStartFrame = DateTime.Now;
             }
             pge.DrawString(0, 0, $"FPS: {_fps}", Pixel.BLACK);
+        }
+
+        private void showCursorPos(int x, int y)
+        {
+            pge.DrawString(x, y, $"Mouse: {pge.MousePosX}, {pge.MousePosY}", Pixel.BLACK);
+        }
+
+        private void showMouseWheelDelta(int x, int y)
+        {
+            pge.DrawString(x, y, $"Wheel Delta: {pge.MouseWheelDelta}", Pixel.BLACK);
+        }
+
+        private void showMouseButtonState(int x, int y, uint button)
+        {
+            var btnState = pge.GetMouse(button);
+
+            string display = $"BTN {button} [Released:{btnState.Released}] [Pressed:{btnState.Pressed}] [Held: {btnState.Held}]";
+            pge.DrawString(x, y, display, Pixel.BLACK);
         }
 
         private void drawRandomPixels()

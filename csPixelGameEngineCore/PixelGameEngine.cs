@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
 using log4net;
+using OpenTK.Input;
 
 /*
 	+-------------------------------------------------------------+
@@ -59,23 +60,23 @@ namespace csPixelGameEngineCore
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
 
-        public string AppName { get; private set; }
-        public GLWindow Window { get; private set; }
-        public bool FullScreen { get; private set; }
-        public bool EnableVSYNC { get; private set; }
-        public uint ScreenWidth { get; private set; }
-        public uint ScreenHeight { get; private set; }
-        public int DrawTargetWidth { get; private set; }
-        public int DrawTargetHeight { get; private set; }
-        public Sprite DefaultDrawTarget { get; private set; }
-        public uint PixelWidth { get; private set; }
-        public uint PixelHeight { get; private set; }
-        public int MousePosX { get; private set; }
-        public int MousePosY { get; private set; }
-        public int MouseWheelDelta { get; private set; }
-        public float PixelX { get; set; }
-        public float PixelY { get; set; }
-        public uint FPS { get; private set; }
+        public string   AppName             { get; private set; }
+        public GLWindow Window              { get; private set; }
+        public bool     FullScreen          { get; private set; }
+        public bool     EnableVSYNC         { get; private set; }
+        public uint     ScreenWidth         { get; private set; }
+        public uint     ScreenHeight        { get; private set; }
+        public int      DrawTargetWidth     { get; private set; }
+        public int      DrawTargetHeight    { get; private set; }
+        public Sprite   DefaultDrawTarget   { get; private set; }
+        public uint     PixelWidth          { get; private set; }
+        public uint     PixelHeight         { get; private set; }
+        public int      MousePosX           { get; private set; }
+        public int      MousePosY           { get; private set; }
+        public int      MouseWheelDelta     { get; private set; }
+        public float    PixelX              { get; set; }
+        public float    PixelY              { get; set; }
+        public uint     FPS                 { get; private set; }
 
         public List<LayerDesc> Layers { get; private set; }
 
@@ -129,6 +130,7 @@ namespace csPixelGameEngineCore
         }
 
         private Sprite fontSprite;
+        private HWButton[] btnStates = { new HWButton(), new HWButton(), new HWButton() };
 
         #region Events
 
@@ -277,10 +279,33 @@ namespace csPixelGameEngineCore
             Window.UpdateFrame += (sender, frameEventArgs) =>
             {
                 OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+                // Reset wheel delta after frame
+                MouseWheelDelta = 0;
             };
             Window.RenderFrame += (sender, frameEventArgs) =>
             {
                 OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+            };
+
+            Window.MouseWheel += (sender, mouseWheelEventArgs) =>
+            {
+                MouseWheelDelta = mouseWheelEventArgs.Delta;
+            };
+
+            Window.MouseMove += (sender, mouseMoveEventArgs) =>
+            {
+                MousePosX = mouseMoveEventArgs.X;
+                MousePosY = mouseMoveEventArgs.Y;
+            };
+
+            Window.MouseDown += (sender, mouseButtonEventArgs) =>
+            {
+                updateMouseButtonStates(mouseButtonEventArgs.Mouse);
+            };
+
+            Window.MouseUp += (sender, mouseButtonEventArgs) =>
+            {
+                updateMouseButtonStates(mouseButtonEventArgs.Mouse);
             };
 
             if (maxUpdateRate.HasValue)
@@ -289,6 +314,27 @@ namespace csPixelGameEngineCore
                 Window.Run(); // go as fast as possible
 
             return 0;
+        }
+
+        private void updateMouseButtonStates(MouseState mouseState)
+        {
+            btnStates[(int)csMouseButton.Left].Pressed   = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
+            btnStates[(int)csMouseButton.Middle].Pressed = mouseState.MiddleButton.HasFlag(ButtonState.Pressed);
+            btnStates[(int)csMouseButton.Right].Pressed  = mouseState.RightButton.HasFlag(ButtonState.Pressed);
+
+            btnStates[(int)csMouseButton.Left].Released   = !mouseState.LeftButton.HasFlag(ButtonState.Pressed);
+            btnStates[(int)csMouseButton.Middle].Released = !mouseState.MiddleButton.HasFlag(ButtonState.Pressed);
+            btnStates[(int)csMouseButton.Right].Released  = !mouseState.RightButton.HasFlag(ButtonState.Pressed);
+        }
+
+        /// <summary>
+        /// Get the state of a specific mouse button
+        /// </summary>
+        /// <param name="b">button</param>
+        /// <returns></returns>
+        public HWButton GetMouse(uint button)
+        {
+            return btnStates[button];
         }
 
         #region Configuration Methods
