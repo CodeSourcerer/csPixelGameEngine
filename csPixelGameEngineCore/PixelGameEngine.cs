@@ -64,7 +64,6 @@ namespace csPixelGameEngineCore
         //public GLWindow Window              { get; private set; }
         public bool     FullScreen          { get; private set; }
         public bool     EnableVSYNC         { get; private set; }
-        public vec2d_i  ScreenSize          { get; private set; }
         public vec2d_i  ViewPos             { get; private set; }
         public vec2d_i  ViewSize            { get; private set; }
         public vec2d_i  WindowSize          { get; private set; }
@@ -80,6 +79,17 @@ namespace csPixelGameEngineCore
         public uint     TargetLayer         { get; private set; }
         
         public List<LayerDesc> Layers       { get; private set; }
+
+        private vec2d_i screenSize;
+        public vec2d_i ScreenSize
+        {
+            get => screenSize;
+            private set
+            {
+                screenSize = value;
+                invScreenSize = 1.0f / value;
+            }
+        }
 
         public Sprite DrawTarget
         {
@@ -130,6 +140,7 @@ namespace csPixelGameEngineCore
             }
         }
 
+        private vec2d_f invScreenSize;
         private readonly IRenderer renderer;
         private readonly IPlatform platform;
         private Sprite fontSprite;
@@ -300,13 +311,7 @@ namespace csPixelGameEngineCore
             renderer.RenderFrame += (sender, frameEventArgs) =>
             {
                 OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
-                renderer.UpdateViewport(ViewPos, ViewSize);
-                renderer.ClearBuffer(Pixel.BLACK, true);
-                renderer.PrepareDrawing();
-                renderer.ApplyTexture(Layers[0].ResID);
-                renderer.UpdateTexture(Layers[0].ResID, Layers[0].DrawTarget);
-                renderer.DrawLayerQuad(Layers[0].vOffset, Layers[0].vScale, Layers[0].Tint);
-                renderer.DisplayFrame();
+                olc_CoreUpdate();
             };
 
             platform.MouseWheel += (sender, mouseWheelEventArgs) =>
@@ -346,6 +351,51 @@ namespace csPixelGameEngineCore
             DrawTarget = Layers[0].DrawTarget;
 
             construct_fontSheet();
+        }
+
+        public void olc_CoreUpdate()
+        {
+            renderer.UpdateViewport(ViewPos, ViewSize);
+            renderer.ClearBuffer(Pixel.BLACK, true);
+
+            // Ensure layer 0 is active
+            Layers[0].bUpdate = true;
+            Layers[0].bShow = true;
+
+            renderer.PrepareDrawing();
+
+            // Draw all active layers
+            foreach (var layer in Layers)
+            {
+                if (layer.bShow)
+                {
+                    if (layer.funcHook == null)
+                    {
+                        renderer.ApplyTexture(layer.ResID);
+                        if (layer.bUpdate)
+                        {
+                            renderer.UpdateTexture(layer.ResID, layer.DrawTarget);
+                            layer.bUpdate = false;
+                        }
+
+                        renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
+
+                        // Display decals in order for this layer
+                        foreach (var decal in layer.DecalInstance)
+                        {
+                            renderer.DrawDecalQuad(decal);
+                        }
+
+                        layer.DecalInstance.Clear();
+                    }
+                    else
+                    {
+                        layer.funcHook();
+                    }
+                }
+            }
+
+            renderer.DisplayFrame();
         }
 
         public void olc_UpdateWindowSize(int width, int height)
@@ -1014,7 +1064,27 @@ namespace csPixelGameEngineCore
             if (!scale.HasValue) scale = vec2d_f.UNIT;
             if (!tint.HasValue) tint = Pixel.WHITE;
 
-            // TODO: Finish...
+            vec2d_f vScreenSpacePos = new vec2d_f
+            {
+                x = (pos.x * invScreenSize.x) * 2.0f - 1.0f,
+                y = ((pos.y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f
+            };
+            vec2d_f vScreenSpaceDim = new vec2d_f
+            {
+                x = vScreenSpacePos.x + (2.0f * decal.sprite.Width * invScreenSize.x) * scale.Value.x,
+                y = vScreenSpacePos.y - (2.0f * decal.sprite.Height * invScreenSize.y) * scale.Value.y
+            };
+
+            DecalInstance di = new DecalInstance
+            {
+                decal = decal,
+                tint = tint.Value
+            };
+            di.pos[0] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpacePos.y };
+            di.pos[1] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpaceDim.y };
+            di.pos[2] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpaceDim.y };
+            di.pos[3] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpacePos.y };
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
         }
 
         /// <summary>
@@ -1031,7 +1101,34 @@ namespace csPixelGameEngineCore
             if (!scale.HasValue) scale = vec2d_f.UNIT;
             if (!tint.HasValue) tint = Pixel.WHITE;
 
-            // TODO: Finish...
+            vec2d_f vScreenSpacePos = new vec2d_f
+            {
+                x = (pos.x * invScreenSize.x) * 2.0f - 1.0f,
+                y = ((pos.y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f
+            };
+            vec2d_f vScreenSpaceDim = new vec2d_f
+            {
+                x = vScreenSpacePos.x + (2.0f * decal.sprite.Width * invScreenSize.x) * scale.Value.x,
+                y = vScreenSpacePos.y - (2.0f * decal.sprite.Height * invScreenSize.y) * scale.Value.y
+            };
+
+            DecalInstance di = new DecalInstance
+            {
+                decal = decal,
+                tint = tint.Value
+            };
+            di.pos[0] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpacePos.y };
+            di.pos[1] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpaceDim.y };
+            di.pos[2] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpaceDim.y };
+            di.pos[3] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpacePos.y };
+
+            vec2d_f uvtl = source_pos * decal.vUVScale;
+            vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+            di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+            di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+            di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+            di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
         }
 
         /// <summary>

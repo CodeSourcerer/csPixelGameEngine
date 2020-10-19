@@ -42,6 +42,7 @@ namespace csPixelGameEngineCore
 
         public static vec2d_f operator +(vec2d_f lhs, vec2d_f rhs) => new vec2d_f(lhs.x + rhs.x, lhs.y + rhs.y);
         public static vec2d_f operator -(vec2d_f lhs, vec2d_f rhs) => new vec2d_f(lhs.x - rhs.x, lhs.y - rhs.y);
+        public static vec2d_f operator *(vec2d_f lhs, vec2d_f rhs) => new vec2d_f(lhs.x * rhs.x, lhs.y * rhs.y);
         public static vec2d_f operator *(vec2d_f lhs, float rhs) => new vec2d_f(lhs.x * rhs, lhs.y * rhs);
         public static vec2d_f operator *(float lhs, vec2d_f rhs) => new vec2d_f(lhs * rhs.x, lhs * rhs.y);
         public static vec2d_f operator /(vec2d_f lhs, float rhs) => new vec2d_f(lhs.x / rhs, lhs.y / rhs);
