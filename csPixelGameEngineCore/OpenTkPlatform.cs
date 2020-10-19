@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using csPixelGameEngineCore.Enums;
 using OpenTK;
+using OpenTK.Input;
 
 namespace csPixelGameEngineCore
 {
@@ -58,6 +59,24 @@ namespace csPixelGameEngineCore
                 MouseMove?.Invoke(sender, new MouseMoveEventArgs(eventArgs.X, eventArgs.Y, eventArgs.XDelta, eventArgs.YDelta));
             };
 
+            glWindow.MouseDown += (sender, eventArgs) =>
+            {
+                var btnClicked = fromTkMouseBtn(eventArgs.Button);
+                if (btnClicked != csMouseButton.Unknown)
+                {
+                    MouseDown?.Invoke(sender, new MouseButtonEventArgs(eventArgs.X, eventArgs.Y, btnClicked, true));
+                }
+            };
+
+            glWindow.MouseUp += (sender, eventArgs) =>
+            {
+                var btnClicked = fromTkMouseBtn(eventArgs.Button);
+                if (btnClicked != csMouseButton.Unknown)
+                {
+                    MouseUp?.Invoke(sender, new MouseButtonEventArgs(eventArgs.X, eventArgs.Y, btnClicked, false));
+                }
+            };
+
             glWindow.UpdateFrame += (sender, eventArgs) =>
             {
                 UpdateFrame?.Invoke(sender, new FrameUpdateEventArgs(eventArgs.Time));
@@ -66,6 +85,17 @@ namespace csPixelGameEngineCore
             glWindow.Run();
 
             return RCode.OK;
+        }
+
+        private csMouseButton fromTkMouseBtn(MouseButton btn)
+        {
+            return btn switch
+            {
+                MouseButton.Left => csMouseButton.Left,
+                MouseButton.Middle => csMouseButton.Middle,
+                MouseButton.Right => csMouseButton.Right,
+                _ => csMouseButton.Unknown
+            };
         }
     }
 }

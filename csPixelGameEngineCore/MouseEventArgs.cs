@@ -14,9 +14,9 @@ namespace csPixelGameEngineCore
             : base()
         { }
 
-        public MouseEventArgs(int x, int y)
+        public MouseEventArgs(int xPos, int yPos)
         {
-            Position = new vec2d_i { x = X, y = Y };
+            Position = new vec2d_i { x = xPos, y = yPos };
         }
     }
 }

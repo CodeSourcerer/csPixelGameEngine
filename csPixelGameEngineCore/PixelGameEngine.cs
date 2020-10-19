@@ -133,7 +133,11 @@ namespace csPixelGameEngineCore
         private readonly IRenderer renderer;
         private readonly IPlatform platform;
         private Sprite fontSprite;
-        private HWButton[] btnStates = { new HWButton(), new HWButton(), new HWButton() };
+        private HWButton[] btnStates = {
+            new HWButton { Released = true, Pressed = false, Held = false },
+            new HWButton { Released = true, Pressed = false, Held = false },
+            new HWButton { Released = true, Pressed = false, Held = false }
+        };
 
         #region Events
 
@@ -367,16 +371,10 @@ namespace csPixelGameEngineCore
 
         private void updateMouseButtonStates(MouseButtonEventArgs mouseButtonEvent)
         {
+            // Event not generated when button held, so below does not work.
+            //btnStates[(int)mouseButtonEvent.Button].Held     = btnStates[(int)mouseButtonEvent.Button].Pressed && mouseButtonEvent.IsPressed;
             btnStates[(int)mouseButtonEvent.Button].Pressed  =  mouseButtonEvent.IsPressed;
             btnStates[(int)mouseButtonEvent.Button].Released = !mouseButtonEvent.IsPressed;
-
-            //btnStates[(int)csMouseButton.Left].Pressed   = mouseButtonEvent.LeftButton.HasFlag(ButtonState.Pressed);
-            //btnStates[(int)csMouseButton.Middle].Pressed = mouseButtonEvent.MiddleButton.HasFlag(ButtonState.Pressed);
-            //btnStates[(int)csMouseButton.Right].Pressed  = mouseButtonEvent.RightButton.HasFlag(ButtonState.Pressed);
-
-            //btnStates[(int)csMouseButton.Left].Released   = !mouseButtonEvent.LeftButton.HasFlag(ButtonState.Pressed);
-            //btnStates[(int)csMouseButton.Middle].Released = !mouseButtonEvent.MiddleButton.HasFlag(ButtonState.Pressed);
-            //btnStates[(int)csMouseButton.Right].Released  = !mouseButtonEvent.RightButton.HasFlag(ButtonState.Pressed);
         }
 
         /// <summary>
