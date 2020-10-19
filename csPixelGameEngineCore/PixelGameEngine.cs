@@ -77,15 +77,15 @@ namespace csPixelGameEngineCore
         public vec2d_i  PixelSize           { get; private set; }
         public vec2d_f  PixelRatio          { get; private set; }  // no idea what this is right now...
         public uint     FPS                 { get; private set; }
+        public uint     TargetLayer         { get; private set; }
+        
+        public List<LayerDesc> Layers       { get; private set; }
 
-        public List<LayerDesc> Layers { get; private set; }
-
-        private Sprite drawTarget;
         public Sprite DrawTarget
         {
-            get => drawTarget;
-            // TODO: Update to work with layers
-            set => drawTarget = value ?? DefaultDrawTarget;
+            get;
+            // Use SetDrawTarget()
+            private set;
         }
 
         private float blendFactor;
@@ -386,50 +386,6 @@ namespace csPixelGameEngineCore
         {
             return btnStates[button];
         }
-
-        #region Configuration Methods
-
-        /// <summary>
-        /// Enable / disable layer
-        /// </summary>
-        /// <param name="layer"></param>
-        /// <param name="b"></param>
-        public void EnableLayer(byte layer, bool b)
-        {
-
-        }
-
-        public void SetLayerOffset(byte layer, vec2d_f offset)
-        {
-
-        }
-
-        public void SetLayerOffset(byte layer, float x, float y)
-        {
-
-        }
-
-        public void SetLayerScale(byte layer, vec2d_f scale)
-        {
-
-        }
-
-        public void SetLayerScale(byte layer, float x, float y)
-        {
-
-        }
-
-        public void SetLayerTint(byte layer, Pixel tint)
-        {
-
-        }
-
-        public void SetLayerCustomRenderFunction(byte layer, Action f)
-        {
-
-        }
-
-        #endregion // Configuration Methods
 
         #region Drawing Methods
 
@@ -1122,6 +1078,83 @@ namespace csPixelGameEngineCore
             renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
             Layers.Add(ld);
             return (uint)(Layers.Count - 1);
+        }
+
+        /// <summary>
+        /// Sets the draw target to the given sprite. Null can be used for layer 0.
+        /// </summary>
+        /// <param name="target">Sprite to set draw target to. Null for layer 0.</param>
+        public void SetDrawTarget(Sprite target)
+        {
+            if (target != null)
+            {
+                DrawTarget = target;
+            }
+            else
+            {
+                TargetLayer = 0;
+                DrawTarget = Layers[0].DrawTarget;
+            }
+        }
+
+        public void SetDrawTarget(uint layer)
+        {
+            if (layer < Layers.Count)
+            {
+                DrawTarget = Layers[(int)layer].DrawTarget;
+                Layers[(int)layer].bUpdate = true;
+                TargetLayer = layer;
+            }
+        }
+
+        public void EnableLayer(uint layer, bool enabled)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].bShow = enabled;
+            }
+        }
+
+        public void SetLayerOffset(uint layer, vec2d_f offset)
+        {
+            SetLayerOffset(layer, offset.x, offset.y);
+        }
+
+        public void SetLayerOffset(uint layer, float xOffset, float yOffset)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].vOffset = new vec2d_f { x = xOffset, y = yOffset };
+            }
+        }
+
+        public void SetLayerScale(uint layer, vec2d_f scale)
+        {
+            SetLayerScale(layer, scale.x, scale.y);
+        }
+
+        public void SetLayerScale(uint layer, float xScale, float yScale)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].vScale = new vec2d_f { x = xScale, y = yScale };
+            }
+        }
+
+        public void SetLayerTint(uint layer, Pixel tint)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].Tint = tint;
+            }
+        }
+
+        public void SetLayerCustomRenderFunction(uint layer, Action func)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].funcHook = func;
+            }
         }
         #endregion // Layer Methods
 
