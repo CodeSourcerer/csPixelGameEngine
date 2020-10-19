@@ -77,6 +77,11 @@ namespace csPixelGameEngineCore
                 }
             };
 
+            glWindow.MouseWheel += (sender, eventArgs) =>
+            {
+                MouseWheel?.Invoke(sender, new MouseWheelEventArgs(eventArgs.X, eventArgs.Y, eventArgs.Value, eventArgs.Delta));
+            };
+
             glWindow.UpdateFrame += (sender, eventArgs) =>
             {
                 UpdateFrame?.Invoke(sender, new FrameUpdateEventArgs(eventArgs.Time));

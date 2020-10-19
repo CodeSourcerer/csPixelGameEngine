@@ -114,6 +114,7 @@ namespace PixelGameEngineCoreTest
                     pge.Draw(x, y, new Pixel((byte)rnd.Next(255), (byte)rnd.Next(255), (byte)rnd.Next(255)));
         }
 
+        // Example of loading a resource pack
         private void loadTestAnimation()
         {
             rp = new ResourcePack();
