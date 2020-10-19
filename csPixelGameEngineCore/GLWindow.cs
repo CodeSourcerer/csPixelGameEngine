@@ -36,7 +36,7 @@ namespace csPixelGameEngineCore
             PixelHeight     = pixel_h;
             ViewX           = 0;
             ViewY           = 0;
-            this.VSync = VSyncMode.Off;
+            VSync           = VSyncMode.Off;
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -56,8 +56,6 @@ namespace csPixelGameEngineCore
             base.OnRenderFrame(e);
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            //GL.Viewport((int)ViewX, (int)ViewY, (int)ViewWidth, (int)ViewHeight);
 
             GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, (int)ScreenWidth, (int)ScreenHeight, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData);
 

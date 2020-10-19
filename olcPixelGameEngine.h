@@ -1,241 +1,11 @@
-/*
-	olcPixelGameEngine.h
-
-	+-------------------------------------------------------------+
-	|           OneLoneCoder Pixel Game Engine v2.05              |
-	|  "What do you need? Pixels... Lots of Pixels..." - javidx9  |
-	+-------------------------------------------------------------+
-
-	What is this?
-	~~~~~~~~~~~~~
-	olc::PixelGameEngine is a single file, cross platform graphics and userinput
-	framework used for games, visualisations, algorithm exploration and learning.
-	It was developed by YouTuber "javidx9" as an assistive tool for many of his
-	videos. The goal of this project is to provide high speed graphics with
-	minimal project setup complexity, to encourage new programmers, younger people,
-	and anyone else that wants to make fun things.
-
-	However, olc::PixelGameEngine is not a toy! It is a powerful and fast utility
-	capable of delivering high resolution, high speed, high quality applications
-	which behave the same way regardless of the operating system or platform.
-
-	This file provides the core utility set of the olc::PixelGameEngine, including
-	window creation, keyboard/mouse input, main game thread, timing, pixel drawing
-	routines, image/sprite loading and drawing routines, and a bunch of utility
-	types to make rapid development of games/visualisations possible.
-
-
-	License (OLC-3)
-	~~~~~~~~~~~~~~~
-
-	Copyright 2018 - 2020 OneLoneCoder.com
-
-	Redistribution and use in source and binary forms, with or without modification,
-	are permitted provided that the following conditions are met:
-
-	1. Redistributions or derivations of source code must retain the above copyright
-	notice, this list of conditions and the following disclaimer.
-
-	2. Redistributions or derivative works in binary form must reproduce the above
-	copyright notice. This list of conditions and the following	disclaimer must be
-	reproduced in the documentation and/or other materials provided with the distribution.
-
-	3. Neither the name of the copyright holder nor the names of its contributors may
-	be used to endorse or promote products derived from this software without specific
-	prior written permission.
-
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS	"AS IS" AND ANY
-	EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-	OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
-	SHALL THE COPYRIGHT	HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-	INCIDENTAL,	SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-	TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-	BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-	CONTRACT, STRICT LIABILITY, OR TORT	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-	ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-	SUCH DAMAGE.
-
-	Links
-	~~~~~
-	YouTube:	https://www.youtube.com/javidx9
-				https://www.youtube.com/javidx9extra
-	Discord:	https://discord.gg/WhwHUMV
-	Twitter:	https://www.twitter.com/javidx9
-	Twitch:		https://www.twitch.tv/javidx9
-	GitHub:		https://www.github.com/onelonecoder
-	Homepage:	https://www.onelonecoder.com
-	Patreon:	https://www.patreon.com/javidx9
-	Community:  https://community.onelonecoder.com
-
-	Compiling in Linux
-	~~~~~~~~~~~~~~~~~~
-	You will need a modern C++ compiler, so update yours!
-	To compile use the command:
-
-	g++ -o YourProgName YourSource.cpp -lX11 -lGL -lpthread -lpng -lstdc++fs -std=c++17
-
-	On some Linux configurations, the frame rate is locked to the refresh
-	rate of the monitor. This engine tries to unlock it but may not be
-	able to, in which case try launching your program like this:
-
-	vblank_mode=0 ./YourProgName
-
-
-	Compiling in Code::Blocks on Windows
-	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	Well I wont judge you, but make sure your Code::Blocks installation
-	is really up to date - you may even consider updating your C++ toolchain
-	to use MinGW32-W64.
-
-	Guide for installing recent GCC for Windows:
-	https://www.msys2.org/
-	Guide for configuring code::blocks:
-	https://solarianprogrammer.com/2019/11/05/install-gcc-windows/
-	https://solarianprogrammer.com/2019/11/16/install-codeblocks-gcc-windows-build-c-cpp-fortran-programs/
-
-	Add these libraries to "Linker Options":
-	user32 gdi32 opengl32 gdiplus Shlwapi stdc++fs
-
-	Set these compiler options: -std=c++17
-
-	Ports
-	~~~~~
-	olc::PixelGameEngine has been ported and tested with varying degrees of
-	success to: WinXP, Win7, Win8, Win10, Various Linux, Raspberry Pi,
-	Chromebook, Playstation Portable (PSP) and Nintendo Switch. If you are
-	interested in the details of these ports, come and visit the Discord!
-
-	Thanks
-	~~~~~~
-	I'd like to extend thanks to Eremiell, slavka, gurkanctn, Phantim, IProgramInCPP
-	JackOJC, KrossX, Huhlig, Dragoneye, Appa, JustinRichardsMusic, SliceNDice
-	Ralakus, Gorbit99, raoul, joshinils, benedani, Moros1138, SaladinAkara & MagetzUb 
-	for advice, ideas and testing, and I'd like to extend my appreciation to the 
-	144K YouTube followers,	70+ Patreons and 6K Discord server members who give me 
-	the motivation to keep going with all this :D
-
-	Significant Contributors: @MaGetzUb, @slavka, @Dragoneye & @Gorbit99
-
-	Special thanks to those who bring gifts!
-	GnarGnarHead.......Domina
-	Gorbit99...........Bastion, Ori & The Blind Forest, Terraria
-	Marti Morta........Gris
-	Danicron...........Terraria
-	SaladinAkara.......Aseprite
-
-	Special thanks to my Patreons too - I wont name you on here, but I've
-	certainly enjoyed my tea and flapjacks :D
-
-	Author
-	~~~~~~
-	David Barr, aka javidx9, ©OneLoneCoder 2018, 2019, 2020
-
-	2.01: Made renderer and platform static for multifile projects
-	2.02: Added Decal destructor, optimised Pixel constructor
-	2.03: Added FreeBSD flags, Added DrawStringDecal()
-	2.04: Windows Full-Screen bug fixed
-	2.05: Added DrawPartialWarpedDecal(), Added DrawPartialRotatedDecal()
-*/
-
-//////////////////////////////////////////////////////////////////////////////////////////
-
-
-// O------------------------------------------------------------------------------O
-// | Example "Hello World" Program (main.cpp)                                     |
-// O------------------------------------------------------------------------------O
-/*
-
-#define OLC_PGE_APPLICATION
-#include "olcPixelGameEngine.h"
-
-// Override base class with your custom functionality
-class Example : public olc::PixelGameEngine
-{
-public:
-	Example()
-	{
-		// Name you application
-		sAppName = "Example";
-	}
-
-public:
-	bool OnUserCreate() override
-	{
-		// Called once at the start, so create things here
-		return true;
-	}
-
-	bool OnUserUpdate(float fElapsedTime) override
-	{
-		// called once per frame, draws random coloured pixels
-		for (int x = 0; x < ScreenWidth(); x++)
-			for (int y = 0; y < ScreenHeight(); y++)
-				Draw(x, y, olc::Pixel(rand() % 256, rand() % 256, rand()% 256));
-		return true;
-	}
-};
-
-int main()
-{
-	Example demo;
-	if (demo.Construct(256, 240, 4, 4))
-		demo.Start();
-	return 0;
-}
-
-*/
 
 #ifndef OLC_PGE_DEF
 #define OLC_PGE_DEF
 
 // O------------------------------------------------------------------------------O
-// | STANDARD INCLUDES                                                            |
-// O------------------------------------------------------------------------------O
-#include <cmath>
-#include <cstdint>
-#include <string>
-#include <iostream>
-#include <streambuf>
-#include <sstream>
-#include <chrono>
-#include <vector>
-#include <list>
-#include <thread>
-#include <atomic>
-#include <fstream>
-#include <map>
-#include <functional>
-#include <algorithm>
-#include <array>
-#include <cstring>
-
-// O------------------------------------------------------------------------------O
 // | COMPILER CONFIGURATION ODDITIES                                              |
 // O------------------------------------------------------------------------------O
-#define USE_EXPERIMENTAL_FS
 
-#if defined(_WIN32)
-	#if _MSC_VER >= 1920 && _MSVC_LANG >= 201703L
-		#undef USE_EXPERIMENTAL_FS
-	#endif
-#endif
-
-#if defined(__linux__) || defined(__MINGW32__) || defined(__EMSCRIPTEN__) || defined(__FreeBSD__)
-	#if __cplusplus >= 201703L
-		#undef USE_EXPERIMENTAL_FS
-	#endif
-#endif
-
-#if defined(USE_EXPERIMENTAL_FS)
-	// C++14
-	#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-	#include <experimental/filesystem>
-	namespace _gfs = std::experimental::filesystem::v1;
-#else
-	// C++17
-	#include <filesystem>
-	namespace _gfs = std::filesystem;
-#endif
 
 #if defined(UNICODE) || defined(_UNICODE)
 	#define olcT(s) L##s
@@ -245,10 +15,6 @@ int main()
 
 #define UNUSED(x) (void)(x)
 
-
-#if !defined(OLC_GFX_OPENGL33) && !defined(OLC_GFX_DIRECTX10)
-	#define OLC_GFX_OPENGL10
-#endif
 
 // O------------------------------------------------------------------------------O
 // | olcPixelGameEngine INTERFACE DECLARATION                                     |
@@ -372,7 +138,6 @@ namespace olc
 #endif
 
 
-
 	// O------------------------------------------------------------------------------O
 	// | olc::HWButton - Represents the state of a hardware button (mouse/key/joy)    |
 	// O------------------------------------------------------------------------------O
@@ -382,7 +147,6 @@ namespace olc
 		bool bReleased = false;	// Set once during the frame the event occurs
 		bool bHeld = false;		// Set true for all frames between pressed and released events
 	};
-
 
 
 	// O------------------------------------------------------------------------------O
@@ -411,7 +175,6 @@ namespace olc
 		std::vector<char> scramble(const std::vector<char>& data, const std::string& key);
 		std::string makeposix(const std::string& path);
 	};
-
 
 
 	// O------------------------------------------------------------------------------O
@@ -2314,7 +2077,6 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | START RENDERER: OpenGL 1.0 (the original, the best...)                       |
 // O------------------------------------------------------------------------------O
-#if defined(OLC_GFX_OPENGL10)
 #if defined(_WIN32)
 	#include <windows.h>
 	#include <GL/gl.h>
@@ -2322,21 +2084,6 @@ namespace olc
 	static wglSwapInterval_t* wglSwapInterval = nullptr;
 	typedef HDC glDeviceContext_t;
 	typedef HGLRC glRenderContext_t;
-#endif
-
-#if defined(__linux__) || defined(__FreeBSD__)
-	#include <GL/gl.h>
-	namespace X11
-	{
-		#include <GL/glx.h>
-		#include <X11/X.h>
-		#include <X11/Xlib.h>
-	}
-	#include <png.h>
-	typedef int(glSwapInterval_t)(X11::Display* dpy, X11::GLXDrawable drawable, int interval);
-	static glSwapInterval_t* glSwapIntervalEXT;
-	typedef X11::GLXContext glDeviceContext_t;
-	typedef X11::GLXContext glRenderContext_t;
 #endif
 
 namespace olc
@@ -2347,11 +2094,6 @@ namespace olc
 		glDeviceContext_t glDeviceContext = 0;
 		glRenderContext_t glRenderContext = 0;
 
-	#if defined(__linux__) || defined(__FreeBSD__)
-		X11::Display*				 olc_Display = nullptr;
-		X11::Window*				 olc_Window = nullptr;
-		X11::XVisualInfo*            olc_VisualInfo = nullptr;
-	#endif
 
 	public:
 		void PrepareDevice() override
@@ -2382,35 +2124,7 @@ namespace olc
 			if (wglSwapInterval && !bVSYNC) wglSwapInterval(0);
 		#endif
 
-		#if defined(__linux__) || defined(__FreeBSD__)
-			using namespace X11;
-			// Linux has tighter coupling between OpenGL and X11, so we store
-			// various "platform" handles in the renderer
-			olc_Display = (X11::Display*)(params[0]);
-			olc_Window = (X11::Window*)(params[1]);
-			olc_VisualInfo = (X11::XVisualInfo*)(params[2]);
-
-			glDeviceContext = glXCreateContext(olc_Display, olc_VisualInfo, nullptr, GL_TRUE);
-			glXMakeCurrent(olc_Display, *olc_Window, glDeviceContext);
-			
-			XWindowAttributes gwa;
-			XGetWindowAttributes(olc_Display, *olc_Window, &gwa);
-			glViewport(0, 0, gwa.width, gwa.height);
-			
-			glSwapIntervalEXT = nullptr;
-			glSwapIntervalEXT = (glSwapInterval_t*)glXGetProcAddress((unsigned char*)"glXSwapIntervalEXT");
-			
-			if (glSwapIntervalEXT == nullptr && !bVSYNC)
-			{
-				printf("NOTE: Could not disable VSYNC, glXSwapIntervalEXT() was not found!\n");
-				printf("      Don't worry though, things will still work, it's just the\n");
-				printf("      frame rate will be capped to your monitors refresh rate - javidx9\n");
-			}
-			
-			if (glSwapIntervalEXT != nullptr && !bVSYNC)
-				glSwapIntervalEXT(olc_Display, *olc_Window, 0);
-		#endif		
-		
+	
 			glEnable(GL_TEXTURE_2D); // Turn on texturing
 			glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 			return olc::rcode::OK;
@@ -2422,10 +2136,6 @@ namespace olc
 			wglDeleteContext(glRenderContext);
 		#endif
 
-		#if defined(__linux__) || defined(__FreeBSD__)
-			glXMakeCurrent(olc_Display, None, NULL);
-			glXDestroyContext(olc_Display, glDeviceContext);
-		#endif
 			return olc::rcode::OK;
 		}
 
@@ -2434,10 +2144,6 @@ namespace olc
 		#if defined(_WIN32)
 			SwapBuffers(glDeviceContext);
 		#endif	
-
-		#if defined(__linux__) || defined(__FreeBSD__)
-			X11::glXSwapBuffers(olc_Display, *olc_Window);
-		#endif		
 		}
 
 		void PrepareDrawing() override
@@ -2513,7 +2219,7 @@ namespace olc
 		}
 	};
 }
-#endif
+
 // O------------------------------------------------------------------------------O
 // | END RENDERER: OpenGL 1.0 (the original, the best...)                         |
 // O------------------------------------------------------------------------------O
@@ -2523,32 +2229,6 @@ namespace olc
 // | START PLATFORM: MICROSOFT WINDOWS XP, VISTA, 7, 8, 10                        |
 // O------------------------------------------------------------------------------O
 #if defined(_WIN32)
-#if !defined(__MINGW32__)
-	#pragma comment(lib, "user32.lib")		// Visual Studio Only
-	#pragma comment(lib, "gdi32.lib")		// For other Windows Compilers please add
-	#pragma comment(lib, "opengl32.lib")	// these libs to your linker input
-	#pragma comment(lib, "gdiplus.lib")
-	#pragma comment(lib, "Shlwapi.lib")
-#else
-	// In Code::Blocks
-	#if !defined(_WIN32_WINNT)
-		#ifdef HAVE_MSMF
-			#define _WIN32_WINNT 0x0600 // Windows Vista
-		#else
-			#define _WIN32_WINNT 0x0500 // Windows 2000
-		#endif
-	#endif
-#endif
-
-// Include WinAPI
-#if !defined(NOMINMAX)
-	#define NOMINMAX
-#endif
-#define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <gdiplus.h>
-#include <Shlwapi.h>
 
 namespace olc
 {
@@ -2784,331 +2464,6 @@ namespace olc
 
 
 
-
-
-// O------------------------------------------------------------------------------O
-// | START PLATFORM: LINUX                                                        |
-// O------------------------------------------------------------------------------O
-#if defined(__linux__) || defined(__FreeBSD__)
-namespace olc
-{
-	class Platform_Linux : public olc::Platform
-	{
-	private:
-		X11::Display*                olc_Display = nullptr;
-		X11::Window					 olc_WindowRoot;
-		X11::Window					 olc_Window;
-		X11::XVisualInfo*			 olc_VisualInfo;
-		X11::Colormap                olc_ColourMap;
-		X11::XSetWindowAttributes    olc_SetWindowAttribs;
-
-	public:
-		virtual olc::rcode ApplicationStartUp() override
-		{ return olc::rcode::OK; }
-
-		virtual olc::rcode ApplicationCleanUp() override
-		{ return olc::rcode::OK; }
-
-		virtual olc::rcode ThreadStartUp() override
-		{ return olc::rcode::OK; }
-
-		virtual olc::rcode ThreadCleanUp() override
-		{
-			renderer->DestroyDevice();
-			return olc::OK;
-		}
-
-		virtual olc::rcode CreateGraphics(bool bFullScreen, bool bEnableVSYNC, const olc::vi2d& vViewPos, const olc::vi2d& vViewSize) override
-		{
-			if (renderer->CreateDevice({ olc_Display, &olc_Window, olc_VisualInfo }, bFullScreen, bEnableVSYNC) == olc::rcode::OK)
-			{
-				renderer->UpdateViewport(vViewPos, vViewSize);
-				return olc::rcode::OK;
-			}
-			else
-				return olc::rcode::FAIL;
-		}
-
-		virtual olc::rcode CreateWindowPane(const olc::vi2d& vWindowPos, olc::vi2d& vWindowSize, bool bFullScreen) override
-		{
-			using namespace X11;
-			XInitThreads();
-	
-			// Grab the deafult display and window
-			olc_Display = XOpenDisplay(NULL);
-			olc_WindowRoot = DefaultRootWindow(olc_Display);
-	
-			// Based on the display capabilities, configure the appearance of the window
-			GLint olc_GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-			olc_VisualInfo = glXChooseVisual(olc_Display, 0, olc_GLAttribs);
-			olc_ColourMap = XCreateColormap(olc_Display, olc_WindowRoot, olc_VisualInfo->visual, AllocNone);
-			olc_SetWindowAttribs.colormap = olc_ColourMap;
-	
-			// Register which events we are interested in receiving
-			olc_SetWindowAttribs.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-				ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask | StructureNotifyMask;
-	
-			// Create the window
-			olc_Window = XCreateWindow(olc_Display, olc_WindowRoot, vWindowPos.x, vWindowPos.y,
-				vWindowSize.x, vWindowSize.y,
-				0, olc_VisualInfo->depth, InputOutput, olc_VisualInfo->visual,
-				CWColormap | CWEventMask, &olc_SetWindowAttribs);
-	
-			Atom wmDelete = XInternAtom(olc_Display, "WM_DELETE_WINDOW", true);
-			XSetWMProtocols(olc_Display, olc_Window, &wmDelete, 1);
-	
-			XMapWindow(olc_Display, olc_Window);
-			XStoreName(olc_Display, olc_Window, "OneLoneCoder.com - Pixel Game Engine");
-	
-			if (bFullScreen) // Thanks DragonEye, again :D
-			{
-				Atom wm_state;
-				Atom fullscreen;
-				wm_state = XInternAtom(olc_Display, "_NET_WM_STATE", False);
-				fullscreen = XInternAtom(olc_Display, "_NET_WM_STATE_FULLSCREEN", False);
-				XEvent xev{ 0 };
-				xev.type = ClientMessage;
-				xev.xclient.window = olc_Window;
-				xev.xclient.message_type = wm_state;
-				xev.xclient.format = 32;
-				xev.xclient.data.l[0] = (bFullScreen ? 1 : 0);   // the action (0: off, 1: on, 2: toggle)
-				xev.xclient.data.l[1] = fullscreen;             // first property to alter
-				xev.xclient.data.l[2] = 0;                      // second property to alter
-				xev.xclient.data.l[3] = 0;                      // source indication
-				XMapWindow(olc_Display, olc_Window);
-				XSendEvent(olc_Display, DefaultRootWindow(olc_Display), False,
-					SubstructureRedirectMask | SubstructureNotifyMask, &xev);
-				XFlush(olc_Display);
-				XWindowAttributes gwa;
-				XGetWindowAttributes(olc_Display, olc_Window, &gwa);
-				vWindowSize.x = gwa.width;
-				vWindowSize.y = gwa.height;
-			}
-	
-			// Create Keyboard Mapping
-			mapKeys[0x00] = Key::NONE;
-			mapKeys[0x61] = Key::A; mapKeys[0x62] = Key::B; mapKeys[0x63] = Key::C; mapKeys[0x64] = Key::D; mapKeys[0x65] = Key::E;
-			mapKeys[0x66] = Key::F; mapKeys[0x67] = Key::G; mapKeys[0x68] = Key::H; mapKeys[0x69] = Key::I; mapKeys[0x6A] = Key::J;
-			mapKeys[0x6B] = Key::K; mapKeys[0x6C] = Key::L; mapKeys[0x6D] = Key::M; mapKeys[0x6E] = Key::N; mapKeys[0x6F] = Key::O;
-			mapKeys[0x70] = Key::P; mapKeys[0x71] = Key::Q; mapKeys[0x72] = Key::R; mapKeys[0x73] = Key::S; mapKeys[0x74] = Key::T;
-			mapKeys[0x75] = Key::U; mapKeys[0x76] = Key::V; mapKeys[0x77] = Key::W; mapKeys[0x78] = Key::X; mapKeys[0x79] = Key::Y;
-			mapKeys[0x7A] = Key::Z;
-	
-			mapKeys[XK_F1] = Key::F1; mapKeys[XK_F2] = Key::F2; mapKeys[XK_F3] = Key::F3; mapKeys[XK_F4] = Key::F4;
-			mapKeys[XK_F5] = Key::F5; mapKeys[XK_F6] = Key::F6; mapKeys[XK_F7] = Key::F7; mapKeys[XK_F8] = Key::F8;
-			mapKeys[XK_F9] = Key::F9; mapKeys[XK_F10] = Key::F10; mapKeys[XK_F11] = Key::F11; mapKeys[XK_F12] = Key::F12;
-	
-			mapKeys[XK_Down] = Key::DOWN; mapKeys[XK_Left] = Key::LEFT; mapKeys[XK_Right] = Key::RIGHT; mapKeys[XK_Up] = Key::UP;
-			mapKeys[XK_KP_Enter] = Key::ENTER; mapKeys[XK_Return] = Key::ENTER;
-	
-			mapKeys[XK_BackSpace] = Key::BACK; mapKeys[XK_Escape] = Key::ESCAPE; mapKeys[XK_Linefeed] = Key::ENTER;	mapKeys[XK_Pause] = Key::PAUSE;
-			mapKeys[XK_Scroll_Lock] = Key::SCROLL; mapKeys[XK_Tab] = Key::TAB; mapKeys[XK_Delete] = Key::DEL; mapKeys[XK_Home] = Key::HOME;
-			mapKeys[XK_End] = Key::END; mapKeys[XK_Page_Up] = Key::PGUP; mapKeys[XK_Page_Down] = Key::PGDN;	mapKeys[XK_Insert] = Key::INS;
-			mapKeys[XK_Shift_L] = Key::SHIFT; mapKeys[XK_Shift_R] = Key::SHIFT; mapKeys[XK_Control_L] = Key::CTRL; mapKeys[XK_Control_R] = Key::CTRL;
-			mapKeys[XK_space] = Key::SPACE; mapKeys[XK_period] = Key::PERIOD;
-	
-			mapKeys[XK_0] = Key::K0; mapKeys[XK_1] = Key::K1; mapKeys[XK_2] = Key::K2; mapKeys[XK_3] = Key::K3; mapKeys[XK_4] = Key::K4;
-			mapKeys[XK_5] = Key::K5; mapKeys[XK_6] = Key::K6; mapKeys[XK_7] = Key::K7; mapKeys[XK_8] = Key::K8; mapKeys[XK_9] = Key::K9;
-	
-			mapKeys[XK_KP_0] = Key::NP0; mapKeys[XK_KP_1] = Key::NP1; mapKeys[XK_KP_2] = Key::NP2; mapKeys[XK_KP_3] = Key::NP3; mapKeys[XK_KP_4] = Key::NP4;
-			mapKeys[XK_KP_5] = Key::NP5; mapKeys[XK_KP_6] = Key::NP6; mapKeys[XK_KP_7] = Key::NP7; mapKeys[XK_KP_8] = Key::NP8; mapKeys[XK_KP_9] = Key::NP9;
-			mapKeys[XK_KP_Multiply] = Key::NP_MUL; mapKeys[XK_KP_Add] = Key::NP_ADD; mapKeys[XK_KP_Divide] = Key::NP_DIV; mapKeys[XK_KP_Subtract] = Key::NP_SUB; mapKeys[XK_KP_Decimal] = Key::NP_DECIMAL;
-	
-			return olc::OK;
-		}
-
-		virtual olc::rcode SetWindowTitle(const std::string& s) override
-		{
-			X11::XStoreName(olc_Display, olc_Window, s.c_str());
-			return olc::OK;
-		}
-
-		virtual olc::rcode StartSystemEventLoop() override
-		{	return olc::OK;	}
-
-		virtual olc::rcode HandleSystemEvent() override
-		{
-			using namespace X11;
-			// Handle Xlib Message Loop - we do this in the
-			// same thread that OpenGL was created so we dont
-			// need to worry too much about multithreading with X11
-			XEvent xev;
-			while (XPending(olc_Display))
-			{
-				XNextEvent(olc_Display, &xev);
-				if (xev.type == Expose)
-				{
-					XWindowAttributes gwa;
-					XGetWindowAttributes(olc_Display, olc_Window, &gwa);
-					ptrPGE->olc_UpdateWindowSize(gwa.width, gwa.height);
-				}
-				else if (xev.type == ConfigureNotify)
-				{
-					XConfigureEvent xce = xev.xconfigure;
-					ptrPGE->olc_UpdateWindowSize(xce.width, xce.height);
-				}
-				else if (xev.type == KeyPress)
-				{
-					KeySym sym = XLookupKeysym(&xev.xkey, 0);
-					ptrPGE->olc_UpdateKeyState(mapKeys[sym], true);
-					XKeyEvent* e = (XKeyEvent*)&xev; // Because DragonEye loves numpads
-					XLookupString(e, NULL, 0, &sym, NULL);
-					ptrPGE->olc_UpdateKeyState(mapKeys[sym], true);
-				}
-				else if (xev.type == KeyRelease)
-				{
-					KeySym sym = XLookupKeysym(&xev.xkey, 0);
-					ptrPGE->olc_UpdateKeyState(mapKeys[sym], false);
-					XKeyEvent* e = (XKeyEvent*)&xev;
-					XLookupString(e, NULL, 0, &sym, NULL);
-					ptrPGE->olc_UpdateKeyState(mapKeys[sym], false);
-				}
-				else if (xev.type == ButtonPress)
-				{
-					switch (xev.xbutton.button)
-					{
-					case 1:	ptrPGE->olc_UpdateMouseState(0, true); break;
-					case 2:	ptrPGE->olc_UpdateMouseState(2, true); break;
-					case 3:	ptrPGE->olc_UpdateMouseState(1, true); break;
-					case 4:	ptrPGE->olc_UpdateMouseWheel(120); break;
-					case 5:	ptrPGE->olc_UpdateMouseWheel(-120); break;
-					default: break;
-					}
-				}
-				else if (xev.type == ButtonRelease)
-				{
-					switch (xev.xbutton.button)
-					{
-					case 1:	ptrPGE->olc_UpdateMouseState(0, false); break;
-					case 2:	ptrPGE->olc_UpdateMouseState(2, false); break;
-					case 3:	ptrPGE->olc_UpdateMouseState(1, false); break;
-					default: break;
-					}
-				}
-				else if (xev.type == MotionNotify)
-				{
-					ptrPGE->olc_UpdateMouse(xev.xmotion.x, xev.xmotion.y);
-				}
-				else if (xev.type == FocusIn)
-				{
-					ptrPGE->olc_UpdateKeyFocus(true);
-				}
-				else if (xev.type == FocusOut)
-				{
-					ptrPGE->olc_UpdateKeyFocus(false);
-				}
-				else if (xev.type == ClientMessage)
-				{
-					ptrPGE->olc_Terminate();
-				}
-			}
-			return olc::OK;
-		}
-	};
-
-	void pngReadStream(png_structp pngPtr, png_bytep data, png_size_t length)
-	{
-		png_voidp a = png_get_io_ptr(pngPtr);
-		((std::istream*)a)->read((char*)data, length);
-	}
-
-	olc::rcode Sprite::LoadFromFile(const std::string& sImageFile, olc::ResourcePack* pack)
-	{
-		UNUSED(pack);
-		////////////////////////////////////////////////////////////////////////////
-		// Use libpng, Thanks to Guillaume Cottenceau
-		// https://gist.github.com/niw/5963798
-
-		// Also reading png from streams
-		// http://www.piko3d.net/tutorials/libpng-tutorial-loading-png-files-from-streams/
-
-		png_structp png;
-		png_infop info;
-
-		auto loadPNG = [&]()
-		{
-			png_read_info(png, info);
-			png_byte color_type;
-			png_byte bit_depth;
-			png_bytep* row_pointers;
-			width = png_get_image_width(png, info);
-			height = png_get_image_height(png, info);
-			color_type = png_get_color_type(png, info);
-			bit_depth = png_get_bit_depth(png, info);
-			if (bit_depth == 16) png_set_strip_16(png);
-			if (color_type == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png);
-			if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)	png_set_expand_gray_1_2_4_to_8(png);
-			if (png_get_valid(png, info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png);
-			if (color_type == PNG_COLOR_TYPE_RGB ||
-				color_type == PNG_COLOR_TYPE_GRAY ||
-				color_type == PNG_COLOR_TYPE_PALETTE)
-				png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
-			if (color_type == PNG_COLOR_TYPE_GRAY ||
-				color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-				png_set_gray_to_rgb(png);
-			png_read_update_info(png, info);
-			row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
-			for (int y = 0; y < height; y++) {
-				row_pointers[y] = (png_byte*)malloc(png_get_rowbytes(png, info));
-			}
-			png_read_image(png, row_pointers);
-			////////////////////////////////////////////////////////////////////////////
-			// Create sprite array
-			pColData = new Pixel[width * height];
-			// Iterate through image rows, converting into sprite format
-			for (int y = 0; y < height; y++)
-			{
-				png_bytep row = row_pointers[y];
-				for (int x = 0; x < width; x++)
-				{
-					png_bytep px = &(row[x * 4]);
-					SetPixel(x, y, Pixel(px[0], px[1], px[2], px[3]));
-				}
-			}
-
-			for (int y = 0; y < height; y++) // Thanks maksym33
-				free(row_pointers[y]);
-			free(row_pointers);
-			png_destroy_read_struct(&png, &info, nullptr);			
-		};
-
-		png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-		if (!png) goto fail_load;
-
-		info = png_create_info_struct(png);
-		if (!info) goto fail_load;
-
-		if (setjmp(png_jmpbuf(png))) goto fail_load;
-
-		if (pack == nullptr)
-		{
-			FILE* f = fopen(sImageFile.c_str(), "rb");
-			if (!f) return olc::NO_FILE;
-			png_init_io(png, f);
-			loadPNG();
-			fclose(f);
-		}
-		else
-		{
-			ResourceBuffer rb = pack->GetFileBuffer(sImageFile);
-			std::istream is(&rb);
-			png_set_read_fn(png, (png_voidp)&is, pngReadStream);
-			loadPNG();
-		}
-
-		return olc::OK;
-
-	fail_load:
-		width = 0;
-		height = 0;
-		pColData = nullptr;
-		return olc::FAIL;
-	}
-}
-#endif
-// O------------------------------------------------------------------------------O
-// | END PLATFORM: LINUX                                                          |
-// O------------------------------------------------------------------------------O
 
 namespace olc
 {

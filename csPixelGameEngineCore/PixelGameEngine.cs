@@ -61,21 +61,21 @@ namespace csPixelGameEngineCore
         private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
 
         public string   AppName             { get; private set; }
-        public GLWindow Window              { get; private set; }
+        //public GLWindow Window              { get; private set; }
         public bool     FullScreen          { get; private set; }
         public bool     EnableVSYNC         { get; private set; }
-        public uint     ScreenWidth         { get; private set; }
-        public uint     ScreenHeight        { get; private set; }
+        public vec2d_i  ScreenSize          { get; private set; }
+        public vec2d_i  ViewPos             { get; private set; }
+        public vec2d_i  ViewSize            { get; private set; }
+        public vec2d_i  WindowSize          { get; private set; }
         public int      DrawTargetWidth     { get; private set; }
         public int      DrawTargetHeight    { get; private set; }
         public Sprite   DefaultDrawTarget   { get; private set; }
-        public uint     PixelWidth          { get; private set; }
-        public uint     PixelHeight         { get; private set; }
         public int      MousePosX           { get; private set; }
         public int      MousePosY           { get; private set; }
         public int      MouseWheelDelta     { get; private set; }
-        public float    PixelX              { get; set; }
-        public float    PixelY              { get; set; }
+        public vec2d_i  PixelSize           { get; private set; }
+        public vec2d_f  PixelRatio          { get; private set; }  // no idea what this is right now...
         public uint     FPS                 { get; private set; }
 
         public List<LayerDesc> Layers { get; private set; }
@@ -84,6 +84,7 @@ namespace csPixelGameEngineCore
         public Sprite DrawTarget
         {
             get => drawTarget;
+            // TODO: Update to work with layers
             set => drawTarget = value ?? DefaultDrawTarget;
         }
 
@@ -129,13 +130,15 @@ namespace csPixelGameEngineCore
             }
         }
 
+        private readonly IRenderer renderer;
+        private readonly IPlatform platform;
         private Sprite fontSprite;
         private HWButton[] btnStates = { new HWButton(), new HWButton(), new HWButton() };
 
         #region Events
 
         /// <summary>
-        /// This event fires once per frame
+        /// This event fires once per frame and replaces OnUserUpdate()
         /// </summary>
         public event FrameUpdateEventHandler OnFrameUpdate;
 
@@ -153,9 +156,15 @@ namespace csPixelGameEngineCore
 
         #endregion // Events
 
-        public PixelGameEngine(string appName)
+        public PixelGameEngine(IRenderer renderer, IPlatform platform, string appName = null)
         {
+            if (renderer == null) throw new ArgumentNullException(nameof(renderer));
+            if (platform == null) throw new ArgumentNullException(nameof(platform));
+
+            this.renderer = renderer;
+            this.platform = platform;
             AppName = string.IsNullOrWhiteSpace(appName) ? "Undefined" : appName;
+            Layers = new List<LayerDesc>();
         }
 
         /// <summary>
@@ -164,37 +173,27 @@ namespace csPixelGameEngineCore
         /// <param name="screen_w"></param>
         /// <param name="screen_h"></param>
         /// <param name="window"></param>
-        /// <returns>0 on success, -1 on failure</returns>
-        public int Construct(uint screen_w, uint screen_h, GLWindow window)
+        /// <exception cref="ArgumentException"></exception>
+        /// <remarks>
+        /// Original returns an error code. I opted to throw an exception instead.
+        /// </remarks>
+        public void Construct(uint screen_w, uint screen_h, uint pixel_w, uint pixel_h, bool full_screen, bool vsync)
         {
-            if (window == null) throw new ArgumentNullException(nameof(window));
             if (screen_w == 0) throw new ArgumentException("Must be at least 1", nameof(screen_w));
             if (screen_h == 0) throw new ArgumentException("Must be at least 1", nameof(screen_h));
+            if (pixel_w == 0) throw new ArgumentException("Must be at least 1", nameof(pixel_w));
+            if (pixel_h == 0) throw new ArgumentException("Must be at least 1", nameof(pixel_h));
 
-            Window = window;
-            ScreenWidth = screen_w;
-            ScreenHeight = screen_h;
-            FullScreen = (window.WindowState == OpenTK.WindowState.Fullscreen);
-            EnableVSYNC = (window.VSync == OpenTK.VSyncMode.On);
-            PixelWidth = window.PixelWidth;
-            PixelHeight = window.PixelHeight;
-            PixelX = 2.0f / ScreenWidth;
-            PixelY = 2.0f / ScreenHeight;
-
-            if (PixelWidth == 0 || PixelHeight == 0 || ScreenWidth == 0 || ScreenHeight == 0)
-            {
-                Log.Error("WTF man.... set a width and height!");
-                // FAIL!
-                return -1;
-            }
-            // Load the default font sheet
-            construct_fontSheet();
+            //Window = window;
+            ScreenSize = new vec2d_i { x = (int)screen_w, y = (int)screen_h };
+            FullScreen = full_screen; //(window.WindowState == OpenTK.WindowState.Fullscreen);
+            EnableVSYNC = vsync; //(window.VSync == OpenTK.VSyncMode.On);
+            PixelSize = new vec2d_i { x = (int)pixel_w, y = (int)pixel_h };
+            PixelRatio = 2.0f / ScreenSize;
 
             // Create a sprite that represents the primary drawing target
-            DefaultDrawTarget = window.DrawTarget;
-            drawTarget = DefaultDrawTarget;
-
-            return 0;
+            //DefaultDrawTarget = window.DrawTarget;
+            //drawTarget = DefaultDrawTarget;
         }
 
         private void construct_fontSheet()
@@ -243,88 +242,141 @@ namespace csPixelGameEngineCore
         /// <param name="h">Height, in pixels</param>
         public void SetScreenSize(uint w, uint h)
         {
-            ScreenWidth = w;
-            ScreenHeight = h;
-            Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
-            updateViewPort();
+            if (w == 0) throw new ArgumentException("Must be at least 1", nameof(w));
+            if (h == 0) throw new ArgumentException("Must be at least 1", nameof(h));
+
+            ScreenSize = new vec2d_i { x = (int)w, y = (int)h };
+            // TODO: Update layers
+
+            //Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
+            DrawTarget = null;
+
+            renderer.ClearBuffer(Pixel.BLACK, true);
+            renderer.DisplayFrame();
+            renderer.ClearBuffer(Pixel.BLACK, true);
+            renderer.UpdateViewport(ViewPos, ViewSize);
         }
 
-        private void updateViewPort()
+        /// <summary>
+        /// This starts the engine and the rendering loop.
+        /// </summary>
+        /// <param name="maxUpdateRate"></param>
+        /// <returns></returns>
+        public int Start()
         {
-            uint windowWidth = ScreenWidth * PixelWidth;
-            uint windowHeight = ScreenHeight * PixelHeight;
-            float windowAsp = (float)windowWidth / windowHeight;
-            Window.ViewWidth = windowWidth;
-            Window.ViewHeight = (uint)(windowWidth / windowAsp);
+            // In the C++ implementation, there is a platform class for handling platform specific things.
+            // This is .NET Core, which runs on all platforms it supports so we don't need it and thus, we
+            // deviate a bit. Instead of creating a window, we will set up the renderer here.
+            olc_UpdateWindowSize(WindowSize.x, WindowSize.y);
 
-            if (Window.ViewHeight > windowHeight)
-            {
-                Window.ViewHeight = windowHeight;
-                Window.ViewWidth = (uint)(windowHeight * windowAsp);
-            }
+            // The C++ implementation creates an engine thread here, which does a whole lot of things .NET handles for us.
+            // Instead, we will do the gist of what it was doing by using event handlers.
+            olc_PrepareEngine();
 
-            Window.ViewX = (windowWidth - Window.ViewWidth) / 2;
-            Window.ViewY = (windowHeight - Window.ViewHeight) / 2;
-        }
-
-        public int Start(double? maxUpdateRate = null)
-        {
+            // This simulates "OnUserCreate()"
             OnCreate?.Invoke(this, new EventArgs());
-
-            Window.Closed += (sender, cancelEventArgs) =>
+            
+            platform.Closed += (sender, eventArgs) =>
             {
                 OnDestroy?.Invoke(sender, EventArgs.Empty);
             };
-            // Since GLWindow already has an update loop with events, lets tap into that
-            Window.UpdateFrame += (sender, frameEventArgs) =>
+
+            platform.Resize += (sender, eventArgs) =>
             {
-                OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+                olc_UpdateWindowSize(platform.WindowWidth, platform.WindowHeight);
+            };
+
+            platform.UpdateFrame += (sender, frameEventArgs) =>
+            {
+                OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 // Reset wheel delta after frame
                 MouseWheelDelta = 0;
             };
-            Window.RenderFrame += (sender, frameEventArgs) =>
+
+            renderer.RenderFrame += (sender, frameEventArgs) =>
             {
-                OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+                OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
+                renderer.UpdateViewport(ViewPos, ViewSize);
+                renderer.ClearBuffer(Pixel.BLACK, true);
+                renderer.PrepareDrawing();
+                renderer.ApplyTexture(Layers[0].ResID);
+                renderer.UpdateTexture(Layers[0].ResID, Layers[0].DrawTarget);
+                renderer.DrawLayerQuad(Layers[0].vOffset, Layers[0].vScale, Layers[0].Tint);
+                renderer.DisplayFrame();
             };
 
-            Window.MouseWheel += (sender, mouseWheelEventArgs) =>
+            platform.MouseWheel += (sender, mouseWheelEventArgs) =>
             {
                 MouseWheelDelta = mouseWheelEventArgs.Delta;
             };
 
-            Window.MouseMove += (sender, mouseMoveEventArgs) =>
+            platform.MouseMove += (sender, mouseMoveEventArgs) =>
             {
                 MousePosX = mouseMoveEventArgs.X;
                 MousePosY = mouseMoveEventArgs.Y;
             };
 
-            Window.MouseDown += (sender, mouseButtonEventArgs) =>
+            platform.MouseDown += (sender, mouseButtonEventArgs) =>
             {
-                updateMouseButtonStates(mouseButtonEventArgs.Mouse);
+                updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            Window.MouseUp += (sender, mouseButtonEventArgs) =>
+            platform.MouseUp += (sender, mouseButtonEventArgs) =>
             {
-                updateMouseButtonStates(mouseButtonEventArgs.Mouse);
+                updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            if (maxUpdateRate.HasValue)
-                Window.Run(maxUpdateRate.Value);
-            else
-                Window.Run(); // go as fast as possible
+            platform.StartSystemEventLoop();
 
             return 0;
         }
 
-        private void updateMouseButtonStates(MouseState mouseState)
+        public void olc_PrepareEngine()
         {
-            btnStates[(int)csMouseButton.Left].Pressed   = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Middle].Pressed = mouseState.MiddleButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Right].Pressed  = mouseState.RightButton.HasFlag(ButtonState.Pressed);
+            renderer.CreateDevice(FullScreen, EnableVSYNC, ViewPos, ViewSize);
 
-            btnStates[(int)csMouseButton.Left].Released   = !mouseState.LeftButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Middle].Released = !mouseState.MiddleButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Right].Released  = !mouseState.RightButton.HasFlag(ButtonState.Pressed);
+            // TODO: Implement this
+            CreateLayer();
+            Layers[0].bUpdate = true;
+            Layers[0].bShow = true;
+            DrawTarget = Layers[0].DrawTarget;
+
+            construct_fontSheet();
+        }
+
+        public void olc_UpdateWindowSize(int width, int height)
+        {
+            WindowSize = new vec2d_i { x = width, y = height };
+            olc_UpdateViewport();
+        }
+
+        public void olc_UpdateViewport()
+        {
+            int windowWidth = ScreenSize.x * PixelSize.x;
+            int windowHeight = ScreenSize.y * PixelSize.y;
+            float windowAspectRatio = windowWidth / (float)windowHeight;
+
+            var viewY = (int)(WindowSize.x / windowAspectRatio);
+            if (viewY > WindowSize.y)
+            {
+                viewY = WindowSize.y;
+            }
+
+            ViewSize = new vec2d_i { x = WindowSize.x, y = viewY };
+        }
+
+        private void updateMouseButtonStates(MouseButtonEventArgs mouseButtonEvent)
+        {
+            btnStates[(int)mouseButtonEvent.Button].Pressed  =  mouseButtonEvent.IsPressed;
+            btnStates[(int)mouseButtonEvent.Button].Released = !mouseButtonEvent.IsPressed;
+
+            //btnStates[(int)csMouseButton.Left].Pressed   = mouseButtonEvent.LeftButton.HasFlag(ButtonState.Pressed);
+            //btnStates[(int)csMouseButton.Middle].Pressed = mouseButtonEvent.MiddleButton.HasFlag(ButtonState.Pressed);
+            //btnStates[(int)csMouseButton.Right].Pressed  = mouseButtonEvent.RightButton.HasFlag(ButtonState.Pressed);
+
+            //btnStates[(int)csMouseButton.Left].Released   = !mouseButtonEvent.LeftButton.HasFlag(ButtonState.Pressed);
+            //btnStates[(int)csMouseButton.Middle].Released = !mouseButtonEvent.MiddleButton.HasFlag(ButtonState.Pressed);
+            //btnStates[(int)csMouseButton.Right].Released  = !mouseButtonEvent.RightButton.HasFlag(ButtonState.Pressed);
         }
 
         /// <summary>
@@ -1063,8 +1115,20 @@ namespace csPixelGameEngineCore
 
         #endregion // Drawing Methods
 
+        #region Layer Methods
+        public uint CreateLayer()
+        {
+            var ld = new LayerDesc();
+            ld.DrawTarget = new Sprite((uint)ScreenSize.x, (uint)ScreenSize.y);
+            ld.ResID = renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
+            renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
+            Layers.Add(ld);
+            return (uint)(Layers.Count - 1);
+        }
+        #endregion // Layer Methods
+
         #region Overrideable methods you should not override
-        
+
         // I would not recommend doing things this way, but if you must (cause you want to do things the OLC way)
         // then I have provided them here. I would consider using the events instead, when possible.
 

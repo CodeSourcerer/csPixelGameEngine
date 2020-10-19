@@ -4,29 +4,38 @@ using System.Reflection;
 using csPixelGameEngineCore;
 using log4net;
 using log4net.Config;
+using Microsoft.Extensions.DependencyInjection;
+using OpenTK;
+using OpenTK.Graphics;
 
 namespace PixelGameEngineCoreTest
 {
     class DemoApp
     {
         public  const string AppName        = "csPixelGameEngine Demo";
-        private const uint   screenWidth    = 1024;
-        private const uint   screenHeight   = 768;
+        private const int    screenWidth    = 1024;
+        private const int    screenHeight   = 768;
 
         private ResourcePack rp;
         private Sprite[] testAnimation;
+        private static ServiceProvider serviceProvider;
 
         static void Main(string[] args)
         {
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
 
+            serviceProvider = new ServiceCollection()
+                .AddSingleton(new GameWindow(screenWidth, screenHeight, GraphicsMode.Default, AppName, GameWindowFlags.Default, DisplayDevice.Default, 2, 1, GraphicsContextFlags.Default))
+                .AddScoped<IRenderer, GL21Renderer>()
+                .AddScoped<IPlatform, OpenTkPlatform>()
+                .BuildServiceProvider();
+
             DemoApp app = new DemoApp();
             app.Run();
         }
 
-        private GLWindow window;
-        private PixelGameEngine pge = new PixelGameEngine(AppName);
+        private PixelGameEngine pge; // = new PixelGameEngine(AppName);
 
         private Random rnd = new Random();
         private DateTime _dtStartFrame = DateTime.Now;
@@ -38,9 +47,10 @@ namespace PixelGameEngineCoreTest
             testAnimation = new Sprite[10];
             loadTestAnimation();
 
-            window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
+            //window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
+            pge = new PixelGameEngine(serviceProvider.GetService<IRenderer>(), serviceProvider.GetService<IPlatform>(), AppName);
             pge.OnFrameUpdate += updateFrame;
-            pge.Construct(screenWidth, screenHeight, window);
+            pge.Construct(screenWidth, screenHeight, 1, 1, false, false);
             pge.BlendFactor = 0.5f;
             pge.Start();
         }
@@ -66,6 +76,8 @@ namespace PixelGameEngineCoreTest
             //                 new vec2d_i(444, 500),
             //                 Pixel.MAGENTA);
             //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
+
+            //drawRandomPixels();
 
             _curFrameCount++;
             if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
@@ -97,8 +109,8 @@ namespace PixelGameEngineCoreTest
 
         private void drawRandomPixels()
         {
-            for (uint x = 0; x < pge.ScreenWidth; x++)
-                for (uint y = 0; y < pge.ScreenHeight; y++)
+            for (uint x = 0; x < pge.ScreenSize.x; x++)
+                for (uint y = 0; y < pge.ScreenSize.y; y++)
                     pge.Draw(x, y, new Pixel((byte)rnd.Next(255), (byte)rnd.Next(255), (byte)rnd.Next(255)));
         }
 

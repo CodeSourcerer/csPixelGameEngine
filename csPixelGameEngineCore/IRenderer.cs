@@ -21,6 +21,6 @@ namespace csPixelGameEngineCore
         void UpdateViewport(vec2d_i pos, vec2d_i size);
         void ClearBuffer(Pixel p, bool bDepth);
 
-        // Do we really need a PGE reference here??
+        event EventHandler<FrameUpdateEventArgs> RenderFrame;
     }
 }
