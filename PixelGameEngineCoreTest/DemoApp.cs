@@ -18,6 +18,7 @@ namespace PixelGameEngineCoreTest
 
         private ResourcePack rp;
         private Sprite[] testAnimation;
+        private Decal[] testAnimationDecal;
         private static ServiceProvider serviceProvider;
 
         static void Main(string[] args)
@@ -45,6 +46,7 @@ namespace PixelGameEngineCoreTest
         public void Run()
         {
             testAnimation = new Sprite[10];
+            testAnimationDecal = new Decal[10];
             loadTestAnimation();
 
             //window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
@@ -60,7 +62,8 @@ namespace PixelGameEngineCoreTest
             pge.Clear(Pixel.BLUE);
             pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.MASK;
             //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
-            pge.DrawSprite(0, 0, testAnimation[1]);
+            //pge.DrawSprite(0, 0, testAnimation[1]);
+            pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
             showCursorPos(0, 10);
             showMouseWheelDelta(0, 20);
             showMouseButtonState(0, 30, 0);
@@ -124,6 +127,7 @@ namespace PixelGameEngineCoreTest
             {
                 string file = $"./assets/Walking_00{i}.png";
                 testAnimation[i] = new Sprite(file, rp);
+                testAnimationDecal[i] = new Decal(testAnimation[i], serviceProvider.GetService<IRenderer>());
             }
         }
     }

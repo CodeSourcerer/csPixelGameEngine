@@ -75,7 +75,18 @@ namespace csPixelGameEngineCore
 
         public void DrawDecalQuad(DecalInstance decal)
         {
-            throw new NotImplementedException();
+            GL.BindTexture(TextureTarget.Texture2D, decal.decal.Id);
+            GL.Begin(PrimitiveType.Quads);
+            GL.Color4(decal.tint.r, decal.tint.g, decal.tint.b, decal.tint.a);
+            GL.TexCoord4(decal.uv[0].x, decal.uv[0].y, 0.0f, decal.w[0]);
+            GL.Vertex2(decal.pos[0].x, decal.pos[0].y);
+            GL.TexCoord4(decal.uv[1].x, decal.uv[1].y, 0.0f, decal.w[1]);
+            GL.Vertex2(decal.pos[1].x, decal.pos[1].y);
+            GL.TexCoord4(decal.uv[2].x, decal.uv[2].y, 0.0f, decal.w[2]);
+            GL.Vertex2(decal.pos[2].x, decal.pos[2].y);
+            GL.TexCoord4(decal.uv[3].x, decal.uv[3].y, 0.0f, decal.w[3]);
+            GL.Vertex2(decal.pos[3].x, decal.pos[3].y);
+            GL.End();
         }
 
         public void DrawLayerQuad(vec2d_f offset, vec2d_f scale, Pixel tint)
