@@ -355,6 +355,12 @@ namespace csPixelGameEngineCore
 
         public void olc_CoreUpdate()
         {
+            // Handle mouse button held state
+            for (int btn = 0; btn < btnStates.Length; btn++)
+            {
+                btnStates[btn].Held = btnStates[btn].Pressed;
+            }
+
             renderer.UpdateViewport(ViewPos, ViewSize);
             renderer.ClearBuffer(Pixel.BLACK, true);
 
