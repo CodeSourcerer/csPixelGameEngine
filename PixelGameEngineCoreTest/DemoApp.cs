@@ -44,6 +44,9 @@ namespace PixelGameEngineCoreTest
         private DateTime _dtStartFrame = DateTime.Now;
         private int _curFrameCount = 0;
         private int _fps = 0;
+        private float _rotation = 0.0f;
+        private float _rotationStep = (float)(-Math.PI / 32);
+        private float _fullCircle = (float)(2 * Math.PI);
 
         public void Run()
         {
@@ -65,7 +68,12 @@ namespace PixelGameEngineCoreTest
             pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.MASK;
             //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
             //pge.DrawSprite(0, 0, testAnimation[1]);
-            pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
+            //pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
+            _rotation += _rotationStep % _fullCircle;
+            pge.DrawRotatedDecal(new vec2d_f(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f),
+                                 testAnimationDecal[1],
+                                 _rotation,
+                                 new vec2d_f(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f));
             showCursorPos(0, 20);
             showMouseWheelDelta(0, 30);
             showMouseButtonState(0, 40, 0);

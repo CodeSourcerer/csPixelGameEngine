@@ -1156,9 +1156,24 @@ namespace csPixelGameEngineCore
             // TODO: Finish...
         }
 
-        public void DrawRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f? center = null, vec2d_f? scale = null, Pixel? tint = null)
+        public void DrawRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f? scale = null, Pixel? tint = null)
         {
-
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            di.pos[0] = (new vec2d_f(0.0f, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[1] = (new vec2d_f(0.0f, decal.sprite.Height) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[2] = (new vec2d_f(decal.sprite.Width, decal.sprite.Height) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[3] = (new vec2d_f(decal.sprite.Width, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            float c = (float)Math.Cos(fAngle);
+            float s = (float)Math.Sin(fAngle);
+            for (int i = 0; i < 4; i++)
+            {
+                di.pos[i] = pos + new vec2d_f(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
+                di.pos[i] = di.pos[i] * invScreenSize * 2.0f - vec2d_f.UNIT;
+                di.pos[i].y *= -1.0f;
+            }
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
         }
 
         public void DrawStringDecal(int x, int y, string sText, Pixel? col = null)
