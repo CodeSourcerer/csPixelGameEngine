@@ -1147,13 +1147,42 @@ namespace csPixelGameEngineCore
         /// Draw a decal with arbitrary bounds.
         /// </summary>
         /// <param name="decal"></param>
-        /// <param name="pos">Must be an array of 4 elements (x1, y1, x2, y2)</param>
+        /// <param name="pos">Must be an array of 4 elements (top-right, bottom-right, bottom-left, top-left)</param>
         /// <param name="tint">If null, will use Pixel.WHITE</param>
         public void DrawWarpedDecal(Decal decal, vec2d_f[] pos, Pixel? tint = null)
         {
-            if (!tint.HasValue) tint = Pixel.WHITE;
+            // Thanks Nathan Reed, a brilliant article explaining whats going on here
+            // http://www.reedbeta.com/blog/quadrilateral-interpolation-part-1/
 
-            // TODO: Finish...
+            if (pos.Length != 4)
+                throw new ArgumentException(nameof(pos), "Array must have 4 elements");
+
+            DecalInstance di = new DecalInstance
+            {
+                decal = decal,
+                tint = tint ?? Pixel.WHITE
+            };
+            vec2d_f center = vec2d_f.UNIT;
+
+            float rd = ((pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y));
+            if (rd != 0)
+            {
+                rd = 1.0f / rd;
+                float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+                float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+                if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+                    center = pos[0] + rn * (pos[2] - pos[0]);
+                float[] d = new float[4];
+                for (int i = 0; i < 4; i++)
+                    d[i] = (pos[i] - center).mag();
+                for (int i = 0; i < 4; i++)
+                {
+                    float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                    di.uv[i] *= q; di.w[i] *= q;
+                    di.pos[i] = new vec2d_f((pos[i].x * invScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f );
+                }
+                Layers[(int)TargetLayer].DecalInstance.Add(di);
+            }
         }
 
         public void DrawRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f? scale = null, Pixel? tint = null)

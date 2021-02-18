@@ -74,6 +74,13 @@ namespace PixelGameEngineCoreTest
                                  testAnimationDecal[1],
                                  _rotation,
                                  new vec2d_f(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f));
+            pge.DrawWarpedDecal(testAnimationDecal[1],
+                                new vec2d_f[] {
+                                    new vec2d_f(400.0f, 200.0f),
+                                    new vec2d_f(780.0f, 550.0f),
+                                    new vec2d_f(10.0f,  500.0f),
+                                    new vec2d_f(200.0f, 120.0f)
+                                });
             showCursorPos(0, 20);
             showMouseWheelDelta(0, 30);
             showMouseButtonState(0, 40, 0);
