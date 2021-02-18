@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -77,7 +78,7 @@ namespace csPixelGameEngineCore
         public vec2d_f  PixelRatio          { get; private set; }  // no idea what this is right now...
         public uint     FPS                 { get; private set; }
         public uint     TargetLayer         { get; private set; }
-        
+
         public List<LayerDesc> Layers       { get; private set; }
 
         private vec2d_i screenSize;
@@ -144,6 +145,7 @@ namespace csPixelGameEngineCore
         private readonly IRenderer renderer;
         private readonly IPlatform platform;
         private Sprite fontSprite;
+        private Decal fontDecal;
         private HWButton[] btnStates = {
             new HWButton { Released = true, Pressed = false, Held = false },
             new HWButton { Released = true, Pressed = false, Held = false },
@@ -248,6 +250,8 @@ namespace csPixelGameEngineCore
                     if (++py == 48) { px++; py = 0; }
                 }
             }
+
+            fontDecal = new Decal(fontSprite, renderer);
         }
 
         /// <summary>
@@ -1090,6 +1094,7 @@ namespace csPixelGameEngineCore
             di.pos[1] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpaceDim.y };
             di.pos[2] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpaceDim.y };
             di.pos[3] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpacePos.y };
+
             Layers[(int)TargetLayer].DecalInstance.Add(di);
         }
 
@@ -1114,8 +1119,8 @@ namespace csPixelGameEngineCore
             };
             vec2d_f vScreenSpaceDim = new vec2d_f
             {
-                x = vScreenSpacePos.x + (2.0f * decal.sprite.Width * invScreenSize.x) * scale.Value.x,
-                y = vScreenSpacePos.y - (2.0f * decal.sprite.Height * invScreenSize.y) * scale.Value.y
+                x = vScreenSpacePos.x + (2.0f * source_size.x * invScreenSize.x) * scale.Value.x,
+                y = vScreenSpacePos.y - (2.0f * source_size.y * invScreenSize.y) * scale.Value.y
             };
 
             DecalInstance di = new DecalInstance
@@ -1134,6 +1139,7 @@ namespace csPixelGameEngineCore
             di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
             di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
             di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
+
             Layers[(int)TargetLayer].DecalInstance.Add(di);
         }
 
@@ -1155,9 +1161,31 @@ namespace csPixelGameEngineCore
 
         }
 
+        public void DrawStringDecal(int x, int y, string sText, Pixel? col = null)
+        {
+            DrawStringDecal(new vec2d_f { x = x, y = y }, sText, col);
+        }
+
 		public void DrawStringDecal(vec2d_f pos, string sText, Pixel? col = null, vec2d_f? scale = null)
         {
+            vec2d_f spos = new vec2d_f();
+            scale = scale ?? vec2d_f.UNIT;
 
+            foreach (var c in sText)
+            {
+                if (c == '\n')
+                {
+                    spos.x = 0;
+                    spos.y += 8.0f * scale.Value.y;
+                }
+                else
+                {
+                    int ox = (c - 32) % 16;
+                    int oy = (c - 32) / 16;
+                    DrawPartialDecal(pos + spos, fontDecal, new vec2d_f { x = ox * 8.0f, y = oy * 8.0f }, new vec2d_f(8.0f, 8.0f), scale, col);
+                    spos.x += 8.0f * scale.Value.x;
+                }
+            }
         }
 
 		public void DrawPartialRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
@@ -1179,6 +1207,7 @@ namespace csPixelGameEngineCore
             ld.DrawTarget = new Sprite((uint)ScreenSize.x, (uint)ScreenSize.y);
             ld.ResID = renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
             renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
+
             Layers.Add(ld);
             return (uint)(Layers.Count - 1);
         }

@@ -25,9 +25,11 @@ namespace PixelGameEngineCoreTest
         {
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+            var gameWindow = new GameWindow(screenWidth, screenHeight, GraphicsMode.Default, AppName, GameWindowFlags.Default, DisplayDevice.Default, 2, 1,
+                GraphicsContextFlags.Default);
 
             serviceProvider = new ServiceCollection()
-                .AddSingleton(new GameWindow(screenWidth, screenHeight, GraphicsMode.Default, AppName, GameWindowFlags.Default, DisplayDevice.Default, 2, 1, GraphicsContextFlags.Default))
+                .AddSingleton(gameWindow)
                 .AddScoped<IRenderer, GL21Renderer>()
                 .AddScoped<IPlatform, OpenTkPlatform>()
                 .BuildServiceProvider();
@@ -64,11 +66,11 @@ namespace PixelGameEngineCoreTest
             //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
             //pge.DrawSprite(0, 0, testAnimation[1]);
             pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
-            showCursorPos(0, 10);
-            showMouseWheelDelta(0, 20);
-            showMouseButtonState(0, 30, 0);
-            showMouseButtonState(0, 40, 1);
-            showMouseButtonState(0, 50, 2);
+            showCursorPos(0, 20);
+            showMouseWheelDelta(0, 30);
+            showMouseButtonState(0, 40, 0);
+            showMouseButtonState(0, 50, 1);
+            showMouseButtonState(0, 60, 2);
             //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
             //pge.DrawCircle(100, 100, 100, Pixel.RED);
@@ -89,17 +91,17 @@ namespace PixelGameEngineCoreTest
                 _curFrameCount = 0;
                 _dtStartFrame = DateTime.Now;
             }
-            pge.DrawString(0, 0, $"FPS: {_fps}", Pixel.BLACK);
+            pge.DrawStringDecal(0, 10, $"FPS: {_fps}", Pixel.BLACK);
         }
 
         private void showCursorPos(int x, int y)
         {
-            pge.DrawString(x, y, $"Mouse: {pge.MousePosX}, {pge.MousePosY}", Pixel.BLACK);
+            pge.DrawStringDecal(x, y, $"Mouse: {pge.MousePosX}, {pge.MousePosY}", Pixel.BLACK);
         }
 
         private void showMouseWheelDelta(int x, int y)
         {
-            pge.DrawString(x, y, $"Wheel Delta: {pge.MouseWheelDelta}", Pixel.BLACK);
+            pge.DrawStringDecal(x, y, $"Wheel Delta: {pge.MouseWheelDelta}", Pixel.BLACK);
         }
 
         private void showMouseButtonState(int x, int y, uint button)
@@ -107,7 +109,7 @@ namespace PixelGameEngineCoreTest
             var btnState = pge.GetMouse(button);
 
             string display = $"BTN {button} [Released:{btnState.Released}] [Pressed:{btnState.Pressed}] [Held: {btnState.Held}]";
-            pge.DrawString(x, y, display, Pixel.BLACK);
+            pge.DrawStringDecal(x, y, display, Pixel.BLACK);
         }
 
         private void drawRandomPixels()
