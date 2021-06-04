@@ -8,6 +8,7 @@ namespace csPixelGameEngineCore.Enums
     {
         Left,
         Middle,
-        Right
+        Right,
+        Unknown
     }
 }

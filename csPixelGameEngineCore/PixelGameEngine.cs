@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,10 +9,10 @@ using log4net;
 using OpenTK.Input;
 
 /*
-	+-------------------------------------------------------------+
-	|           OneLoneCoder Pixel Game Engine v1.23              |
-	| "Like the command prompt console one, but not..." - javidx9 |
-	+-------------------------------------------------------------+
+    +-------------------------------------------------------------+
+    |           OneLoneCoder Pixel Game Engine v1.23              |
+    | "Like the command prompt console one, but not..." - javidx9 |
+    +-------------------------------------------------------------+
     ... ported to C#!
 
 License (OLC-3)
@@ -61,27 +62,41 @@ namespace csPixelGameEngineCore
         private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
 
         public string   AppName             { get; private set; }
-        public GLWindow Window              { get; private set; }
+        //public GLWindow Window              { get; private set; }
         public bool     FullScreen          { get; private set; }
         public bool     EnableVSYNC         { get; private set; }
-        public uint     ScreenWidth         { get; private set; }
-        public uint     ScreenHeight        { get; private set; }
+        public vec2d_i  ViewPos             { get; private set; }
+        public vec2d_i  ViewSize            { get; private set; }
+        public vec2d_i  WindowSize          { get; private set; }
         public int      DrawTargetWidth     { get; private set; }
         public int      DrawTargetHeight    { get; private set; }
         public Sprite   DefaultDrawTarget   { get; private set; }
-        public uint     PixelWidth          { get; private set; }
-        public uint     PixelHeight         { get; private set; }
         public int      MousePosX           { get; private set; }
         public int      MousePosY           { get; private set; }
         public int      MouseWheelDelta     { get; private set; }
-        public float    PixelX              { get; set; }
-        public float    PixelY              { get; set; }
+        public vec2d_i  PixelSize           { get; private set; }
+        public vec2d_f  PixelRatio          { get; private set; }  // no idea what this is right now...
+        public uint     FPS                 { get; private set; }
+        public uint     TargetLayer         { get; private set; }
 
-        private Sprite drawTarget;
+        public List<LayerDesc> Layers       { get; private set; }
+
+        private vec2d_i screenSize;
+        public vec2d_i ScreenSize
+        {
+            get => screenSize;
+            private set
+            {
+                screenSize = value;
+                invScreenSize = 1.0f / value;
+            }
+        }
+
         public Sprite DrawTarget
         {
-            get => drawTarget;
-            set => drawTarget = value ?? DefaultDrawTarget;
+            get;
+            // Use SetDrawTarget()
+            private set;
         }
 
         private float blendFactor;
@@ -90,11 +105,11 @@ namespace csPixelGameEngineCore
             get => blendFactor;
 
             set => blendFactor = value switch
-                {
-                    _ when value < 0.0f => 0.0f,
-                    _ when value > 1.0f => 1.0f,
-                    _ => value
-                };
+            {
+                _ when value < 0.0f => 0.0f,
+                _ when value > 1.0f => 1.0f,
+                _ => value
+            };
         }
 
         private PixelBlender funcPixelBlender;
@@ -126,13 +141,21 @@ namespace csPixelGameEngineCore
             }
         }
 
+        private vec2d_f invScreenSize;
+        private readonly IRenderer renderer;
+        private readonly IPlatform platform;
         private Sprite fontSprite;
-        private HWButton[] btnStates = { new HWButton(), new HWButton(), new HWButton() };
+        private Decal fontDecal;
+        private HWButton[] btnStates = {
+            new HWButton { Released = true, Pressed = false, Held = false },
+            new HWButton { Released = true, Pressed = false, Held = false },
+            new HWButton { Released = true, Pressed = false, Held = false }
+        };
 
         #region Events
 
         /// <summary>
-        /// This event fires once per frame
+        /// This event fires once per frame and replaces OnUserUpdate()
         /// </summary>
         public event FrameUpdateEventHandler OnFrameUpdate;
 
@@ -150,9 +173,15 @@ namespace csPixelGameEngineCore
 
         #endregion // Events
 
-        public PixelGameEngine(string appName)
+        public PixelGameEngine(IRenderer renderer, IPlatform platform, string appName = null)
         {
+            if (renderer == null) throw new ArgumentNullException(nameof(renderer));
+            if (platform == null) throw new ArgumentNullException(nameof(platform));
+
+            this.renderer = renderer;
+            this.platform = platform;
             AppName = string.IsNullOrWhiteSpace(appName) ? "Undefined" : appName;
+            Layers = new List<LayerDesc>();
         }
 
         /// <summary>
@@ -161,37 +190,27 @@ namespace csPixelGameEngineCore
         /// <param name="screen_w"></param>
         /// <param name="screen_h"></param>
         /// <param name="window"></param>
-        /// <returns>0 on success, -1 on failure</returns>
-        public int Construct(uint screen_w, uint screen_h, GLWindow window)
+        /// <exception cref="ArgumentException"></exception>
+        /// <remarks>
+        /// Original returns an error code. I opted to throw an exception instead.
+        /// </remarks>
+        public void Construct(uint screen_w, uint screen_h, uint pixel_w, uint pixel_h, bool full_screen, bool vsync)
         {
-            if (window == null) throw new ArgumentNullException(nameof(window));
             if (screen_w == 0) throw new ArgumentException("Must be at least 1", nameof(screen_w));
             if (screen_h == 0) throw new ArgumentException("Must be at least 1", nameof(screen_h));
+            if (pixel_w == 0) throw new ArgumentException("Must be at least 1", nameof(pixel_w));
+            if (pixel_h == 0) throw new ArgumentException("Must be at least 1", nameof(pixel_h));
 
-            Window          = window;
-            ScreenWidth     = screen_w;
-            ScreenHeight    = screen_h;
-            FullScreen      = (window.WindowState == OpenTK.WindowState.Fullscreen);
-            EnableVSYNC     = (window.VSync == OpenTK.VSyncMode.On);
-            PixelWidth      = window.PixelWidth;
-            PixelHeight     = window.PixelHeight;
-            PixelX          = 2.0f / ScreenWidth;
-            PixelY          = 2.0f / ScreenHeight;
-
-            if (PixelWidth == 0 || PixelHeight == 0 || ScreenWidth == 0 || ScreenHeight == 0)
-            {
-                Log.Error("WTF man.... set a width and height!");
-                // FAIL!
-                return -1;
-            }
-            // Load the default font sheet
-            construct_fontSheet();
+            //Window = window;
+            ScreenSize = new vec2d_i { x = (int)screen_w, y = (int)screen_h };
+            FullScreen = full_screen; //(window.WindowState == OpenTK.WindowState.Fullscreen);
+            EnableVSYNC = vsync; //(window.VSync == OpenTK.VSyncMode.On);
+            PixelSize = new vec2d_i { x = (int)pixel_w, y = (int)pixel_h };
+            PixelRatio = 2.0f / ScreenSize;
 
             // Create a sprite that represents the primary drawing target
-            DefaultDrawTarget = window.DrawTarget;
-            drawTarget = DefaultDrawTarget;
-
-            return 0;
+            //DefaultDrawTarget = window.DrawTarget;
+            //drawTarget = DefaultDrawTarget;
         }
 
         private void construct_fontSheet()
@@ -231,6 +250,8 @@ namespace csPixelGameEngineCore
                     if (++py == 48) { px++; py = 0; }
                 }
             }
+
+            fontDecal = new Decal(fontSprite, renderer);
         }
 
         /// <summary>
@@ -240,88 +261,180 @@ namespace csPixelGameEngineCore
         /// <param name="h">Height, in pixels</param>
         public void SetScreenSize(uint w, uint h)
         {
-            ScreenWidth = w;
-            ScreenHeight = h;
-            Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
-            updateViewPort();
+            if (w == 0) throw new ArgumentException("Must be at least 1", nameof(w));
+            if (h == 0) throw new ArgumentException("Must be at least 1", nameof(h));
+
+            ScreenSize = new vec2d_i { x = (int)w, y = (int)h };
+            // TODO: Update layers
+
+            //Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
+            DrawTarget = null;
+
+            renderer.ClearBuffer(Pixel.BLACK, true);
+            renderer.DisplayFrame();
+            renderer.ClearBuffer(Pixel.BLACK, true);
+            renderer.UpdateViewport(ViewPos, ViewSize);
         }
 
-        private void updateViewPort()
+        /// <summary>
+        /// This starts the engine and the rendering loop.
+        /// </summary>
+        /// <param name="maxUpdateRate"></param>
+        /// <returns></returns>
+        public int Start()
         {
-            uint windowWidth = ScreenWidth * PixelWidth;
-            uint windowHeight = ScreenHeight * PixelHeight;
-            float windowAsp = (float)windowWidth / windowHeight;
-            Window.ViewWidth = windowWidth;
-            Window.ViewHeight = (uint)(windowWidth / windowAsp);
+            // In the C++ implementation, there is a platform class for handling platform specific things.
+            // This is .NET Core, which runs on all platforms it supports so we don't need it and thus, we
+            // deviate a bit. Instead of creating a window, we will set up the renderer here.
+            olc_UpdateWindowSize(WindowSize.x, WindowSize.y);
 
-            if (Window.ViewHeight > windowHeight)
-            {
-                Window.ViewHeight = windowHeight;
-                Window.ViewWidth = (uint)(windowHeight * windowAsp);
-            }
+            // The C++ implementation creates an engine thread here, which does a whole lot of things .NET handles for us.
+            // Instead, we will do the gist of what it was doing by using event handlers.
+            olc_PrepareEngine();
 
-            Window.ViewX = (windowWidth - Window.ViewWidth) / 2;
-            Window.ViewY = (windowHeight - Window.ViewHeight) / 2;
-        }
-
-        public int Start(double? maxUpdateRate = null)
-        {
+            // This simulates "OnUserCreate()"
             OnCreate?.Invoke(this, new EventArgs());
-
-            Window.Closed += (sender, cancelEventArgs) =>
+            
+            platform.Closed += (sender, eventArgs) =>
             {
                 OnDestroy?.Invoke(sender, EventArgs.Empty);
             };
-            // Since GLWindow already has an update loop with events, lets tap into that
-            Window.UpdateFrame += (sender, frameEventArgs) =>
+
+            platform.Resize += (sender, eventArgs) =>
             {
-                OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+                olc_UpdateWindowSize(platform.WindowWidth, platform.WindowHeight);
+            };
+
+            platform.UpdateFrame += (sender, frameEventArgs) =>
+            {
+                OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 // Reset wheel delta after frame
                 MouseWheelDelta = 0;
             };
-            Window.RenderFrame += (sender, frameEventArgs) =>
+
+            renderer.RenderFrame += (sender, frameEventArgs) =>
             {
-                OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.Time));
+                OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
+                olc_CoreUpdate();
             };
 
-            Window.MouseWheel += (sender, mouseWheelEventArgs) =>
+            platform.MouseWheel += (sender, mouseWheelEventArgs) =>
             {
                 MouseWheelDelta = mouseWheelEventArgs.Delta;
             };
 
-            Window.MouseMove += (sender, mouseMoveEventArgs) =>
+            platform.MouseMove += (sender, mouseMoveEventArgs) =>
             {
                 MousePosX = mouseMoveEventArgs.X;
                 MousePosY = mouseMoveEventArgs.Y;
             };
 
-            Window.MouseDown += (sender, mouseButtonEventArgs) =>
+            platform.MouseDown += (sender, mouseButtonEventArgs) =>
             {
-                updateMouseButtonStates(mouseButtonEventArgs.Mouse);
+                updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            Window.MouseUp += (sender, mouseButtonEventArgs) =>
+            platform.MouseUp += (sender, mouseButtonEventArgs) =>
             {
-                updateMouseButtonStates(mouseButtonEventArgs.Mouse);
+                updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            if (maxUpdateRate.HasValue)
-                Window.Run(maxUpdateRate.Value);
-            else
-                Window.Run(); // go as fast as possible
+            platform.StartSystemEventLoop();
 
             return 0;
         }
 
-        private void updateMouseButtonStates(MouseState mouseState)
+        public void olc_PrepareEngine()
         {
-            btnStates[(int)csMouseButton.Left].Pressed   = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Middle].Pressed = mouseState.MiddleButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Right].Pressed  = mouseState.RightButton.HasFlag(ButtonState.Pressed);
+            renderer.CreateDevice(FullScreen, EnableVSYNC, ViewPos, ViewSize);
 
-            btnStates[(int)csMouseButton.Left].Released   = !mouseState.LeftButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Middle].Released = !mouseState.MiddleButton.HasFlag(ButtonState.Pressed);
-            btnStates[(int)csMouseButton.Right].Released  = !mouseState.RightButton.HasFlag(ButtonState.Pressed);
+            // TODO: Implement this
+            CreateLayer();
+            Layers[0].bUpdate = true;
+            Layers[0].bShow = true;
+            DrawTarget = Layers[0].DrawTarget;
+
+            construct_fontSheet();
+        }
+
+        public void olc_CoreUpdate()
+        {
+            // Handle mouse button held state
+            for (int btn = 0; btn < btnStates.Length; btn++)
+            {
+                btnStates[btn].Held = btnStates[btn].Pressed;
+            }
+
+            renderer.UpdateViewport(ViewPos, ViewSize);
+            renderer.ClearBuffer(Pixel.BLACK, true);
+
+            // Ensure layer 0 is active
+            Layers[0].bUpdate = true;
+            Layers[0].bShow = true;
+
+            renderer.PrepareDrawing();
+
+            // Draw all active layers
+            foreach (var layer in Layers)
+            {
+                if (layer.bShow)
+                {
+                    if (layer.funcHook == null)
+                    {
+                        renderer.ApplyTexture(layer.ResID);
+                        if (layer.bUpdate)
+                        {
+                            renderer.UpdateTexture(layer.ResID, layer.DrawTarget);
+                            layer.bUpdate = false;
+                        }
+
+                        renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
+
+                        // Display decals in order for this layer
+                        foreach (var decal in layer.DecalInstance)
+                        {
+                            renderer.DrawDecalQuad(decal);
+                        }
+
+                        layer.DecalInstance.Clear();
+                    }
+                    else
+                    {
+                        layer.funcHook();
+                    }
+                }
+            }
+
+            renderer.DisplayFrame();
+        }
+
+        public void olc_UpdateWindowSize(int width, int height)
+        {
+            WindowSize = new vec2d_i { x = width, y = height };
+            olc_UpdateViewport();
+        }
+
+        public void olc_UpdateViewport()
+        {
+            int windowWidth = ScreenSize.x * PixelSize.x;
+            int windowHeight = ScreenSize.y * PixelSize.y;
+            float windowAspectRatio = windowWidth / (float)windowHeight;
+
+            var viewY = (int)(WindowSize.x / windowAspectRatio);
+            if (viewY > WindowSize.y)
+            {
+                viewY = WindowSize.y;
+            }
+
+            ViewSize = new vec2d_i { x = WindowSize.x, y = viewY };
+        }
+
+        private void updateMouseButtonStates(MouseButtonEventArgs mouseButtonEvent)
+        {
+            // Event not generated when button held, so below does not work.
+            //btnStates[(int)mouseButtonEvent.Button].Held     = btnStates[(int)mouseButtonEvent.Button].Pressed && mouseButtonEvent.IsPressed;
+            btnStates[(int)mouseButtonEvent.Button].Pressed  =  mouseButtonEvent.IsPressed;
+            btnStates[(int)mouseButtonEvent.Button].Released = !mouseButtonEvent.IsPressed;
         }
 
         /// <summary>
@@ -708,7 +821,7 @@ namespace csPixelGameEngineCore
                             t1x += signx1;
                     }
                     // Move line
-                next1:
+                    next1:
                     // process second line until y value is about to change
                     while (true)
                     {
@@ -726,7 +839,7 @@ namespace csPixelGameEngineCore
                             break;
                         else t2x += signx2;
                     }
-                next2:
+                    next2:
 
                     if (minx > t1x) minx = t1x;
                     if (minx > t2x) minx = t2x;
@@ -783,7 +896,7 @@ namespace csPixelGameEngineCore
                     else t1x += signx1;
                     if (i < dx1) i++;
                 }
-            next3:
+                next3:
 
                 // process second line until y value is about to change
                 while (t2x != x3)
@@ -801,7 +914,7 @@ namespace csPixelGameEngineCore
                     if (changed2) break;
                     else t2x += signx2;
                 }
-            next4:
+                next4:
 
                 if (minx > t1x) minx = t1x;
                 if (minx > t2x) minx = t2x;
@@ -945,10 +1058,337 @@ namespace csPixelGameEngineCore
                 DrawTarget.ColorData[i] = p;
         }
 
+        //=====================================================================
+        // Decal Drawing
+        //=====================================================================
+
+        /// <summary>
+        /// Draws a whole decal, with optional scale and tinting
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="decal"></param>
+        /// <param name="scale">If null, will use vec2d_f.UNIT</param>
+        /// <param name="tint">If null, will use Pixel.WHITE</param>
+        public void DrawDecal(vec2d_f pos, Decal decal, vec2d_f? scale = null, Pixel? tint = null)
+        {
+            if (!scale.HasValue) scale = vec2d_f.UNIT;
+            if (!tint.HasValue) tint = Pixel.WHITE;
+
+            vec2d_f vScreenSpacePos = new vec2d_f
+            {
+                x = (pos.x * invScreenSize.x) * 2.0f - 1.0f,
+                y = ((pos.y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f
+            };
+            vec2d_f vScreenSpaceDim = new vec2d_f
+            {
+                x = vScreenSpacePos.x + (2.0f * decal.sprite.Width * invScreenSize.x) * scale.Value.x,
+                y = vScreenSpacePos.y - (2.0f * decal.sprite.Height * invScreenSize.y) * scale.Value.y
+            };
+
+            DecalInstance di = new DecalInstance
+            {
+                decal = decal,
+                tint = tint.Value
+            };
+            di.pos[0] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpacePos.y };
+            di.pos[1] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpaceDim.y };
+            di.pos[2] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpaceDim.y };
+            di.pos[3] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpacePos.y };
+
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
+        }
+
+        /// <summary>
+        /// Draws a region of a decal, with optional scale and tinting
+        /// </summary>
+        /// <param name="pos"></param>
+        /// <param name="decal"></param>
+        /// <param name="source_pos"></param>
+        /// <param name="source_size"></param>
+        /// <param name="scale">If null, will use vec2d_f.UNIT</param>
+        /// <param name="tint">If null, will use Pixel.WHITE</param>
+        public void DrawPartialDecal(vec2d_f pos, Decal decal, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
+        {
+            if (!scale.HasValue) scale = vec2d_f.UNIT;
+            if (!tint.HasValue) tint = Pixel.WHITE;
+
+            vec2d_f vScreenSpacePos = new vec2d_f
+            {
+                x = (pos.x * invScreenSize.x) * 2.0f - 1.0f,
+                y = ((pos.y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f
+            };
+            vec2d_f vScreenSpaceDim = new vec2d_f
+            {
+                x = vScreenSpacePos.x + (2.0f * source_size.x * invScreenSize.x) * scale.Value.x,
+                y = vScreenSpacePos.y - (2.0f * source_size.y * invScreenSize.y) * scale.Value.y
+            };
+
+            DecalInstance di = new DecalInstance
+            {
+                decal = decal,
+                tint = tint.Value
+            };
+            di.pos[0] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpacePos.y };
+            di.pos[1] = new vec2d_f { x = vScreenSpacePos.x, y = vScreenSpaceDim.y };
+            di.pos[2] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpaceDim.y };
+            di.pos[3] = new vec2d_f { x = vScreenSpaceDim.x, y = vScreenSpacePos.y };
+
+            vec2d_f uvtl = source_pos * decal.vUVScale;
+            vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+            di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+            di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+            di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+            di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
+
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
+        }
+
+        /// <summary>
+        /// Draw a decal with arbitrary bounds.
+        /// </summary>
+        /// <param name="decal"></param>
+        /// <param name="pos">Must be an array of 4 elements (top-right, bottom-right, bottom-left, top-left)</param>
+        /// <param name="tint">If null, will use Pixel.WHITE</param>
+        public void DrawWarpedDecal(Decal decal, vec2d_f[] pos, Pixel? tint = null)
+        {
+            // Thanks Nathan Reed, a brilliant article explaining whats going on here
+            // http://www.reedbeta.com/blog/quadrilateral-interpolation-part-1/
+
+            if (pos.Length != 4)
+                throw new ArgumentException(nameof(pos), "Array must have 4 elements");
+
+            DecalInstance di = new DecalInstance
+            {
+                decal = decal,
+                tint = tint ?? Pixel.WHITE
+            };
+            vec2d_f center = vec2d_f.UNIT;
+
+            float rd = (pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y);
+            if (rd != 0)
+            {
+                rd = 1.0f / rd;
+                float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+                float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+                if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+                    center = pos[0] + rn * (pos[2] - pos[0]);
+                float[] d = new float[4];
+                for (int i = 0; i < 4; i++)
+                    d[i] = (pos[i] - center).mag();
+                for (int i = 0; i < 4; i++)
+                {
+                    float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                    di.uv[i] *= q;
+                    di.w[i] *= q;
+                    di.pos[i] = new vec2d_f((pos[i].x * invScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f);
+                }
+                Layers[(int)TargetLayer].DecalInstance.Add(di);
+            }
+        }
+
+        public void DrawRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f? scale = null, Pixel? tint = null)
+        {
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            di.pos[0] = (new vec2d_f(0.0f, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[1] = (new vec2d_f(0.0f, decal.sprite.Height) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[2] = (new vec2d_f(decal.sprite.Width, decal.sprite.Height) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[3] = (new vec2d_f(decal.sprite.Width, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            float c = (float)Math.Cos(fAngle);
+            float s = (float)Math.Sin(fAngle);
+            for (int i = 0; i < 4; i++)
+            {
+                di.pos[i] = pos + new vec2d_f(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
+                di.pos[i] = di.pos[i] * invScreenSize * 2.0f - vec2d_f.UNIT;
+                di.pos[i].y *= -1.0f;
+            }
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
+        }
+
+        public void DrawStringDecal(int x, int y, string sText, Pixel? col = null)
+        {
+            DrawStringDecal(new vec2d_f { x = x, y = y }, sText, col);
+        }
+
+        public void DrawStringDecal(vec2d_f pos, string sText, Pixel? col = null, vec2d_f? scale = null)
+        {
+            vec2d_f spos = new vec2d_f();
+            scale = scale ?? vec2d_f.UNIT;
+
+            foreach (var c in sText)
+            {
+                if (c == '\n')
+                {
+                    spos.x = 0;
+                    spos.y += 8.0f * scale.Value.y;
+                }
+                else
+                {
+                    int ox = (c - 32) % 16;
+                    int oy = (c - 32) / 16;
+                    DrawPartialDecal(pos + spos, fontDecal, new vec2d_f { x = ox * 8.0f, y = oy * 8.0f }, new vec2d_f(8.0f, 8.0f), scale, col);
+                    spos.x += 8.0f * scale.Value.x;
+                }
+            }
+        }
+
+        public void DrawPartialRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
+        {
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            di.pos[0] = (new vec2d_f(0.0f, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[1] = (new vec2d_f(0.0f, source_size.y) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[2] = (new vec2d_f(source_size.x, source_size.y) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[3] = (new vec2d_f(source_size.x, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            float c = (float)Math.Cos(fAngle), s = (float)Math.Sin(fAngle);
+            for (int i = 0; i < 4; i++)
+            {
+                di.pos[i] = pos + new vec2d_f(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
+                di.pos[i] = di.pos[i] * invScreenSize * 2.0f - vec2d_f.UNIT;
+                di.pos[i].y *= -1.0f;
+            }
+
+            vec2d_f uvtl = source_pos * decal.vUVScale;
+            vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+            di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+            di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+            di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+            di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
+
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
+        }
+
+        public void DrawPartialWarpedDecal(Decal decal, vec2d_f[] pos, vec2d_f source_pos, vec2d_f source_size, Pixel? tint = null)
+        {
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            vec2d_f center = new vec2d_f();
+            float rd = ((pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y));
+            if (rd != 0)
+            {
+                vec2d_f uvtl = source_pos * decal.vUVScale;
+                vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+                di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+                di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+                di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+                di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
+
+                rd = 1.0f / rd;
+                float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+                float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+                if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+                    center = pos[0] + rn * (pos[2] - pos[0]);
+                float[] d = new float[4];
+                for (int i = 0; i < 4; i++)
+                    d[i] = (pos[i] - center).mag();
+                for (int i = 0; i < 4; i++)
+                {
+                    float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                    di.uv[i] *= q;
+                    di.w[i] *= q;
+                    di.pos[i] = new vec2d_f { x = (pos[i].x * invScreenSize.x) * 2.0f - 1.0f, y = ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f };
+                }
+                Layers[(int)TargetLayer].DecalInstance.Add(di);
+            }
+        }
+
         #endregion // Drawing Methods
 
+        #region Layer Methods
+        public uint CreateLayer()
+        {
+            var ld = new LayerDesc();
+            ld.DrawTarget = new Sprite((uint)ScreenSize.x, (uint)ScreenSize.y);
+            ld.ResID = renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
+            renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
+
+            Layers.Add(ld);
+            return (uint)(Layers.Count - 1);
+        }
+
+        /// <summary>
+        /// Sets the draw target to the given sprite. Null can be used for layer 0.
+        /// </summary>
+        /// <param name="target">Sprite to set draw target to. Null for layer 0.</param>
+        public void SetDrawTarget(Sprite target)
+        {
+            if (target != null)
+            {
+                DrawTarget = target;
+            }
+            else
+            {
+                TargetLayer = 0;
+                DrawTarget = Layers[0].DrawTarget;
+            }
+        }
+
+        public void SetDrawTarget(uint layer)
+        {
+            if (layer < Layers.Count)
+            {
+                DrawTarget = Layers[(int)layer].DrawTarget;
+                Layers[(int)layer].bUpdate = true;
+                TargetLayer = layer;
+            }
+        }
+
+        public void EnableLayer(uint layer, bool enabled)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].bShow = enabled;
+            }
+        }
+
+        public void SetLayerOffset(uint layer, vec2d_f offset)
+        {
+            SetLayerOffset(layer, offset.x, offset.y);
+        }
+
+        public void SetLayerOffset(uint layer, float xOffset, float yOffset)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].vOffset = new vec2d_f { x = xOffset, y = yOffset };
+            }
+        }
+
+        public void SetLayerScale(uint layer, vec2d_f scale)
+        {
+            SetLayerScale(layer, scale.x, scale.y);
+        }
+
+        public void SetLayerScale(uint layer, float xScale, float yScale)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].vScale = new vec2d_f { x = xScale, y = yScale };
+            }
+        }
+
+        public void SetLayerTint(uint layer, Pixel tint)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].Tint = tint;
+            }
+        }
+
+        public void SetLayerCustomRenderFunction(uint layer, Action func)
+        {
+            if (layer < Layers.Count)
+            {
+                Layers[(int)layer].funcHook = func;
+            }
+        }
+        #endregion // Layer Methods
+
         #region Overrideable methods you should not override
-        
+
         // I would not recommend doing things this way, but if you must (cause you want to do things the OLC way)
         // then I have provided them here. I would consider using the events instead, when possible.
 

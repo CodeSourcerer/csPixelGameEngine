@@ -4,6 +4,9 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Represents the state of a hardware button (mouse/key/joy)
+    /// </summary>
     public struct HWButton
     {
         public bool Pressed  { get; set; }

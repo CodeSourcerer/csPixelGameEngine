@@ -5,33 +5,40 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Represents a 32-bit RGBA color
+    /// </summary>
+    /// <remarks>
+    /// In the original PGE, you can default the Pixel RGBA component values to anything.
+    /// C#, however, does not allow this. If you do not specify a component value, it will be 0.
+    /// </remarks>
     public struct Pixel
     {
         #region Predefined colors
-        public static Pixel WHITE               = new Pixel(255, 255, 255);
-        public static Pixel GRAY                = new Pixel(192, 192, 192);
-        public static Pixel DARK_GRAY           = new Pixel(128, 128, 128);
-        public static Pixel VERY_DARK_GRAY      = new Pixel(64, 64, 64);
-        public static Pixel RED                 = new Pixel(255, 0, 0);
-        public static Pixel DARK_RED            = new Pixel(128, 0, 0);
-        public static Pixel VERY_DARK_RED       = new Pixel(64, 0, 0);
-        public static Pixel YELLOW              = new Pixel(255, 255, 0);
-        public static Pixel DARK_YELLOW         = new Pixel(128, 128, 0);
-        public static Pixel VERY_DARK_YELLOW    = new Pixel(64, 64, 0);
-        public static Pixel GREEN               = new Pixel(0, 255, 0);
-        public static Pixel DARK_GREEN          = new Pixel(0, 128, 0);
-        public static Pixel VERY_DARK_GREEN     = new Pixel(0, 64, 0);
-        public static Pixel CYAN                = new Pixel(0, 255, 255);
-        public static Pixel DARK_CYAN           = new Pixel(0, 128, 128);
-        public static Pixel VERY_DARK_CYAN      = new Pixel(0, 64, 64);
-        public static Pixel BLUE                = new Pixel(0, 0, 255);
-        public static Pixel DARK_BLUE           = new Pixel(0, 0, 128);
-        public static Pixel VERY_DARK_BLUE      = new Pixel(0, 0, 64);
-        public static Pixel MAGENTA             = new Pixel(255, 0, 255);
-        public static Pixel DARK_MAGENTA        = new Pixel(128, 0, 128);
-        public static Pixel VERY_DARK_MAGENTA   = new Pixel(64, 0, 64);
-        public static Pixel BLACK               = new Pixel(0, 0, 0);
-        public static Pixel BLANK               = new Pixel(0, 0, 0, 0);
+        public static readonly Pixel WHITE               = new Pixel(255, 255, 255);
+        public static readonly Pixel GRAY                = new Pixel(192, 192, 192);
+        public static readonly Pixel DARK_GRAY           = new Pixel(128, 128, 128);
+        public static readonly Pixel VERY_DARK_GRAY      = new Pixel(64, 64, 64);
+        public static readonly Pixel RED                 = new Pixel(255, 0, 0);
+        public static readonly Pixel DARK_RED            = new Pixel(128, 0, 0);
+        public static readonly Pixel VERY_DARK_RED       = new Pixel(64, 0, 0);
+        public static readonly Pixel YELLOW              = new Pixel(255, 255, 0);
+        public static readonly Pixel DARK_YELLOW         = new Pixel(128, 128, 0);
+        public static readonly Pixel VERY_DARK_YELLOW    = new Pixel(64, 64, 0);
+        public static readonly Pixel GREEN               = new Pixel(0, 255, 0);
+        public static readonly Pixel DARK_GREEN          = new Pixel(0, 128, 0);
+        public static readonly Pixel VERY_DARK_GREEN     = new Pixel(0, 64, 0);
+        public static readonly Pixel CYAN                = new Pixel(0, 255, 255);
+        public static readonly Pixel DARK_CYAN           = new Pixel(0, 128, 128);
+        public static readonly Pixel VERY_DARK_CYAN      = new Pixel(0, 64, 64);
+        public static readonly Pixel BLUE                = new Pixel(0, 0, 255);
+        public static readonly Pixel DARK_BLUE           = new Pixel(0, 0, 128);
+        public static readonly Pixel VERY_DARK_BLUE      = new Pixel(0, 0, 64);
+        public static readonly Pixel MAGENTA             = new Pixel(255, 0, 255);
+        public static readonly Pixel DARK_MAGENTA        = new Pixel(128, 0, 128);
+        public static readonly Pixel VERY_DARK_MAGENTA   = new Pixel(64, 0, 64);
+        public static readonly Pixel BLACK               = new Pixel(0, 0, 0);
+        public static readonly Pixel BLANK               = new Pixel(0, 0, 0, 0);
         #endregion // Predefined colors
 
         public uint color { get; set; }
