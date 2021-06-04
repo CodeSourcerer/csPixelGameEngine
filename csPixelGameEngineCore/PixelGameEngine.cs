@@ -1262,7 +1262,37 @@ namespace csPixelGameEngineCore
 
         public void DrawPartialWarpedDecal(Decal decal, vec2d_f[] pos, vec2d_f source_pos, vec2d_f source_size, Pixel? tint = null)
         {
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            vec2d_f center = new vec2d_f();
+            float rd = ((pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y));
+            if (rd != 0)
+            {
+                vec2d_f uvtl = source_pos * decal.vUVScale;
+                vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+                di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+                di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+                di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+                di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
 
+                rd = 1.0f / rd;
+                float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+                float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+                if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+                    center = pos[0] + rn * (pos[2] - pos[0]);
+                float[] d = new float[4];
+                for (int i = 0; i < 4; i++)
+                    d[i] = (pos[i] - center).mag();
+                for (int i = 0; i < 4; i++)
+                {
+                    float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                    di.uv[i] *= q;
+                    di.w[i] *= q;
+                    di.pos[i] = new vec2d_f { x = (pos[i].x * invScreenSize.x) * 2.0f - 1.0f, y = ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f };
+                }
+                Layers[(int)TargetLayer].DecalInstance.Add(di);
+            }
         }
 
         #endregion // Drawing Methods
