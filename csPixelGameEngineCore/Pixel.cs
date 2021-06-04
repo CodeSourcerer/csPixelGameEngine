@@ -5,6 +5,13 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Represents a 32-bit RGBA color
+    /// </summary>
+    /// <remarks>
+    /// In the original PGE, you can default the Pixel RGBA component values to anything.
+    /// C#, however, does not allow this. If you do not specify a component value, it will be 0.
+    /// </remarks>
     public struct Pixel
     {
         #region Predefined colors
