@@ -1164,7 +1164,7 @@ namespace csPixelGameEngineCore
             };
             vec2d_f center = vec2d_f.UNIT;
 
-            float rd = ((pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y));
+            float rd = (pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y);
             if (rd != 0)
             {
                 rd = 1.0f / rd;
@@ -1178,8 +1178,9 @@ namespace csPixelGameEngineCore
                 for (int i = 0; i < 4; i++)
                 {
                     float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
-                    di.uv[i] *= q; di.w[i] *= q;
-                    di.pos[i] = new vec2d_f((pos[i].x * invScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f );
+                    di.uv[i] *= q;
+                    di.w[i] *= q;
+                    di.pos[i] = new vec2d_f((pos[i].x * invScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f);
                 }
                 Layers[(int)TargetLayer].DecalInstance.Add(di);
             }
