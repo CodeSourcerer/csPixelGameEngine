@@ -5,6 +5,12 @@ using csPixelGameEngineCore.Enums;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Representation of the rendering system.
+    /// </summary>
+    /// <remarks>
+    /// This roughly correlates to the Renderer class in PGE, which is pure abstract.
+    /// </remarks>
     public interface IRenderer
     {
         void PrepareDevice();

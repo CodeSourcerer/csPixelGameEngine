@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Floating-point version of a 2D vector
+    /// </summary>
+    /// <remarks>
+    /// This is basically the vf2d typedef. 
+    /// </remarks>
     public struct vec2d_f : Ivec2d<float>
     {
         public static readonly vec2d_f ZERO = new vec2d_f(0.0f, 0.0f);

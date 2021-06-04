@@ -4,6 +4,13 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// A GPU resident storage of a Sprite
+    /// </summary>
+    /// <remarks>
+    /// The original PGE does not require a renderer to be passed in, but that is because the renderer
+    /// is global.
+    /// </remarks>
     public class Decal : IDisposable
     {
         public int     Id       { get; private set; } = -1;
