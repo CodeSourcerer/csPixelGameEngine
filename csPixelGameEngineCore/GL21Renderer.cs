@@ -25,6 +25,11 @@ namespace csPixelGameEngineCore
             };
         }
 
+        public void ResizeWindow(int width, int height)
+        {
+            glWindow.ClientSize = new Size(width, height);
+        }
+
         public void ApplyTexture(uint id)
         {
             GL.BindTexture(TextureTarget.Texture2D, id);

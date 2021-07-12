@@ -20,12 +20,14 @@ namespace csPixelGameEngineCore
         int WindowHeight { get; }
 
         // The C++ version does not have these, but we need them for C#
+        KeyboardState KeyboardState { get; }
         event EventHandler<EventArgs> Closed;
         event EventHandler<EventArgs> Resize;
         event EventHandler<MouseMoveEventArgs> MouseMove;
         event EventHandler<MouseWheelEventArgs> MouseWheel;
         event EventHandler<MouseButtonEventArgs> MouseDown;
         event EventHandler<MouseButtonEventArgs> MouseUp;
+        event EventHandler<KeyboardEventArgs> KeyDown;
         event EventHandler<FrameUpdateEventArgs> UpdateFrame;
     }
 }

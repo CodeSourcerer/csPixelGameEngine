@@ -10,6 +10,8 @@ namespace csPixelGameEngineCore
     public class OpenTkPlatform : IPlatform
     {
         private readonly GameWindow glWindow;
+        private readonly KeyboardState keyboardState;
+        public KeyboardState KeyboardState { get => keyboardState; }
 
         public int WindowWidth  { get => glWindow.Size.Width; }
         public int WindowHeight { get => glWindow.Size.Height; }
@@ -20,11 +22,13 @@ namespace csPixelGameEngineCore
         public event EventHandler<MouseWheelEventArgs> MouseWheel;
         public event EventHandler<MouseButtonEventArgs> MouseDown;
         public event EventHandler<MouseButtonEventArgs> MouseUp;
+        public event EventHandler<KeyboardEventArgs> KeyDown;
         public event EventHandler<FrameUpdateEventArgs> UpdateFrame;
 
         public OpenTkPlatform(GameWindow gameWindow)
         {
             glWindow = gameWindow;
+            keyboardState = new KeyboardState();
         }
 
         public RCode CreateGraphics(bool fullscreen, bool enableVSync, vec2d_i viewPos, vec2d_i viewSize)
@@ -85,6 +89,20 @@ namespace csPixelGameEngineCore
             glWindow.UpdateFrame += (sender, eventArgs) =>
             {
                 UpdateFrame?.Invoke(sender, new FrameUpdateEventArgs(eventArgs.Time));
+            };
+
+            glWindow.KeyUp += (sender, eventArgs) =>
+            {
+                Enums.Key k = (Enums.Key)(int)eventArgs.Key;
+                keyboardState[k] = false;
+            };
+
+            glWindow.KeyDown += (sender, eventArgs) =>
+            {
+                Enums.Key k = (Enums.Key)(int)eventArgs.Key;
+                Enums.KeyModifiers m = (Enums.KeyModifiers)(int)eventArgs.Modifiers;
+                keyboardState[k] = true;
+                KeyDown?.Invoke(sender, new KeyboardEventArgs(k, eventArgs.ScanCode, m));
             };
 
             glWindow.Run();

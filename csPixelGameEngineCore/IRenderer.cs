@@ -16,6 +16,7 @@ namespace csPixelGameEngineCore
         void PrepareDevice();
         RCode CreateDevice(bool bFullScreen, bool bVSYNC, params object[] p);   // Slight deviation, but more C#-style
         RCode DestroyDevice();
+        void ResizeWindow(int width, int height);
         void DisplayFrame();
         void PrepareDrawing();
         void DrawLayerQuad(vec2d_f offset, vec2d_f scale, Pixel tint);

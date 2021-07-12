@@ -57,7 +57,7 @@ namespace PixelGameEngineCoreTest
             //window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
             pge = new PixelGameEngine(serviceProvider.GetService<IRenderer>(), serviceProvider.GetService<IPlatform>(), AppName);
             pge.OnFrameUpdate += updateFrame;
-            pge.Construct(screenWidth, screenHeight, 1, 1, false, false);
+            pge.Construct(screenWidth, screenHeight, 2, 2, false, false);
             pge.BlendFactor = 0.5f;
             pge.Start();
         }

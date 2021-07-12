@@ -142,8 +142,8 @@ namespace csPixelGameEngineCore
         }
 
         private vec2d_f invScreenSize;
-        private readonly IRenderer renderer;
-        private readonly IPlatform platform;
+        public readonly IRenderer Renderer;
+        public readonly IPlatform Platform;
         private Sprite fontSprite;
         private Decal fontDecal;
         private HWButton[] btnStates = {
@@ -178,8 +178,8 @@ namespace csPixelGameEngineCore
             if (renderer == null) throw new ArgumentNullException(nameof(renderer));
             if (platform == null) throw new ArgumentNullException(nameof(platform));
 
-            this.renderer = renderer;
-            this.platform = platform;
+            this.Renderer = renderer;
+            this.Platform = platform;
             AppName = string.IsNullOrWhiteSpace(appName) ? "Undefined" : appName;
             Layers = new List<LayerDesc>();
         }
@@ -208,6 +208,7 @@ namespace csPixelGameEngineCore
             PixelSize = new vec2d_i { x = (int)pixel_w, y = (int)pixel_h };
             PixelRatio = 2.0f / ScreenSize;
 
+            Renderer.ResizeWindow((int)(screen_w * pixel_w), (int)(screen_h * pixel_h));
             // Create a sprite that represents the primary drawing target
             //DefaultDrawTarget = window.DrawTarget;
             //drawTarget = DefaultDrawTarget;
@@ -251,7 +252,7 @@ namespace csPixelGameEngineCore
                 }
             }
 
-            fontDecal = new Decal(fontSprite, renderer);
+            fontDecal = new Decal(fontSprite, Renderer);
         }
 
         /// <summary>
@@ -270,10 +271,10 @@ namespace csPixelGameEngineCore
             //Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
             DrawTarget = null;
 
-            renderer.ClearBuffer(Pixel.BLACK, true);
-            renderer.DisplayFrame();
-            renderer.ClearBuffer(Pixel.BLACK, true);
-            renderer.UpdateViewport(ViewPos, ViewSize);
+            Renderer.ClearBuffer(Pixel.BLACK, true);
+            Renderer.DisplayFrame();
+            Renderer.ClearBuffer(Pixel.BLACK, true);
+            Renderer.UpdateViewport(ViewPos, ViewSize);
         }
 
         /// <summary>
@@ -295,58 +296,58 @@ namespace csPixelGameEngineCore
             // This simulates "OnUserCreate()"
             OnCreate?.Invoke(this, new EventArgs());
             
-            platform.Closed += (sender, eventArgs) =>
+            Platform.Closed += (sender, eventArgs) =>
             {
                 OnDestroy?.Invoke(sender, EventArgs.Empty);
             };
 
-            platform.Resize += (sender, eventArgs) =>
+            Platform.Resize += (sender, eventArgs) =>
             {
-                olc_UpdateWindowSize(platform.WindowWidth, platform.WindowHeight);
+                olc_UpdateWindowSize(Platform.WindowWidth, Platform.WindowHeight);
             };
 
-            platform.UpdateFrame += (sender, frameEventArgs) =>
+            Platform.UpdateFrame += (sender, frameEventArgs) =>
             {
                 OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 // Reset wheel delta after frame
                 MouseWheelDelta = 0;
             };
 
-            renderer.RenderFrame += (sender, frameEventArgs) =>
+            Renderer.RenderFrame += (sender, frameEventArgs) =>
             {
                 OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 olc_CoreUpdate();
             };
 
-            platform.MouseWheel += (sender, mouseWheelEventArgs) =>
+            Platform.MouseWheel += (sender, mouseWheelEventArgs) =>
             {
                 MouseWheelDelta = mouseWheelEventArgs.Delta;
             };
 
-            platform.MouseMove += (sender, mouseMoveEventArgs) =>
+            Platform.MouseMove += (sender, mouseMoveEventArgs) =>
             {
                 MousePosX = mouseMoveEventArgs.X;
                 MousePosY = mouseMoveEventArgs.Y;
             };
 
-            platform.MouseDown += (sender, mouseButtonEventArgs) =>
+            Platform.MouseDown += (sender, mouseButtonEventArgs) =>
             {
                 updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            platform.MouseUp += (sender, mouseButtonEventArgs) =>
+            Platform.MouseUp += (sender, mouseButtonEventArgs) =>
             {
                 updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            platform.StartSystemEventLoop();
+            Platform.StartSystemEventLoop();
 
             return 0;
         }
 
         public void olc_PrepareEngine()
         {
-            renderer.CreateDevice(FullScreen, EnableVSYNC, ViewPos, ViewSize);
+            Renderer.CreateDevice(FullScreen, EnableVSYNC, ViewPos, ViewSize);
 
             // TODO: Implement this
             CreateLayer();
@@ -365,14 +366,14 @@ namespace csPixelGameEngineCore
                 btnStates[btn].Held = btnStates[btn].Pressed;
             }
 
-            renderer.UpdateViewport(ViewPos, ViewSize);
-            renderer.ClearBuffer(Pixel.BLACK, true);
+            Renderer.UpdateViewport(ViewPos, ViewSize);
+            Renderer.ClearBuffer(Pixel.BLACK, true);
 
             // Ensure layer 0 is active
             Layers[0].bUpdate = true;
             Layers[0].bShow = true;
 
-            renderer.PrepareDrawing();
+            Renderer.PrepareDrawing();
 
             // Draw all active layers
             foreach (var layer in Layers)
@@ -381,19 +382,19 @@ namespace csPixelGameEngineCore
                 {
                     if (layer.funcHook == null)
                     {
-                        renderer.ApplyTexture(layer.ResID);
+                        Renderer.ApplyTexture(layer.ResID);
                         if (layer.bUpdate)
                         {
-                            renderer.UpdateTexture(layer.ResID, layer.DrawTarget);
+                            Renderer.UpdateTexture(layer.ResID, layer.DrawTarget);
                             layer.bUpdate = false;
                         }
 
-                        renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
+                        Renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
 
                         // Display decals in order for this layer
                         foreach (var decal in layer.DecalInstance)
                         {
-                            renderer.DrawDecalQuad(decal);
+                            Renderer.DrawDecalQuad(decal);
                         }
 
                         layer.DecalInstance.Clear();
@@ -405,7 +406,7 @@ namespace csPixelGameEngineCore
                 }
             }
 
-            renderer.DisplayFrame();
+            Renderer.DisplayFrame();
         }
 
         public void olc_UpdateWindowSize(int width, int height)
@@ -1302,8 +1303,8 @@ namespace csPixelGameEngineCore
         {
             var ld = new LayerDesc();
             ld.DrawTarget = new Sprite((uint)ScreenSize.x, (uint)ScreenSize.y);
-            ld.ResID = renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
-            renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
+            ld.ResID = Renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
+            Renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
 
             Layers.Add(ld);
             return (uint)(Layers.Count - 1);
