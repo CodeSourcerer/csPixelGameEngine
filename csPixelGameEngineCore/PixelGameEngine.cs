@@ -448,6 +448,35 @@ namespace csPixelGameEngineCore
             return btnStates[button];
         }
 
+        /// <summary>
+        /// Get the area occupied by a multiline string.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        public vec2d_i GetTextSize(string s)
+        {
+            vec2d_i size = new vec2d_i { x = 0, y = 1 };
+            vec2d_i pos = new vec2d_i { x = 0, y = 1 };
+            
+            foreach (var c in s)
+            {
+                if (c == '\n')
+                {
+                    pos.y++;
+                    pos.x = 0;
+                }
+                else
+                {
+                    pos.x++;
+                }
+
+                size.x = Math.Max(size.x, pos.x);
+                size.y = Math.Max(size.y, pos.y);
+            }
+
+            return size * 8;
+        }
+
         #region Drawing Methods
 
         public bool Draw(vec2d_i pos, Pixel p)
