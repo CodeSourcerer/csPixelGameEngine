@@ -1,4 +1,4 @@
-﻿# csPixelGameEngine
+# csPixelGameEngine
 This is a C# port of the [olcPixelGameEngine](https://github.com/OneLoneCoder/olcPixelGameEngine). It is roughly up to date
 with v2.0.5 of the olcPixelGameEngine.
 
