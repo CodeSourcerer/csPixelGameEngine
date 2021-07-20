@@ -12,7 +12,7 @@ namespace csPixelGameEngineCore
     {
         private readonly GameWindow glWindow;
 
-        public event EventHandler<FrameUpdateEventArgs> RenderFrame;
+        public EventHandler<FrameUpdateEventArgs> RenderFrame { get; set; }
 
         public GL21Renderer(GameWindow gameWindow)
         {

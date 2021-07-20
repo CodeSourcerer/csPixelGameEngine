@@ -28,6 +28,6 @@ namespace csPixelGameEngineCore
         event EventHandler<MouseButtonEventArgs> MouseDown;
         event EventHandler<MouseButtonEventArgs> MouseUp;
         event EventHandler<KeyboardEventArgs> KeyDown;
-        event EventHandler<FrameUpdateEventArgs> UpdateFrame;
+        EventHandler<FrameUpdateEventArgs> UpdateFrame { get; set; }
     }
 }

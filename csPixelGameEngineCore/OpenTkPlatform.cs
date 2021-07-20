@@ -23,7 +23,7 @@ namespace csPixelGameEngineCore
         public event EventHandler<MouseButtonEventArgs> MouseDown;
         public event EventHandler<MouseButtonEventArgs> MouseUp;
         public event EventHandler<KeyboardEventArgs> KeyDown;
-        public event EventHandler<FrameUpdateEventArgs> UpdateFrame;
+        public EventHandler<FrameUpdateEventArgs> UpdateFrame { get; set; }
 
         public OpenTkPlatform(GameWindow gameWindow)
         {

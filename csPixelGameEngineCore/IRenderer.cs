@@ -28,6 +28,6 @@ namespace csPixelGameEngineCore
         void UpdateViewport(vec2d_i pos, vec2d_i size);
         void ClearBuffer(Pixel p, bool bDepth);
 
-        event EventHandler<FrameUpdateEventArgs> RenderFrame;
+        EventHandler<FrameUpdateEventArgs> RenderFrame { get; set; }
     }
 }

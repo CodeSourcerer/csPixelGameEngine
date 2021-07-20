@@ -62,12 +62,12 @@ namespace csPixelGameEngineCore
         private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
 
         public string   AppName             { get; private set; }
-        //public GLWindow Window              { get; private set; }
         public bool     FullScreen          { get; private set; }
         public bool     EnableVSYNC         { get; private set; }
         public vec2d_i  ViewPos             { get; private set; }
         public vec2d_i  ViewSize            { get; private set; }
-        public vec2d_i  WindowSize          { get; private set; }
+        // We will let platform handle this
+        //public vec2d_i  WindowSize          { get; private set; }
         public int      DrawTargetWidth     { get; private set; }
         public int      DrawTargetHeight    { get; private set; }
         public Sprite   DefaultDrawTarget   { get; private set; }
@@ -157,9 +157,9 @@ namespace csPixelGameEngineCore
         /// <summary>
         /// This event fires once per frame and replaces OnUserUpdate()
         /// </summary>
-        public event FrameUpdateEventHandler OnFrameUpdate;
+        public FrameUpdateEventHandler OnFrameUpdate { get; set; }
 
-        public event FrameUpdateEventHandler OnFrameRender;
+        public FrameUpdateEventHandler OnFrameRender { get; set; }
 
         /// <summary>
         /// Event that fires before starting main loop. Use to load resources
@@ -287,7 +287,7 @@ namespace csPixelGameEngineCore
             // In the C++ implementation, there is a platform class for handling platform specific things.
             // This is .NET Core, which runs on all platforms it supports so we don't need it and thus, we
             // deviate a bit. Instead of creating a window, we will set up the renderer here.
-            olc_UpdateWindowSize(WindowSize.x, WindowSize.y);
+            olc_UpdateViewport();
 
             // The C++ implementation creates an engine thread here, which does a whole lot of things .NET handles for us.
             // Instead, we will do the gist of what it was doing by using event handlers.
@@ -303,17 +303,17 @@ namespace csPixelGameEngineCore
 
             Platform.Resize += (sender, eventArgs) =>
             {
-                olc_UpdateWindowSize(Platform.WindowWidth, Platform.WindowHeight);
+                olc_UpdateViewport();
             };
 
-            Platform.UpdateFrame += (sender, frameEventArgs) =>
+            Platform.UpdateFrame = (sender, frameEventArgs) =>
             {
                 OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 // Reset wheel delta after frame
                 MouseWheelDelta = 0;
             };
 
-            Renderer.RenderFrame += (sender, frameEventArgs) =>
+            Renderer.RenderFrame = (sender, frameEventArgs) =>
             {
                 OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 olc_CoreUpdate();
@@ -409,25 +409,12 @@ namespace csPixelGameEngineCore
             Renderer.DisplayFrame();
         }
 
-        public void olc_UpdateWindowSize(int width, int height)
-        {
-            WindowSize = new vec2d_i { x = width, y = height };
-            olc_UpdateViewport();
-        }
-
         public void olc_UpdateViewport()
         {
             int windowWidth = ScreenSize.x * PixelSize.x;
             int windowHeight = ScreenSize.y * PixelSize.y;
-            float windowAspectRatio = windowWidth / (float)windowHeight;
 
-            var viewY = (int)(WindowSize.x / windowAspectRatio);
-            if (viewY > WindowSize.y)
-            {
-                viewY = WindowSize.y;
-            }
-
-            ViewSize = new vec2d_i { x = WindowSize.x, y = viewY };
+            ViewSize = new vec2d_i { x = windowWidth, y = windowHeight };
         }
 
         private void updateMouseButtonStates(MouseButtonEventArgs mouseButtonEvent)
