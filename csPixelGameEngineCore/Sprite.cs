@@ -177,10 +177,6 @@ namespace csPixelGameEngineCore
         /// <returns>The pixel value. If x and y coordinates are outside of the sprite boundaries, Pixel.BLANK is returned.</returns>
         public Pixel GetPixel(uint x, uint y)
         {
-            // Not sure if I really want assertions or not....
-            Debug.Assert(x < Width, "Attempt to get pixel outside of sprite boundaries");
-            Debug.Assert(y < Height, "Attempt to get pixel outside of sprite boundaries");
-
             if (ModeSample == Mode.NORMAL)
             {
                 if (x < Width && y < Height)
@@ -204,10 +200,6 @@ namespace csPixelGameEngineCore
         /// <returns>true if set, false if not (outside of sprite boundaries)</returns>
         public bool SetPixel(uint x, uint y, Pixel p)
         {
-            // Not sure if I really want assertions or not....
-            //Debug.Assert(x < Width, "Attempt to set pixel outside of sprite boundaries");
-            //Debug.Assert(y < Height, "Attempt to set pixel outside of sprite boundaries");
-
             if (x < Width && y < Height)
             {
                 ColorData[y * Width + x] = p;
