@@ -4,6 +4,12 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// Integer version of a 2D vector
+    /// </summary>
+    /// <remarks>
+    /// This is basically the vi2d typedef. 
+    /// </remarks>
     public struct vec2d_i : Ivec2d<int>
     {
         public int x { get; set; }

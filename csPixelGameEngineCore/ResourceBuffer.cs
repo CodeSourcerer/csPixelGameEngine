@@ -5,6 +5,9 @@ using System.Text;
 
 namespace csPixelGameEngineCore
 {
+    /// <summary>
+    /// A virtual scrambled filesystem to pack your assets into
+    /// </summary>
     public struct ResourceBuffer
     {
         public Memory<byte> Memory { get; private set; }

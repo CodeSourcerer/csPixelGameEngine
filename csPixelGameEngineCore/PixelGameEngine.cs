@@ -9,10 +9,10 @@ using log4net;
 using OpenTK.Input;
 
 /*
-	+-------------------------------------------------------------+
-	|           OneLoneCoder Pixel Game Engine v1.23              |
-	| "Like the command prompt console one, but not..." - javidx9 |
-	+-------------------------------------------------------------+
+    +-------------------------------------------------------------+
+    |           OneLoneCoder Pixel Game Engine v1.23              |
+    | "Like the command prompt console one, but not..." - javidx9 |
+    +-------------------------------------------------------------+
     ... ported to C#!
 
 License (OLC-3)
@@ -1211,7 +1211,7 @@ namespace csPixelGameEngineCore
             DrawStringDecal(new vec2d_f { x = x, y = y }, sText, col);
         }
 
-		public void DrawStringDecal(vec2d_f pos, string sText, Pixel? col = null, vec2d_f? scale = null)
+        public void DrawStringDecal(vec2d_f pos, string sText, Pixel? col = null, vec2d_f? scale = null)
         {
             vec2d_f spos = new vec2d_f();
             scale = scale ?? vec2d_f.UNIT;
@@ -1233,14 +1233,66 @@ namespace csPixelGameEngineCore
             }
         }
 
-		public void DrawPartialRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
+        public void DrawPartialRotatedDecal(vec2d_f pos, Decal decal, float fAngle, vec2d_f center, vec2d_f source_pos, vec2d_f source_size, vec2d_f? scale = null, Pixel? tint = null)
         {
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            di.pos[0] = (new vec2d_f(0.0f, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[1] = (new vec2d_f(0.0f, source_size.y) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[2] = (new vec2d_f(source_size.x, source_size.y) - center) * (scale ?? vec2d_f.UNIT);
+            di.pos[3] = (new vec2d_f(source_size.x, 0.0f) - center) * (scale ?? vec2d_f.UNIT);
+            float c = (float)Math.Cos(fAngle), s = (float)Math.Sin(fAngle);
+            for (int i = 0; i < 4; i++)
+            {
+                di.pos[i] = pos + new vec2d_f(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
+                di.pos[i] = di.pos[i] * invScreenSize * 2.0f - vec2d_f.UNIT;
+                di.pos[i].y *= -1.0f;
+            }
 
+            vec2d_f uvtl = source_pos * decal.vUVScale;
+            vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+            di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+            di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+            di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+            di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
+
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
         }
 
-		public void DrawPartialWarpedDecal(Decal decal, vec2d_f[] pos, vec2d_f source_pos, vec2d_f source_size, Pixel? tint = null)
+        public void DrawPartialWarpedDecal(Decal decal, vec2d_f[] pos, vec2d_f source_pos, vec2d_f source_size, Pixel? tint = null)
         {
+            DecalInstance di = new DecalInstance();
+            di.decal = decal;
+            di.tint = tint ?? Pixel.WHITE;
+            vec2d_f center = new vec2d_f();
+            float rd = ((pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y));
+            if (rd != 0)
+            {
+                vec2d_f uvtl = source_pos * decal.vUVScale;
+                vec2d_f uvbr = uvtl + (source_size * decal.vUVScale);
+                di.uv[0] = new vec2d_f { x = uvtl.x, y = uvtl.y };
+                di.uv[1] = new vec2d_f { x = uvtl.x, y = uvbr.y };
+                di.uv[2] = new vec2d_f { x = uvbr.x, y = uvbr.y };
+                di.uv[3] = new vec2d_f { x = uvbr.x, y = uvtl.y };
 
+                rd = 1.0f / rd;
+                float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+                float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+                if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+                    center = pos[0] + rn * (pos[2] - pos[0]);
+                float[] d = new float[4];
+                for (int i = 0; i < 4; i++)
+                    d[i] = (pos[i] - center).mag();
+                for (int i = 0; i < 4; i++)
+                {
+                    float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                    di.uv[i] *= q;
+                    di.w[i] *= q;
+                    di.pos[i] = new vec2d_f { x = (pos[i].x * invScreenSize.x) * 2.0f - 1.0f, y = ((pos[i].y * invScreenSize.y) * 2.0f - 1.0f) * -1.0f };
+                }
+                Layers[(int)TargetLayer].DecalInstance.Add(di);
+            }
         }
 
         #endregion // Drawing Methods
