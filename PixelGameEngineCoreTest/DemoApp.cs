@@ -25,6 +25,7 @@ namespace PixelGameEngineCoreTest
         {
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+            // Create a window for OpenGL
             var gameWindow = new GameWindow(screenWidth, screenHeight, GraphicsMode.Default, AppName, GameWindowFlags.Default, DisplayDevice.Default, 2, 1,
                 GraphicsContextFlags.Default);
 
@@ -54,7 +55,6 @@ namespace PixelGameEngineCoreTest
             testAnimationDecal = new Decal[10];
             loadTestAnimation();
 
-            //window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
             pge = new PixelGameEngine(serviceProvider.GetService<IRenderer>(), serviceProvider.GetService<IPlatform>(), AppName);
             pge.OnFrameUpdate += updateFrame;
             pge.Construct(screenWidth, screenHeight, 1, 1, false, false);
@@ -140,7 +140,8 @@ namespace PixelGameEngineCoreTest
             rp = new ResourcePack();
             rp.LoadPack("./assets1.pack", "AReallyGoodKeyShouldBeUsed");
 
-            for (int i = 0; i < 10; i++)
+            // Images in pack go from 1 to 9
+            for (int i = 1; i < 10; i++)
             {
                 string file = $"./assets/Walking_00{i}.png";
                 testAnimation[i] = new Sprite(file, rp);
