@@ -143,7 +143,7 @@ namespace csPixelGameEngineCore
 
         private vec2d_f invScreenSize;
         private readonly IRenderer renderer;
-        private readonly IPlatform platform;
+        public readonly IPlatform Platform;
         private Sprite fontSprite;
         private Decal fontDecal;
         private HWButton[] btnStates = {
@@ -179,7 +179,7 @@ namespace csPixelGameEngineCore
             if (platform == null) throw new ArgumentNullException(nameof(platform));
 
             this.renderer = renderer;
-            this.platform = platform;
+            this.Platform = platform;
             AppName = string.IsNullOrWhiteSpace(appName) ? "Undefined" : appName;
             Layers = new List<LayerDesc>();
         }
@@ -295,17 +295,17 @@ namespace csPixelGameEngineCore
             // This simulates "OnUserCreate()"
             OnCreate?.Invoke(this, new EventArgs());
             
-            platform.Closed += (sender, eventArgs) =>
+            Platform.Closed += (sender, eventArgs) =>
             {
                 OnDestroy?.Invoke(sender, EventArgs.Empty);
             };
 
-            platform.Resize += (sender, eventArgs) =>
+            Platform.Resize += (sender, eventArgs) =>
             {
-                olc_UpdateWindowSize(platform.WindowWidth, platform.WindowHeight);
+                olc_UpdateWindowSize(Platform.WindowWidth, Platform.WindowHeight);
             };
 
-            platform.UpdateFrame += (sender, frameEventArgs) =>
+            Platform.UpdateFrame += (sender, frameEventArgs) =>
             {
                 OnFrameUpdate?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
                 // Reset wheel delta after frame
@@ -318,28 +318,28 @@ namespace csPixelGameEngineCore
                 olc_CoreUpdate();
             };
 
-            platform.MouseWheel += (sender, mouseWheelEventArgs) =>
+            Platform.MouseWheel += (sender, mouseWheelEventArgs) =>
             {
                 MouseWheelDelta = mouseWheelEventArgs.Delta;
             };
 
-            platform.MouseMove += (sender, mouseMoveEventArgs) =>
+            Platform.MouseMove += (sender, mouseMoveEventArgs) =>
             {
                 MousePosX = mouseMoveEventArgs.X;
                 MousePosY = mouseMoveEventArgs.Y;
             };
 
-            platform.MouseDown += (sender, mouseButtonEventArgs) =>
+            Platform.MouseDown += (sender, mouseButtonEventArgs) =>
             {
                 updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            platform.MouseUp += (sender, mouseButtonEventArgs) =>
+            Platform.MouseUp += (sender, mouseButtonEventArgs) =>
             {
                 updateMouseButtonStates(mouseButtonEventArgs);
             };
 
-            platform.StartSystemEventLoop();
+            Platform.StartSystemEventLoop();
 
             return 0;
         }
