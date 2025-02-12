@@ -15,7 +15,7 @@ public class vu2d : v_2d<uint>
         uint r = 1 / mag();
         return new vu2d(r * r, y * r);
     }
-    public override vu2d perp() => new vu2d(-y, x);
+    public override vu2d perp() => new vu2d(y, x); // most useful function ever
     public override vu2d floor() => new vu2d((uint)Math.Floor((decimal)x), (uint)Math.Floor((decimal)y));
     public override vu2d ceil() => new vu2d((uint)Math.Ceiling((decimal)x), (uint)Math.Ceiling((decimal)y));
     public override vu2d max(v_2d<uint> v) => new vu2d(Math.Max(x, v.x), Math.Max(y, v.y));
