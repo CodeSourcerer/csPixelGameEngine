@@ -17,8 +17,8 @@ namespace csPixelGameEngineCore.Extensions
 
             // Work out bounding rectangle of sprite
             float ex = 0.0f, ey = 0.0f;
-            vec2d_f s = transform.Forward(0.0f, 0.0f);
-            vec2d_f p = new vec2d_f(s);
+            vf2d s = transform.Forward(0.0f, 0.0f);
+            vf2d p = new vf2d(s);
 
             s.x = Math.Min(s.x, p.x);
             s.y = Math.Min(s.y, p.y);
@@ -60,10 +60,30 @@ namespace csPixelGameEngineCore.Extensions
             {
                 for (float j = s.y; j < ey; j++)
                 {
-                    vec2d_f o = transform.Backward(i, j);
-                    pge.Draw((uint)i, (uint)j, sprite.GetPixel((uint)(o.x + 0.5f), (uint)(o.y + 0.5f)));
+                    vf2d o = transform.Backward(i, j);
+                    pge.Draw((int)i, (int)j, sprite.GetPixel((int)(o.x + 0.5f), (int)(o.y + 0.5f)));
                 }
             }
+        }
+
+        public override void OnAfterUserCreate()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void OnAfterUserUpdate(float fElapsedTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void OnBeforeUserCreate()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override bool OnBeforeUserUpdate(float fElapsedTime)
+        {
+            throw new NotImplementedException();
         }
 
         public class Transform2D
@@ -160,9 +180,9 @@ namespace csPixelGameEngineCore.Extensions
                 Multiply();
             }
 
-            public vec2d_f Forward(float x, float y)
+            public vf2d Forward(float x, float y)
             {
-                vec2d_f ret = new vec2d_f(
+                vf2d ret = new vf2d(
                     x * _matrix[_sourceMatrix,0,0] + y * _matrix[_sourceMatrix,1,0] + _matrix[_sourceMatrix,2,0],
                     x * _matrix[_sourceMatrix,0,1] + y * _matrix[_sourceMatrix,1,1] + _matrix[_sourceMatrix,2,1]
                 );
@@ -176,9 +196,9 @@ namespace csPixelGameEngineCore.Extensions
                 return ret;
             }
 
-            public vec2d_f Backward(float x, float y)
+            public vf2d Backward(float x, float y)
             {
-                vec2d_f ret = new vec2d_f(
+                vf2d ret = new vf2d(
                     x * _matrix[3,0,0] + y * _matrix[3,1,0] + _matrix[3,2,0],
                     x * _matrix[3,0,1] + y * _matrix[3,1,1] + _matrix[3,2,1]
                 );

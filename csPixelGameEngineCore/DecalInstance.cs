@@ -1,22 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using csPixelGameEngineCore.Enums;
 
 namespace csPixelGameEngineCore
 {
     public class DecalInstance
     {
         public Decal     decal  { get; set; }
-        public vec2d_f[] pos    { get; private set; }
-        public vec2d_f[] uv     { get; private set; }
+        public vf2d[]    pos    { get; private set; }
+        public vf2d[]    uv     { get; private set; }
         public float[]   w      { get; private set; }
-        public Pixel     tint   { get; set; }
+        public float[]   z      { get; private set; }
+        public Pixel[]   tint   { get; set; }
+        public uint      points { get; private set; } = 0;
+        public bool      depth  { get; private set; } = false;
+        public DecalMode mode   { get; set; } = DecalMode.NORMAL;
+        public DecalStructure structure { get; set; } = DecalStructure.FAN;
 
         public DecalInstance()
         {
-            pos = new vec2d_f[] { new vec2d_f(), new vec2d_f(), new vec2d_f(), new vec2d_f() };
-            uv = new vec2d_f[] { new vec2d_f(0.0f, 0.0f), new vec2d_f(0.0f, 1.0f), new vec2d_f(1.0f, 1.0f), new vec2d_f(1.0f, 0.0f) };
-            w = new float[] { 1.0f, 1.0f, 1.0f, 1.0f };
+            pos = [new vf2d(), new vf2d(), new vf2d(), new vf2d()];
+            uv = [new vf2d(0.0f, 0.0f), new vf2d(0.0f, 1.0f), new vf2d(1.0f, 1.0f), new vf2d(1.0f, 0.0f)];
+            w = [1.0f, 1.0f, 1.0f, 1.0f];
         }
     }
 }

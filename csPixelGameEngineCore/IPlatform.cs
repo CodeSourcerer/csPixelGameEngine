@@ -12,8 +12,15 @@ namespace csPixelGameEngineCore
     /// </summary>
     public interface IPlatform
     {
-        RCode CreateGraphics(bool fullscreen, bool enableVSync, vec2d_i viewPos, vec2d_i viewSize);
+        RCode ApplicationStartUp();
+        RCode ApplicationCleanUp();
+        RCode ThreadStartUp();
+        RCode ThreadCleanUp();
+        RCode CreateWindowPane(vi2d windowPosition, vi2d windowSize, bool isFullScreen);
+        RCode CreateGraphics(bool fullscreen, bool enableVSync, vi2d viewPos, vi2d viewSize);
+        RCode ShowWindowFrame(bool showFrame = true);
         RCode SetWindowTitle(string title);
+        RCode SetWindowSize(vi2d WindowPos, vi2d WindowSize);
         RCode StartSystemEventLoop();
 
         int WindowWidth  { get; }

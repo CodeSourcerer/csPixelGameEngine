@@ -8,7 +8,7 @@ namespace csPixelGameEngineCore
     {
         public int X { get => Position.x; }
         public int Y { get => Position.y; }
-        public vec2d_i Position { get; }
+        public vi2d Position { get; }
 
         public MouseEventArgs()
             : base()
@@ -16,7 +16,7 @@ namespace csPixelGameEngineCore
 
         public MouseEventArgs(int xPos, int yPos)
         {
-            Position = new vec2d_i { x = xPos, y = yPos };
+            Position = new vi2d { x = xPos, y = yPos };
         }
     }
 }

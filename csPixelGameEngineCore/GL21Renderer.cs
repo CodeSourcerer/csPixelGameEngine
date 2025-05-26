@@ -5,17 +5,56 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using csPixelGameEngineCore.Enums;
+using log4net;
 
 namespace csPixelGameEngineCore
 {
     public class GL21Renderer : IRenderer
     {
+        private static readonly ILog Log = LogManager.GetLogger(typeof(GL21Renderer));
         private readonly GameWindow glWindow;
+
+        private DecalMode _decalMode;
+        public DecalMode DecalMode
+        {
+            get => _decalMode;
+            set
+            {
+                if (value != _decalMode)
+                {
+                    switch (value)
+                    {
+                        case DecalMode.NORMAL:
+                            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                            break;
+                        case DecalMode.ADDITIVE:
+                            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
+                            break;
+                        case DecalMode.MULTIPLICATIVE:
+                            GL.BlendFunc(BlendingFactor.DstColor, BlendingFactor.One);
+                            break;
+                        case DecalMode.STENCIL:
+                            GL.BlendFunc(BlendingFactor.Zero, BlendingFactor.SrcAlpha);
+                            break;
+                        case DecalMode.ILLUMINATE:
+                            GL.BlendFunc(BlendingFactor.OneMinusSrcAlpha, BlendingFactor.SrcAlpha);
+                            break;
+                        case DecalMode.WIREFRAME:
+                            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                            break;
+                    }
+
+                    _decalMode = value;
+                }
+            }
+        }
 
         public event EventHandler<FrameUpdateEventArgs> RenderFrame;
 
         public GL21Renderer(GameWindow gameWindow)
         {
+            Log.Debug("Constructing GL21Renderer");
+
             if (gameWindow == null) throw new ArgumentNullException(nameof(gameWindow));
 
             glWindow = gameWindow;
@@ -41,12 +80,14 @@ namespace csPixelGameEngineCore
 
         public RCode CreateDevice(bool bFullScreen, bool bVSYNC, params object[] p)
         {
+            Log.Debug("GL21Renderer.CreateDevice()");
+
             GL.Enable(EnableCap.Texture2D);
             GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);
             return RCode.OK;
         }
 
-        public uint CreateTexture(uint width, uint height)
+        public uint CreateTexture(int width, int height, bool filtered = false, bool clamp = true)
         {
             uint id = 0;
             GL.GenTextures(1, out id);
@@ -73,23 +114,62 @@ namespace csPixelGameEngineCore
             glWindow.SwapBuffers();
         }
 
-        public void DrawDecalQuad(DecalInstance decal)
+        public void DrawDecal(DecalInstance decal)
         {
-            GL.BindTexture(TextureTarget.Texture2D, decal.decal.Id);
-            GL.Begin(PrimitiveType.Quads);
-            GL.Color4(decal.tint.r, decal.tint.g, decal.tint.b, decal.tint.a);
-            GL.TexCoord4(decal.uv[0].x, decal.uv[0].y, 0.0f, decal.w[0]);
-            GL.Vertex2(decal.pos[0].x, decal.pos[0].y);
-            GL.TexCoord4(decal.uv[1].x, decal.uv[1].y, 0.0f, decal.w[1]);
-            GL.Vertex2(decal.pos[1].x, decal.pos[1].y);
-            GL.TexCoord4(decal.uv[2].x, decal.uv[2].y, 0.0f, decal.w[2]);
-            GL.Vertex2(decal.pos[2].x, decal.pos[2].y);
-            GL.TexCoord4(decal.uv[3].x, decal.uv[3].y, 0.0f, decal.w[3]);
-            GL.Vertex2(decal.pos[3].x, decal.pos[3].y);
+            DecalMode = decal.mode;
+
+            if (decal.decal == null)
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+            else
+                GL.BindTexture(TextureTarget.Texture2D, decal.decal.Id);
+
+            if (decal.depth)
+            {
+                GL.Enable(EnableCap.DepthTest);
+            }
+
+            if (DecalMode == DecalMode.WIREFRAME)
+                GL.Begin(PrimitiveType.LineLoop);
+            else
+            {
+                if (decal.structure == DecalStructure.FAN)
+                    GL.Begin(PrimitiveType.TriangleFan);
+                else if (decal.structure == DecalStructure.STRIP)
+                    GL.Begin(PrimitiveType.TriangleStrip);
+                else if (decal.structure == DecalStructure.LIST)
+                    GL.Begin(PrimitiveType.Triangles);
+            }
+
+            if (decal.depth)
+            {
+                // Render as 3D Spatial Entity
+                for (uint n = 0; n < decal.points; n++)
+                {
+                    GL.Color4(decal.tint[n].r, decal.tint[n].g, decal.tint[n].b, decal.tint[n].a);
+                    GL.TexCoord4(decal.uv[n].x, decal.uv[n].y, 0.0f, decal.w[n]);
+                    GL.Vertex3(decal.pos[n].x, decal.pos[n].y, decal.z[n]);
+                }
+            }
+            else
+            {
+                // Render as 2D Spatial entity
+                for (uint n = 0; n < decal.points; n++)
+                {
+                    GL.Color4(decal.tint[n].r, decal.tint[n].g, decal.tint[n].b, decal.tint[n].a);
+                    GL.TexCoord4(decal.uv[0].x, decal.uv[0].y, 0.0f, decal.w[0]);
+                    GL.Vertex2(decal.pos[0].x, decal.pos[0].y);
+                }
+            }
+            
             GL.End();
+
+            if (decal.depth)
+            {
+                GL.Disable(EnableCap.DepthTest);
+            }
         }
 
-        public void DrawLayerQuad(vec2d_f offset, vec2d_f scale, Pixel tint)
+        public void DrawLayerQuad(vf2d offset, vf2d scale, Pixel tint)
         {
             GL.Begin(PrimitiveType.Quads);
             GL.Color4(tint.r, tint.g, tint.b, tint.a);
@@ -112,15 +192,16 @@ namespace csPixelGameEngineCore
         public void PrepareDrawing()
         {
             GL.Enable(EnableCap.Blend);
+            DecalMode = DecalMode.NORMAL;
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         }
 
         public void UpdateTexture(uint id, Sprite spr)
         {
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)spr.Width, (int)spr.Height, 0, PixelFormat.Rgba, PixelType.UnsignedInt8888, spr.ColorData);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)spr.Width, (int)spr.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColorData);
         }
 
-        public void UpdateViewport(vec2d_i pos, vec2d_i size)
+        public void UpdateViewport(vi2d pos, vi2d size)
         {
             GL.Viewport(pos.x, pos.y, size.x, size.y);
         }

@@ -15,23 +15,17 @@ namespace csPixelGameEngineCore
     {
         public int     Id       { get; private set; } = -1;
         public Sprite  sprite   { get; private set; }
-        public vec2d_f vUVScale { get; private set; } = new vec2d_f { x = 1.0f, y = 1.0f };
+        public vf2d    vUVScale { get; private set; } = new vf2d { x = 1.0f, y = 1.0f };
 
-        private readonly IRenderer renderer;
+        private readonly IRenderer _renderer;
 
-        public Decal(Sprite spr, IRenderer renderer)
+        public Decal(Sprite spr, IRenderer renderer, bool filter = false, bool clamp = true)
         {
-            if (renderer == null)
-                throw new ArgumentNullException(nameof(renderer));
-
-            if (spr == null)
-                return;
-
+            Id = -1;
+            if (spr == null) return;
             sprite = spr;
-            this.renderer = renderer;
-
-            // I don't really like this here, but I'll leave it for now...
-            Id = (int)this.renderer.CreateTexture(sprite.Width, sprite.Height);
+            _renderer = renderer;
+            Id = (int)renderer.CreateTexture(sprite.Width, sprite.Height, filter, clamp);
             Update();
         }
 
@@ -42,9 +36,9 @@ namespace csPixelGameEngineCore
 
             if (Id >= 0)
             {
-                vUVScale = new vec2d_f(1.0f / sprite.Width, 1.0f / sprite.Height);
-                renderer.ApplyTexture((uint)Id);
-                renderer.UpdateTexture((uint)Id, sprite);
+                vUVScale = new vf2d(1.0f / sprite.Width, 1.0f / sprite.Height);
+                _renderer.ApplyTexture((uint)Id);
+                _renderer.UpdateTexture((uint)Id, sprite);
             }
         }
 
@@ -64,7 +58,7 @@ namespace csPixelGameEngineCore
                 // TODO: set large fields to null.
                 if (Id != -1)
                 {
-                    renderer.DeleteTexture((uint)Id);
+                    _renderer.DeleteTexture((uint)Id);
                 }
 
                 disposedValue = true;

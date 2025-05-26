@@ -1,13 +1,8 @@
-﻿using csPixelGameEngineCore.Enums;
-using log4net;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
+using csPixelGameEngineCore.Enums;
+using log4net;
 
 namespace csPixelGameEngineCore
 {
@@ -20,8 +15,8 @@ namespace csPixelGameEngineCore
 
         public enum Mode { NORMAL, PERIODIC };
 
-        public uint Width { get; private set; }
-        public uint Height { get; private set; }
+        public int Width { get; private set; }
+        public int Height { get; private set; }
         public Pixel[] ColorData { get; private set; }
 
         public Mode ModeSample { get; private set; } = Mode.NORMAL;
@@ -31,12 +26,10 @@ namespace csPixelGameEngineCore
             // Don't allow creation of sprites without dimensions
         }
         
-        public Sprite(uint w, uint h)
+        public Sprite(int w, int h)
         {
-            if (w == 0)
-                throw new ArgumentException("Argument must be greater than 0", nameof(w));
-            if (h == 0)
-                throw new ArgumentException("Argument must be greater than 0", nameof(h));
+            if (w <= 0) throw new ArgumentException("Argument must be greater than 0", nameof(w));
+            if (h <= 0) throw new ArgumentException("Argument must be greater than 0", nameof(h));
 
             Width = w;
             Height = h;
@@ -59,8 +52,8 @@ namespace csPixelGameEngineCore
         {
             DataReader ReadData = (br) =>
             {
-                Width = (uint)br.ReadInt32();
-                Height = (uint)br.ReadInt32();
+                Width = br.ReadInt32();
+                Height = br.ReadInt32();
                 ColorData = new Pixel[Width * Height];
                 for (int i = 0; i < (Width * Height); i++)
                 {
@@ -105,8 +98,8 @@ namespace csPixelGameEngineCore
             {
                 using (BinaryWriter bw = new BinaryWriter(File.OpenWrite(sImageFile)))
                 {
-                    bw.Write((int)Width);
-                    bw.Write((int)Height);
+                    bw.Write(Width);
+                    bw.Write(Height);
                     for (int i = 0; i < (Width * Height); i++)
                     {
                         bw.Write(ColorData[i]);
@@ -146,15 +139,15 @@ namespace csPixelGameEngineCore
                 return RCode.NO_FILE;
             }
 
-            Width = (uint)bmp.Width;
-            Height = (uint)bmp.Height;
+            Width = bmp.Width;
+            Height = bmp.Height;
             ColorData = new Pixel[Width * Height];
             for (int x = 0; x < Width; x++)
             {
                 for (int y = 0; y < Height; y++)
                 {
                     Color p = bmp.GetPixel(x, y);
-                    SetPixel((uint)x, (uint)y, new Pixel(p.R, p.G, p.B, p.A));
+                    SetPixel(x, y, new Pixel(p.R, p.G, p.B, p.A));
                 }
             }
 
@@ -175,7 +168,7 @@ namespace csPixelGameEngineCore
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns>The pixel value. If x and y coordinates are outside of the sprite boundaries, Pixel.BLANK is returned.</returns>
-        public Pixel GetPixel(uint x, uint y)
+        public Pixel GetPixel(int x, int y)
         {
             if (ModeSample == Mode.NORMAL)
             {
@@ -198,7 +191,7 @@ namespace csPixelGameEngineCore
         /// <param name="y">y coordinate in sprite to set</param>
         /// <param name="p">Pixel value to use</param>
         /// <returns>true if set, false if not (outside of sprite boundaries)</returns>
-        public bool SetPixel(uint x, uint y, Pixel p)
+        public bool SetPixel(int x, int y, Pixel p)
         {
             if (x < Width && y < Height)
             {
@@ -217,10 +210,10 @@ namespace csPixelGameEngineCore
         /// <param name="width">Width of rectangle to fill</param>
         /// <param name="height">Height of rectangle to fill</param>
         /// <param name="p">Pixel value to fill with</param>
-        public void FillRect(uint x, uint y, uint width, uint height, Pixel p)
+        public void FillRect(int x, int y, int width, int height, Pixel p)
         {
-            uint x2 = x + width;
-            uint y2 = y + height;
+            int x2 = x + width;
+            int y2 = y + height;
 
             // TODO: Write unit tests for below...its kinda suspect
             if (x >= Width)
@@ -232,9 +225,9 @@ namespace csPixelGameEngineCore
             if (y2 >= Height)
                 y2 = (Height - 1);
 
-            for (uint y1 = y; y1 < y2; y1++)
+            for (int y1 = y; y1 < y2; y1++)
             {
-                Span<Pixel> row = new Span<Pixel>(ColorData, (int)(y1 * Width + x), (int)(x2 - x));
+                Span<Pixel> row = new Span<Pixel>(ColorData, y1 * Width + x, x2 - x);
                 row.Fill(p);
             }
 
@@ -249,8 +242,8 @@ namespace csPixelGameEngineCore
 
         public Pixel Sample(float x, float y)
         {
-            uint sx = Math.Min((uint)((x * Width)), Width - 1);
-            uint sy = Math.Min((uint)((y * Height)), Height - 1);
+            int sx = Math.Min((int)(x * Width), Width - 1);
+            int sy = Math.Min((int)(y * Height), Height - 1);
             return GetPixel(sx, sy);
         }
 
@@ -258,8 +251,8 @@ namespace csPixelGameEngineCore
         {
             u = u * Width - 0.5f;
             v = v * Height - 0.5f;
-            uint y = (uint)Math.Floor(v); // Thanks @joshinils
-            uint x = (uint)Math.Floor(u); // cast to int rounds toward zero, not downward
+            int y = (int)Math.Floor(v); // Thanks @joshinils
+            int x = (int)Math.Floor(u); // cast to int rounds toward zero, not downward
             float u_ratio = u - x;
             float v_ratio = v - y;
             float u_opposite = 1 - u_ratio;
@@ -286,7 +279,7 @@ namespace csPixelGameEngineCore
         /// <param name="src_y"></param>
         /// <param name="dst_x"></param>
         /// <param name="dst_y"></param>
-        public void CopyTo(Sprite dest, uint src_x, uint src_y, int dst_x, int dst_y)
+        public void CopyTo(Sprite dest, int src_x, int src_y, int dst_x, int dst_y)
         {
             // Check that src and dst positions are valid
             if (src_x >= Width) return;
@@ -298,22 +291,22 @@ namespace csPixelGameEngineCore
 
             if (dst_x < 0)
             {
-                src_x += (uint)Math.Abs(dst_x);
+                src_x += Math.Abs(dst_x);
                 dst_x = 0;
             }
             if (dst_y < 0)
             {
-                src_y += (uint)Math.Abs(dst_y);
+                src_y += Math.Abs(dst_y);
                 dst_y = 0;
             }
 
-            uint w = (uint)Math.Min((Width - src_x) - 1, (dest.Width - dst_x) - 1);
-            uint h = (uint)Math.Min((Height - src_y) - 1, (dest.Height - dst_y) - 1);
+            int w = Math.Min((Width - src_x) - 1, (dest.Width - dst_x) - 1);
+            int h = Math.Min((Height - src_y) - 1, (dest.Height - dst_y) - 1);
 
-            for (int sy = (int)src_y, dy = dst_y; sy < (src_y + h); sy++, dy++)
+            for (int sy = src_y, dy = dst_y; sy < (src_y + h); sy++, dy++)
             {
-                Memory<Pixel> srcPixelsRow = new Memory<Pixel>(ColorData, (int)(Width * sy + src_x), (int)w);
-                Memory<Pixel> dstPixelsRow = new Memory<Pixel>(dest.ColorData, (int)(dest.Width * dy + dst_x), (int)w);
+                Memory<Pixel> srcPixelsRow = new Memory<Pixel>(ColorData, Width * sy + src_x, w);
+                Memory<Pixel> dstPixelsRow = new Memory<Pixel>(dest.ColorData, dest.Width * dy + dst_x, w);
                 srcPixelsRow.CopyTo(dstPixelsRow);
             }
         }

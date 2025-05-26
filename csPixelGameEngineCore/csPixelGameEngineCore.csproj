@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="log4net" Version="3.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.5" />
     <PackageReference Include="OpenTK.NetStandard" Version="1.0.5.32" />
   </ItemGroup>
 

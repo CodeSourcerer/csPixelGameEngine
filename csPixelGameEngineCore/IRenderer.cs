@@ -18,14 +18,16 @@ namespace csPixelGameEngineCore
         RCode DestroyDevice();
         void DisplayFrame();
         void PrepareDrawing();
-        void DrawLayerQuad(vec2d_f offset, vec2d_f scale, Pixel tint);
-        void DrawDecalQuad(DecalInstance decal);
-        uint CreateTexture(uint width, uint height);
+        void DrawLayerQuad(vf2d offset, vf2d scale, Pixel tint);
+        void DrawDecal(DecalInstance decal);
+        uint CreateTexture(int width, int height, bool filtered = false, bool clamp = true);
         void UpdateTexture(uint id, Sprite spr);
         uint DeleteTexture(uint id);
         void ApplyTexture(uint id);
-        void UpdateViewport(vec2d_i pos, vec2d_i size);
+        void UpdateViewport(vi2d pos, vi2d size);
         void ClearBuffer(Pixel p, bool bDepth);
+
+        DecalMode DecalMode { get; set; }
 
         event EventHandler<FrameUpdateEventArgs> RenderFrame;
     }

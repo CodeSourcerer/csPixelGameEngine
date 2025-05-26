@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using csPixelGameEngineCore.Enums;
+using log4net;
 using OpenTK;
 using OpenTK.Input;
 
@@ -9,6 +10,7 @@ namespace csPixelGameEngineCore
 {
     public class OpenTkPlatform : IPlatform
     {
+        private static readonly ILog Log = LogManager.GetLogger(typeof(OpenTkPlatform));
         private readonly GameWindow glWindow;
 
         public int WindowWidth  { get => glWindow.Size.Width; }
@@ -27,11 +29,6 @@ namespace csPixelGameEngineCore
             glWindow = gameWindow;
         }
 
-        public RCode CreateGraphics(bool fullscreen, bool enableVSync, vec2d_i viewPos, vec2d_i viewSize)
-        {
-            throw new NotImplementedException();
-        }
-
         public RCode SetWindowTitle(string title)
         {
             if (title == null) return RCode.FAIL;
@@ -43,6 +40,8 @@ namespace csPixelGameEngineCore
 
         public RCode StartSystemEventLoop()
         {
+            Log.Debug("OpenTkPlatform.StartSystemEventLoop()");
+
             // Glue some event handlers to glWindow
             glWindow.Closed += (sender, eventArgs) =>
             {
@@ -101,6 +100,34 @@ namespace csPixelGameEngineCore
                 MouseButton.Right => csMouseButton.Right,
                 _ => csMouseButton.Unknown
             };
+        }
+
+        public RCode CreateGraphics(bool fullscreen, bool enableVSync, vi2d viewPos, vi2d viewSize) => RCode.OK;
+
+        public RCode ApplicationStartUp() => RCode.OK;
+
+        public RCode ApplicationCleanUp() => RCode.OK;
+
+        public RCode ThreadStartUp() => RCode.OK;
+
+        public RCode ThreadCleanUp() => RCode.OK;
+
+        public RCode CreateWindowPane(vi2d windowPosition, vi2d windowSize, bool isFullScreen)
+        {
+            Log.Debug("OpenTkPlatform.CreateWindowPane()");
+            SetWindowSize(windowPosition, windowSize);
+            glWindow.WindowState = isFullScreen ? WindowState.Fullscreen : WindowState.Normal;
+
+            return RCode.OK;
+        }
+
+        public RCode ShowWindowFrame(bool showFrame = true) => RCode.OK;
+
+        public RCode SetWindowSize(vi2d WindowPos, vi2d WindowSize)
+        {
+            glWindow.Location = new Point(WindowPos.x, WindowPos.y);
+            glWindow.Size = new Size(WindowSize.x, WindowSize.y);
+            return RCode.OK;
         }
     }
 }
