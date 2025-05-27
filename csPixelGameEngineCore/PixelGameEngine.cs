@@ -155,8 +155,7 @@ public class PixelGameEngine
 
     private readonly IRenderer _renderer;
     public readonly IPlatform Platform;
-    private Sprite fontSprite;
-    private Decal fontDecal;
+    private Renderable fontRenderable;
     private HWButton[] btnStates = {
         new HWButton { Released = true, Pressed = false, Held = false },
         new HWButton { Released = true, Pressed = false, Held = false },
@@ -235,6 +234,8 @@ public class PixelGameEngine
 
     private void construct_fontSheet()
     {
+        Log.Info("Constructing font sheet");
+
         StringBuilder data = new StringBuilder(1024);
         data.Append("?Q`0001oOch0o01o@F40o0<AGD4090LAGD<090@A7ch0?00O7Q`0600>00000000");
         data.Append("O000000nOT0063Qo4d8>?7a14Gno94AA4gno94AaOT0>o3`oO400o7QN00000400");
@@ -253,7 +254,9 @@ public class PixelGameEngine
         data.Append("O`000P08Od400g`<3V=P0G`673IP0`@3>1`00P@6O`P00g`<O`000GP800000000");
         data.Append("?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020");
 
-        fontSprite = new Sprite(128, 48);
+        fontRenderable = new Renderable(_renderer);
+        fontRenderable.Create(128, 48);
+
         int px = 0, py = 0;
         for (int b = 0; b < 1024; b += 4)
         {
@@ -265,13 +268,13 @@ public class PixelGameEngine
 
             for (int i = 0; i < 24; i++)
             {
-                byte k = (r & (1 << i)) != 0 ? (byte)0xFF : (byte)0x00;
-                fontSprite.SetPixel(px, py, new Pixel(k, k, k, k));
+                byte k = (r & (1 << i)) != 0 ? (byte)255 : (byte)0;
+                fontRenderable.Sprite.SetPixel(px, py, new Pixel(k, k, k, k));
                 if (++py == 48) { px++; py = 0; }
             }
         }
 
-        fontDecal = new Decal(fontSprite, _renderer);
+        fontRenderable.Decal.Update();
     }
 
     /// <summary>
@@ -1072,7 +1075,14 @@ public class PixelGameEngine
         DrawString(pos.x, pos.y, sText, col, scale);
     }
 
-    // Draws a single line of text
+    /// <summary>
+    /// Draws a single line of text
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="sText"></param>
+    /// <param name="col"></param>
+    /// <param name="scale"></param>
     public void DrawString(int x, int y, string sText, Pixel col, uint scale = 1)
     {
         int sx = 0;
@@ -1099,7 +1109,7 @@ public class PixelGameEngine
                 {
                     for (int i = 0; i < 8; i++)
                         for (int j = 0; j < 8; j++)
-                            if (fontSprite.GetPixel(i + ox * 8, j + oy * 8).r > 0)
+                            if (fontRenderable.Sprite.GetPixel(i + ox * 8, j + oy * 8).r > 0)
                                 for (int is_ = 0; is_ < scale; is_++)
                                     for (int js = 0; js < scale; js++)
                                         Draw((int)(x + sx + (i * scale) + is_), (int)(y + sy + (j * scale) + js), col);
@@ -1108,7 +1118,7 @@ public class PixelGameEngine
                 {
                     for (int i = 0; i < 8; i++)
                         for (int j = 0; j < 8; j++)
-                            if (fontSprite.GetPixel(i + ox * 8, j + oy * 8).r > 0)
+                            if (fontRenderable.Sprite.GetPixel(i + ox * 8, j + oy * 8).r > 0)
                                 Draw(x + sx + i, y + sy + j, col);
                 }
                 sx += (int)(8 * scale);
@@ -1121,8 +1131,9 @@ public class PixelGameEngine
     public void Clear(Pixel p)
     {
         int pixelCount = DrawTarget.ColorData.Length;
-        for (int i = 0; i < pixelCount; i++)
-            DrawTarget.ColorData[i] = p;
+        DrawTarget.ColorData.AsSpan().Fill(p);
+        //for (int i = 0; i < pixelCount; i++)
+        //    DrawTarget.ColorData[i] = p;
     }
 
     //=====================================================================

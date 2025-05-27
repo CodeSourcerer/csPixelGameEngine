@@ -17,9 +17,22 @@ namespace csPixelGameEngineCore
 
         public int Width { get; private set; }
         public int Height { get; private set; }
+        public vi2d Size
+        {
+            get => new vi2d(Width, Height);
+            set
+            {
+                Width = value.x;
+                Height = value.y;
+                ColorData = new Pixel[Width * Height];
+                ColorData.AsSpan().Fill(Pixel.BLACK);
+            }
+        }
         public Pixel[] ColorData { get; private set; }
 
         public Mode ModeSample { get; private set; } = Mode.NORMAL;
+
+        public string ID { get; init; }
 
         private Sprite()
         {
@@ -31,14 +44,9 @@ namespace csPixelGameEngineCore
             if (w <= 0) throw new ArgumentException("Argument must be greater than 0", nameof(w));
             if (h <= 0) throw new ArgumentException("Argument must be greater than 0", nameof(h));
 
-            Width = w;
-            Height = h;
-            ColorData = new Pixel[Width * Height];
+            ID = Guid.NewGuid().ToString();
 
-            for (int i = 0; i < Width * Height; i++)
-            {
-                ColorData[i] = Pixel.BLACK;
-            }
+            Size = new vi2d(w, h);
         }
 
         public Sprite(string sImageFile, ResourcePack pack)
@@ -55,6 +63,7 @@ namespace csPixelGameEngineCore
                 Width = br.ReadInt32();
                 Height = br.ReadInt32();
                 ColorData = new Pixel[Width * Height];
+
                 for (int i = 0; i < (Width * Height); i++)
                 {
                     ColorData[i] = br.ReadUInt32();
@@ -173,9 +182,14 @@ namespace csPixelGameEngineCore
             if (ModeSample == Mode.NORMAL)
             {
                 if (x < Width && y < Height)
+                {
                     return ColorData[y * Width + x];
+                }
                 else
+                {
+                    Log.DebugFormat("Attempted to get pixel outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
                     return Pixel.BLANK;
+                }
             }
             else
             {
@@ -183,6 +197,8 @@ namespace csPixelGameEngineCore
                 return ColorData[Math.Abs(y % Height) * Width + Math.Abs(x % Width)];
             }
         }
+
+        public Pixel GetPixel(vi2d a) => GetPixel(a.x, a.y);
 
         /// <summary>
         /// Set a pixel in this sprite to the given pixel value
@@ -199,6 +215,28 @@ namespace csPixelGameEngineCore
                 return true;
             }
 
+            Log.DebugFormat("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+            return false;
+        }
+
+        public bool SetPixel(vi2d a, Pixel p) => SetPixel(a.x, a.y, p);
+
+        /// <summary>
+        /// Set a pixel in this sprite to the given pixel value
+        /// </summary>
+        /// <param name="x">x coordinate in sprite to set</param>
+        /// <param name="y">y coordinate in sprite to set</param>
+        /// <param name="c">Pixel color value to use</param>
+        /// <returns>true if set, false if not (outside of sprite boundaries)</returns>
+        public bool SetPixel(int x, int y, uint c)
+        {
+            if (x < Width && y < Height)
+            {
+                ColorData[y * Width + x].n = c;
+                return true;
+            }
+
+            Log.DebugFormat("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
             return false;
         }
 
@@ -247,6 +285,8 @@ namespace csPixelGameEngineCore
             return GetPixel(sx, sy);
         }
 
+        public Pixel Sample(vf2d uv) => Sample(uv.x, uv.y);
+
         public Pixel SampleBL(float u, float v)
         {
             u = u * Width - 0.5f;
@@ -268,6 +308,8 @@ namespace csPixelGameEngineCore
                 (byte)((p1.g * u_opposite + p2.g * u_ratio) * v_opposite + (p3.g * u_opposite + p4.g * u_ratio) * v_ratio),
                 (byte)((p1.b * u_opposite + p2.b * u_ratio) * v_opposite + (p3.b * u_opposite + p4.b * u_ratio) * v_ratio));
         }
+
+        public Pixel SampleBL(vf2d uv) => SampleBL(uv.x, uv.y);
 
         /// <summary>
         /// If you need to do a fast copy of sprites, use this. Note that it cannot
@@ -309,6 +351,42 @@ namespace csPixelGameEngineCore
                 Memory<Pixel> dstPixelsRow = new Memory<Pixel>(dest.ColorData, dest.Width * dy + dst_x, w);
                 srcPixelsRow.CopyTo(dstPixelsRow);
             }
+        }
+
+        /// <summary>
+        /// Return a duplicate of this sprite.
+        /// </summary>
+        /// <returns></returns>
+        public Sprite Duplicate()
+        {
+            var spr = new Sprite(Width, Height);
+            var src = new Memory<Pixel>(ColorData);
+            var dst = new Memory<Pixel>(spr.ColorData);
+
+            src.CopyTo(dst);
+            spr.ModeSample = ModeSample;
+
+            return spr;
+        }
+
+        /// <summary>
+        /// Duplicate a portion of this sprite
+        /// </summary>
+        /// <param name="vPos">Position in this sprite to start from</param>
+        /// <param name="vSize">Width/height of this sprite to duplicate</param>
+        /// <returns></returns>
+        public Sprite Duplicate(vi2d vPos, vi2d vSize)
+        {
+            var spr = new Sprite(vSize.x, vSize.y);
+
+            for (int sy = 0, dy = 0; sy < (vSize.y + vPos.y); sy++, dy++)
+            {
+                var srcPixelsRow = new Memory<Pixel>(ColorData, Width * sy + vPos.x, vSize.x);
+                var dstPixelsRow = new Memory<Pixel>(spr.ColorData, spr.Width * dy, vSize.x);
+                srcPixelsRow.CopyTo(dstPixelsRow);
+            }
+
+            return spr;
         }
     }
 }

@@ -33,8 +33,8 @@ public class GLWindow : GameWindow
                DisplayDevice.Default, 2, 1, GraphicsContextFlags.ForwardCompatible)
     {
         appConfig = config.Value;
-        Width           = appConfig.ScreenWidth * appConfig.PixelWidth;
-        Height          = appConfig.ScreenHeight * appConfig.PixelHeight;
+        //Width           = appConfig.ScreenWidth * appConfig.PixelWidth;
+        //Height          = appConfig.ScreenHeight * appConfig.PixelHeight;
         ScreenWidth     = appConfig.ScreenWidth;
         ScreenHeight    = appConfig.ScreenHeight;
         DrawTarget      = new Sprite(appConfig.ScreenWidth, appConfig.ScreenHeight);
@@ -112,6 +112,10 @@ public class GLWindow : GameWindow
         GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new int[] { (int)All.Nearest });
         GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)All.Decal);
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)ScreenWidth, (int)ScreenHeight, 0, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData);
+
+        Width = ScreenWidth * PixelWidth;
+        Height = ScreenHeight * PixelHeight;
+        //ClientSize = new Size(Width, Height);
 
         base.OnLoad(e);
     }

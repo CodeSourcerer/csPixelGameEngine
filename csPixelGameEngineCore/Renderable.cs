@@ -7,6 +7,10 @@ using csPixelGameEngineCore.Enums;
 
 namespace csPixelGameEngineCore;
 
+/// <summary>
+/// Convenince class to keep a sprite and a decal together
+/// </summary>
+/// <param name="renderer"></param>
 public class Renderable(IRenderer renderer)
 {
     //public RCode Load(string file, ResourcePack pack = null, bool filter = false, bool clamp = true);

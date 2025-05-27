@@ -43,56 +43,80 @@ public struct Pixel
     // C# Does not have unions, but we can sorta fake it.
     // We'll make an internal r,g,b struct like PGE does and 'n' can just combine all of the
     // properties to a single uint. If there's a better way, I'm all ears.
-    
-    private struct rgba
-    {
-        public byte r;
-        public byte g;
-        public byte b;
-        public byte a;
-    }
 
-    private rgba _rgba;
+    //private struct rgba
+    //{
+    //    public byte r;
+    //    public byte g;
+    //    public byte b;
+    //    public byte a;
+    //}
 
-    public uint n
-    {
-        get => (uint)((_rgba.r) | (_rgba.g << 8) | (_rgba.b << 16) | (_rgba.a << 24));
-        set
-        {
-            _rgba.r = (byte)(value & 0x000000FF);
-            _rgba.g = (byte)((value & 0x0000FF00) >> 8);
-            _rgba.b = (byte)((value & 0x00FF0000) >> 16);
-            _rgba.a = (byte)((value & 0xFF000000) >> 24);
-        }
-    }
+    //private rgba _rgba;
+
+    //public uint n
+    //{
+    //    get => (uint)((_rgba.r << 24) | (_rgba.g << 16) | (_rgba.b << 8) | (_rgba.a));
+    //    set
+    //    {
+    //        _rgba.r = (byte)((value & 0xFF000000) >> 24);
+    //        _rgba.g = (byte)((value & 0x00FF0000) >> 16);
+    //        _rgba.b = (byte)((value & 0x0000FF00) >> 8);
+    //        _rgba.a = (byte)(value & 0x000000FF);
+    //    }
+    //}
+
+    //public byte r
+    //{
+    //    get => _rgba.r;
+    //    set => _rgba.r = value;
+    //}
+    //public byte g
+    //{
+    //    get => _rgba.g;
+    //    set => _rgba.g = value;
+    //}
+    //public byte b
+    //{
+    //    get => _rgba.b;
+    //    set => _rgba.b = value;
+    //}
+    //public byte a
+    //{
+    //    get => _rgba.a;
+    //    set => _rgba.a = value;
+    //}
+
+    public uint n { get; set; }
 
     public byte r
     {
-        get => _rgba.r;
-        set => _rgba.r = value;
+        get => (byte)(n & 0x000000FF);
+        set => n = (n & 0xFFFFFF00) | value;
     }
     public byte g
     {
-        get => _rgba.g;
-        set => _rgba.g = value;
+        get => (byte)((n & 0x0000FF00) >> 8);
+        set => n = (n & 0xFFFF00FF) | (uint)(value << 8);
     }
     public byte b
     {
-        get => _rgba.b;
-        set => _rgba.b = value;
+        get => (byte)((n & 0x00FF0000) >> 16);
+        set => n = (n & 0xFF00FFFF) | ((uint)value << 16);
     }
     public byte a
     {
-        get => _rgba.a;
-        set => _rgba.a = value;
+        get => (byte)((n & 0xFF000000) >> 24);
+        set => n = (n & 0x00FFFFFF) | ((uint)value << 24);
     }
 
     public Pixel(byte r = 0, byte g = 0, byte b = 0, byte a = 255)
     {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
+        n = (uint)(r | (g << 8) | (b << 16) | (a << 24));
+        //this.r = r;
+        //this.g = g;
+        //this.b = b;
+        //this.a = a;
     }
 
     public Pixel(uint p)
@@ -102,10 +126,10 @@ public struct Pixel
 
     public Pixel inv()
     {
-        byte nR = (byte)Math.Min(255, Math.Max(0, 255 - _rgba.r));
-        byte nG = (byte)Math.Min(255, Math.Max(0, 255 - _rgba.g));
-        byte nB = (byte)Math.Min(255, Math.Max(0, 255 - _rgba.b));
-        return new Pixel(nR, nG, nB, _rgba.a);
+        byte nR = (byte)Math.Min(255, Math.Max(0, 255 - r));
+        byte nG = (byte)Math.Min(255, Math.Max(0, 255 - g));
+        byte nB = (byte)Math.Min(255, Math.Max(0, 255 - b));
+        return new Pixel(nR, nG, nB, a);
     }
 
     public Pixel PixelF(float red, float green, float blue, float alpha) =>
@@ -125,7 +149,7 @@ public struct Pixel
 
     public override int GetHashCode()
     {
-        return _rgba.r.GetHashCode() ^ _rgba.g.GetHashCode() ^ _rgba.b.GetHashCode() ^ _rgba.a.GetHashCode();
+        return r.GetHashCode() ^ g.GetHashCode() ^ b.GetHashCode() ^ a.GetHashCode();
     }
 
     public static bool operator ==(Pixel p1, Pixel p2)

@@ -19,13 +19,6 @@ namespace PixelGameEngineCoreTest;
 // instantiation different, so we will use this class to just set up DI and launch the PGE-derived class.
 class DemoApp
 {
-    public  const string AppName        = "csPixelGameEngine Demo";
-    private const int    screenWidth    = 1024;
-    private const int    screenHeight   = 768;
-
-    private ResourcePack rp;
-    private Sprite[] testAnimation;
-    private Decal[] testAnimationDecal;
     private IServiceProvider serviceProvider;
 
     static void Main(string[] args)
@@ -52,7 +45,6 @@ class DemoApp
 
     private PGEDemo pge; // = new PixelGameEngine(AppName);
 
-    private Random rnd = new Random();
     private DateTime _dtStartFrame = DateTime.Now;
     private int _curFrameCount = 0;
     private int _fps = 0;
@@ -67,67 +59,63 @@ class DemoApp
 
     public void Run()
     {
-        testAnimation = new Sprite[10];
-        testAnimationDecal = new Decal[10];
+        //testAnimation = new Sprite[10];
+        //testAnimationDecal = new Decal[10];
         //loadTestAnimation();
 
-        var renderer = serviceProvider.GetRequiredService<IRenderer>();
-        var platform = serviceProvider.GetRequiredService<IPlatform>();
         var configuration = serviceProvider.GetRequiredService<IOptions<ApplicationConfiguration>>();
-        pge = new PGEDemo(renderer, platform, configuration);
-        //pge.OnFrameUpdate += updateFrame;
+        pge = serviceProvider.GetRequiredService<PGEDemo>();
         pge.Construct(configuration.Value.ScreenWidth, configuration.Value.ScreenHeight,
             configuration.Value.PixelWidth, configuration.Value.PixelHeight, false, false);
-        //pge.BlendFactor = 0.5f;
         pge.Start();
     }
 
-    private void updateFrame(object sender, FrameUpdateEventArgs frameUpdateArgs)
-    {
-        pge.Clear(Pixel.BLUE);
-        pge.PixelMode = Pixel.Mode.NORMAL;
-        //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
-        //pge.DrawSprite(0, 0, testAnimation[1]);
-        //pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
-        //_rotation += _rotationStep % _fullCircle;
-        //pge.DrawRotatedDecal(new vf2d(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f),
-        //                     testAnimationDecal[1],
-        //                     _rotation,
-        //                     new vf2d(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f));
-        //pge.DrawWarpedDecal(testAnimationDecal[1],
-        //                    new vf2d[] {
-        //                        new vf2d(400.0f, 200.0f),
-        //                        new vf2d(780.0f, 550.0f),
-        //                        new vf2d(10.0f,  500.0f),
-        //                        new vf2d(200.0f, 120.0f)
-        //                    });
-        //showCursorPos(0, 20);
-        //showMouseWheelDelta(0, 30);
-        //showMouseButtonState(0, 40, 0);
-        //showMouseButtonState(0, 50, 1);
-        //showMouseButtonState(0, 60, 2);
-        //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
+    //private void updateFrame(object sender, FrameUpdateEventArgs frameUpdateArgs)
+    //{
+    //    pge.Clear(Pixel.BLUE);
+    //    pge.PixelMode = Pixel.Mode.NORMAL;
+    //    //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
+    //    //pge.DrawSprite(0, 0, testAnimation[1]);
+    //    //pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
+    //    //_rotation += _rotationStep % _fullCircle;
+    //    //pge.DrawRotatedDecal(new vf2d(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f),
+    //    //                     testAnimationDecal[1],
+    //    //                     _rotation,
+    //    //                     new vf2d(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f));
+    //    //pge.DrawWarpedDecal(testAnimationDecal[1],
+    //    //                    new vf2d[] {
+    //    //                        new vf2d(400.0f, 200.0f),
+    //    //                        new vf2d(780.0f, 550.0f),
+    //    //                        new vf2d(10.0f,  500.0f),
+    //    //                        new vf2d(200.0f, 120.0f)
+    //    //                    });
+    //    //showCursorPos(0, 20);
+    //    //showMouseWheelDelta(0, 30);
+    //    //showMouseButtonState(0, 40, 0);
+    //    //showMouseButtonState(0, 50, 1);
+    //    //showMouseButtonState(0, 60, 2);
+    //    //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
-        //pge.DrawCircle(100, 100, 100, Pixel.RED);
-        //pge.FillCircle(500, 500, 30, Pixel.GREEN);
-        //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.ALPHA;
-        //pge.FillTriangle(new vec2d_i(304, 200),
-        //                 new vec2d_i(544, 381),
-        //                 new vec2d_i(444, 500),
-        //                 Pixel.MAGENTA);
-        //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
+    //    //pge.DrawCircle(100, 100, 100, Pixel.RED);
+    //    //pge.FillCircle(500, 500, 30, Pixel.GREEN);
+    //    //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.ALPHA;
+    //    //pge.FillTriangle(new vec2d_i(304, 200),
+    //    //                 new vec2d_i(544, 381),
+    //    //                 new vec2d_i(444, 500),
+    //    //                 Pixel.MAGENTA);
+    //    //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
-        //drawRandomPixels();
+    //    //drawRandomPixels();
 
-        _curFrameCount++;
-        if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
-        {
-            _fps = _curFrameCount;
-            _curFrameCount = 0;
-            _dtStartFrame = DateTime.Now;
-        }
-        //pge.DrawStringDecal(new vf2d(0, 10), $"FPS: {_fps}", Pixel.BLACK, new vf2d(1, 1));
-    }
+    //    _curFrameCount++;
+    //    if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
+    //    {
+    //        _fps = _curFrameCount;
+    //        _curFrameCount = 0;
+    //        _dtStartFrame = DateTime.Now;
+    //    }
+    //    //pge.DrawStringDecal(new vf2d(0, 10), $"FPS: {_fps}", Pixel.BLACK, new vf2d(1, 1));
+    //}
 
     private void showCursorPos(int x, int y)
     {
@@ -145,27 +133,5 @@ class DemoApp
 
         string display = $"BTN {button} [Released:{btnState.Released}] [Pressed:{btnState.Pressed}] [Held: {btnState.Held}]";
         //pge.DrawStringDecal(x, y, display, Pixel.BLACK);
-    }
-
-    private void drawRandomPixels()
-    {
-        for (int x = 0; x < pge.ScreenSize.x; x++)
-            for (int y = 0; y < pge.ScreenSize.y; y++)
-                pge.Draw(x, y, new Pixel((byte)rnd.Next(255), (byte)rnd.Next(255), (byte)rnd.Next(255)));
-    }
-
-    // Example of loading a resource pack
-    private void loadTestAnimation()
-    {
-        rp = new ResourcePack();
-        rp.LoadPack("./assets1.pack", "AReallyGoodKeyShouldBeUsed");
-
-        // Images in pack go from 1 to 9
-        for (int i = 1; i < 10; i++)
-        {
-            string file = $"./assets/Walking_00{i}.png";
-            testAnimation[i] = new Sprite(file, rp);
-            testAnimationDecal[i] = new Decal(testAnimation[i], serviceProvider.GetService<IRenderer>());
-        }
     }
 }

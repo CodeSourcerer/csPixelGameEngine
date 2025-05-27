@@ -20,6 +20,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cpp_src", "cpp_src", "{1573E809-FCCD-41DD-B33C-500A09200EE7}"
 	ProjectSection(SolutionItems) = preProject
 		cpp_src\class_pge.h = cpp_src\class_pge.h
+		cpp_src\pge_cleaned.h = cpp_src\pge_cleaned.h
 	EndProjectSection
 EndProject
 Global

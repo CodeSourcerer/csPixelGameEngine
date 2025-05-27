@@ -198,7 +198,7 @@ namespace csPixelGameEngineCore
 
         public void UpdateTexture(uint id, Sprite spr)
         {
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)spr.Width, (int)spr.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColorData);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, spr.Width, spr.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColorData);
         }
 
         public void UpdateViewport(vi2d pos, vi2d size)
