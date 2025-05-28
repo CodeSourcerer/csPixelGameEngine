@@ -5,14 +5,14 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using csPixelGameEngineCore.Enums;
-using log4net;
+using Microsoft.Extensions.Logging;
 
 namespace csPixelGameEngineCore
 {
     public class GL21Renderer : IRenderer
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(GL21Renderer));
         private readonly GameWindow glWindow;
+        private readonly ILogger<GL21Renderer> logger;
 
         private DecalMode _decalMode;
         public DecalMode DecalMode
@@ -51,9 +51,10 @@ namespace csPixelGameEngineCore
 
         public event EventHandler<FrameUpdateEventArgs> RenderFrame;
 
-        public GL21Renderer(GameWindow gameWindow)
+        public GL21Renderer(GameWindow gameWindow, ILogger<GL21Renderer> logger)
         {
-            Log.Debug("Constructing GL21Renderer");
+            this.logger = logger;
+            logger.LogDebug("Constructing GL21Renderer");
 
             if (gameWindow == null) throw new ArgumentNullException(nameof(gameWindow));
 
@@ -80,7 +81,7 @@ namespace csPixelGameEngineCore
 
         public RCode CreateDevice(bool bFullScreen, bool bVSYNC, params object[] p)
         {
-            Log.Debug("GL21Renderer.CreateDevice()");
+            logger.LogDebug("GL21Renderer.CreateDevice()");
 
             GL.Enable(EnableCap.Texture2D);
             GL.Hint(HintTarget.PerspectiveCorrectionHint, HintMode.Nicest);

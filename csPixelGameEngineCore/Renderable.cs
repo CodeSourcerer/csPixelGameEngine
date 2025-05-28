@@ -22,4 +22,19 @@ public class Renderable(IRenderer renderer)
         this.Sprite = new Sprite((int)width, (int)height);
         this.Decal = new Decal(Sprite, renderer, filter, clamp);
     }
+
+    public RCode Load(string sFile, ResourcePack pack, bool filter = false, bool clamp = true)
+    {
+        try
+        {
+            Sprite = new Sprite(sFile, pack);
+            Decal = new Decal(Sprite, renderer, filter, clamp);
+            return RCode.OK;
+        }
+        catch
+        {
+            Sprite = null;
+            return RCode.FAIL;
+        }
+    }
 }

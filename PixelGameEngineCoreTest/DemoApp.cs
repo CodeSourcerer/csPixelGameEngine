@@ -3,13 +3,12 @@ using System.IO;
 using System.Reflection;
 using csPixelGameEngineCore;
 using csPixelGameEngineCore.Configuration;
-using log4net;
-using log4net.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTK;
 using OpenTK.Graphics;
+using Serilog;
 
 namespace PixelGameEngineCoreTest;
 
@@ -23,24 +22,38 @@ class DemoApp
 
     static void Main(string[] args)
     {
-        var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-        XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+        try
+        {
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
 
-        IConfigurationBuilder configBuilder = new ConfigurationBuilder()
-            .AddJsonFile($"{Environment.CurrentDirectory}/appsettings.json");
+            IConfigurationBuilder configBuilder = new ConfigurationBuilder()
+                .AddJsonFile($"{Environment.CurrentDirectory}/appsettings.json");
 
-        var configuration = configBuilder.Build();
+            var configuration = configBuilder.Build();
 
-        using var serviceProvider = new ServiceCollection()
-            .AddSingleton<GameWindow, GLWindow>()
-            .AddSingleton<PGEDemo>()
-            .AddScoped<IRenderer, GL21Renderer>()
-            .AddScoped<IPlatform, OpenTkPlatform>()
-            .Configure<ApplicationConfiguration>(configuration.GetSection("Application"))
-            .BuildServiceProvider();
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<GameWindow, GLWindow>()
+                .AddSingleton<PGEDemo>()
+                .AddScoped<IRenderer, GL21Renderer>()
+                .AddScoped<IPlatform, OpenTkPlatform>()
+                .Configure<ApplicationConfiguration>(configuration.GetSection("Application"))
+                .AddLogging(builder =>
+                {
+                    var logConfig = new LoggerConfiguration().ReadFrom.Configuration(configuration);
+                    builder.AddSerilog(logConfig.CreateLogger(), true);
+                })
+                .BuildServiceProvider();
 
-        DemoApp app = new DemoApp(serviceProvider);
-        app.Run();
+            DemoApp app = new DemoApp(serviceProvider);
+            app.Run();
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
 
     private PGEDemo pge; // = new PixelGameEngine(AppName);
@@ -91,9 +104,7 @@ class DemoApp
     //    //                    });
     //    //showCursorPos(0, 20);
     //    //showMouseWheelDelta(0, 30);
-    //    //showMouseButtonState(0, 40, 0);
-    //    //showMouseButtonState(0, 50, 1);
-    //    //showMouseButtonState(0, 60, 2);
+
     //    //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
     //    //pge.DrawCircle(100, 100, 100, Pixel.RED);
@@ -105,15 +116,7 @@ class DemoApp
     //    //                 Pixel.MAGENTA);
     //    //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
 
-    //    //drawRandomPixels();
 
-    //    _curFrameCount++;
-    //    if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
-    //    {
-    //        _fps = _curFrameCount;
-    //        _curFrameCount = 0;
-    //        _dtStartFrame = DateTime.Now;
-    //    }
     //    //pge.DrawStringDecal(new vf2d(0, 10), $"FPS: {_fps}", Pixel.BLACK, new vf2d(1, 1));
     //}
 
@@ -127,11 +130,4 @@ class DemoApp
         //pge.DrawStringDecal(x, y, $"Wheel Delta: {pge.MouseWheelDelta}", Pixel.BLACK);
     }
 
-    private void showMouseButtonState(int x, int y, uint button)
-    {
-        var btnState = pge.GetMouse(button);
-
-        string display = $"BTN {button} [Released:{btnState.Released}] [Pressed:{btnState.Pressed}] [Held: {btnState.Held}]";
-        //pge.DrawStringDecal(x, y, display, Pixel.BLACK);
-    }
 }

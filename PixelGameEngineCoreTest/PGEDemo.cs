@@ -7,10 +7,12 @@ using csPGE = csPixelGameEngineCore;
 using csPixelGameEngineCore;
 using csPixelGameEngineCore.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 
 namespace PixelGameEngineCoreTest;
 
-internal class PGEDemo : PixelGameEngine
+internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<ApplicationConfiguration> config, ILogger<PGEDemo> logger)
+    : PixelGameEngine(renderer, platform, logger, config.Value.AppName)
 {
     private Random rnd = new Random();
     private DateTime dtStartFrame = DateTime.Now;
@@ -20,12 +22,7 @@ internal class PGEDemo : PixelGameEngine
     private int curFrameCount = 0;
     private int fps = 0;
 
-    private Sprite[] animation;
-
-    public PGEDemo(IRenderer renderer, IPlatform platform, IOptions<ApplicationConfiguration> config)
-        : base(renderer, platform, config.Value.AppName)
-    {
-    }
+    private Renderable[] animation;
 
     protected override bool OnUserCreate()
     {
@@ -39,7 +36,7 @@ internal class PGEDemo : PixelGameEngine
         base.OnUserUpdate(fElapsedTime);
 
         Clear(csPGE.Pixel.BLUE);
-        PixelMode = csPGE.Pixel.Mode.MASK;
+        PixelMode = csPGE.Pixel.Mode.NORMAL;
 
         //drawRandomPixels();
         drawAnimation();
@@ -81,7 +78,9 @@ internal class PGEDemo : PixelGameEngine
                 animationDirection = 1;
             }
         }
-        DrawSprite(0, 0, animation[animationFrame]);
+
+        //DrawSprite(0, 0, animation[animationFrame].Sprite);
+        DrawDecal(new vf2d(0, 0), animation[animationFrame].Decal, new vf2d(1, 1), csPGE.Pixel.WHITE);
     }
 
     /// <summary>
@@ -105,17 +104,21 @@ internal class PGEDemo : PixelGameEngine
     /// Load a test animation from a resource pack
     /// </summary>
     /// <returns></returns>
-    private Sprite[] loadTestAnimation()
+    private Renderable[] loadTestAnimation()
     {
-        var testAnimation = new Sprite[10];
-        var rp = new ResourcePack();
+        var testAnimation = new Renderable[10];
+        using var rp = new ResourcePack();
         rp.LoadPack("./assets1.pack", "AReallyGoodKeyShouldBeUsed");
 
         // Images in pack go from 1 to 9
         for (int i = 1, spr_i = 0; i < 10; i++, spr_i++)
         {
             string file = $"./assets/Walking_00{i}.png";
-            testAnimation[spr_i] = new Sprite(file, rp);
+            testAnimation[spr_i] = new Renderable(renderer);
+            if (testAnimation[spr_i].Load(file, rp) != csPGE.Enums.RCode.OK)
+            {
+                throw new Exception($"Failed to load image {file} from resource pack");
+            }
             //testAnimationDecal[i] = new Decal(testAnimation[i], serviceProvider.GetService<IRenderer>());
         }
 

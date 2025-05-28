@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using csPixelGameEngineCore.Enums;
-using log4net;
+using Microsoft.Extensions.Logging;
 using OpenTK;
 using OpenTK.Input;
 
@@ -10,7 +10,7 @@ namespace csPixelGameEngineCore
 {
     public class OpenTkPlatform : IPlatform
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(OpenTkPlatform));
+        private readonly ILogger<OpenTkPlatform> logger;
         private readonly GameWindow glWindow;
 
         public int WindowWidth  { get => glWindow.Size.Width; }
@@ -24,8 +24,9 @@ namespace csPixelGameEngineCore
         public event EventHandler<MouseButtonEventArgs> MouseUp;
         public event EventHandler<FrameUpdateEventArgs> UpdateFrame;
 
-        public OpenTkPlatform(GameWindow gameWindow)
+        public OpenTkPlatform(GameWindow gameWindow, ILogger<OpenTkPlatform> logger)
         {
+            this.logger = logger;
             glWindow = gameWindow;
         }
 
@@ -40,7 +41,7 @@ namespace csPixelGameEngineCore
 
         public RCode StartSystemEventLoop()
         {
-            Log.Debug("OpenTkPlatform.StartSystemEventLoop()");
+            logger.LogDebug("OpenTkPlatform.StartSystemEventLoop()");
 
             // Glue some event handlers to glWindow
             glWindow.Closed += (sender, eventArgs) =>
@@ -114,7 +115,7 @@ namespace csPixelGameEngineCore
 
         public RCode CreateWindowPane(vi2d windowPosition, vi2d windowSize, bool isFullScreen)
         {
-            Log.Debug("OpenTkPlatform.CreateWindowPane()");
+            logger.LogDebug("OpenTkPlatform.CreateWindowPane()");
             SetWindowSize(windowPosition, windowSize);
             glWindow.WindowState = isFullScreen ? WindowState.Fullscreen : WindowState.Normal;
 

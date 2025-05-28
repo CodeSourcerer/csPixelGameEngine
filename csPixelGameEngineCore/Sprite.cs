@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.IO;
 using csPixelGameEngineCore.Enums;
-using log4net;
+using Serilog;
 
 namespace csPixelGameEngineCore
 {
@@ -11,8 +11,6 @@ namespace csPixelGameEngineCore
     /// </summary>
     public class Sprite
     {
-        private static readonly ILog Log = LogManager.GetLogger(typeof(Sprite));
-
         public enum Mode { NORMAL, PERIODIC };
 
         public int Width { get; private set; }
@@ -51,7 +49,7 @@ namespace csPixelGameEngineCore
 
         public Sprite(string sImageFile, ResourcePack pack)
         {
-            LoadFromFile(sImageFile, pack);
+            LoadFromFile(sImageFile, pack, true);
         }
 
         private delegate void DataReader(BinaryReader br);
@@ -74,19 +72,18 @@ namespace csPixelGameEngineCore
             {
                 if (pack == null)
                 {
-                    using (BinaryReader br = new BinaryReader(File.OpenRead(sImageFile)))
-                    {
-                        ReadData(br);
-                        return RCode.OK;
-                    }
+                    using BinaryReader br = new BinaryReader(File.OpenRead(sImageFile));
+
+                    ReadData(br);
+                    return RCode.OK;
                 }
                 else
                 {
                     ResourceBuffer rb = pack.GetFileBuffer(sImageFile);
-                    using (BinaryReader br = new BinaryReader(new MemoryStream(rb.Memory.ToArray())))
-                    {
-                        ReadData(br);
-                    }
+                    using BinaryReader br = new BinaryReader(new MemoryStream(rb.Memory.ToArray()));
+
+                    ReadData(br);
+
                     return RCode.OK;
                 }
             }
@@ -105,16 +102,16 @@ namespace csPixelGameEngineCore
 
             try
             {
-                using (BinaryWriter bw = new BinaryWriter(File.OpenWrite(sImageFile)))
+                using BinaryWriter bw = new BinaryWriter(File.OpenWrite(sImageFile));
+
+                bw.Write(Width);
+                bw.Write(Height);
+                for (int i = 0; i < (Width * Height); i++)
                 {
-                    bw.Write(Width);
-                    bw.Write(Height);
-                    for (int i = 0; i < (Width * Height); i++)
-                    {
-                        bw.Write(ColorData[i]);
-                    }
-                    bw.Close();
+                    bw.Write(ColorData[i]);
                 }
+                bw.Close();
+
                 return RCode.OK;
             }
             catch (Exception)
@@ -123,12 +120,19 @@ namespace csPixelGameEngineCore
             }
         }
 
-        public RCode LoadFromFile(string sImageFile, ResourcePack pack)
+        public RCode LoadFromFile(string sImageFile, ResourcePack pack, bool throwOnError = false)
         {
             Bitmap bmp;
 
+            if (pack == null && !File.Exists(sImageFile))
+            {
+                if (throwOnError) throw new FileNotFoundException("File could not be located", sImageFile);
+                return RCode.NO_FILE;
+            }
+
             try
             {
+                // Latest version of PGE removed resource packs. I'm leaving them for now.
                 if (pack != null)
                 {
                     // Load sprite from input stream
@@ -144,8 +148,10 @@ namespace csPixelGameEngineCore
             }
             catch (Exception ex)
             {
-                Log.Warn($"Unable to load image {sImageFile}", ex);
-                return RCode.NO_FILE;
+                Log.Warning($"Unable to load image {sImageFile}", ex);
+                if (throwOnError) throw;
+
+                return RCode.FAIL;
             }
 
             Width = bmp.Width;
@@ -187,7 +193,7 @@ namespace csPixelGameEngineCore
                 }
                 else
                 {
-                    Log.DebugFormat("Attempted to get pixel outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+                    Log.Debug("Attempted to get pixel outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
                     return Pixel.BLANK;
                 }
             }
@@ -215,7 +221,7 @@ namespace csPixelGameEngineCore
                 return true;
             }
 
-            Log.DebugFormat("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+            Log.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
             return false;
         }
 
@@ -236,7 +242,7 @@ namespace csPixelGameEngineCore
                 return true;
             }
 
-            Log.DebugFormat("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+            Log.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
             return false;
         }
 

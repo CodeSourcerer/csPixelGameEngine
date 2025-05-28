@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
-using log4net;
+using Microsoft.Extensions.Logging;
 using OpenTK.Input;
 
 /*
@@ -71,7 +71,7 @@ public delegate Pixel PixelBlender(int x, int y, Pixel pSrc, Pixel pDst);
 
 public class PixelGameEngine
 {
-    private static readonly ILog Log = LogManager.GetLogger(typeof(PixelGameEngine));
+    private readonly ILogger<PixelGameEngine> logger;
 
     #region Engine properties
     public string   AppName             { get; private set; }
@@ -93,6 +93,7 @@ public class PixelGameEngine
     public vi2d     ScreenSize          { get; private set; } = new vi2d(256, 240);
     public vf2d     InvScreenSize       { get; private set; } = new vf2d(1.0f / 256.0f, 1.0f / 240.0f);
     public DecalMode DecalMode          { get; set; } = DecalMode.NORMAL;
+    public DecalStructure DecalStructure { get; set; } = DecalStructure.FAN;
 
     /// <summary>
     /// Pixel aspect ratio
@@ -153,7 +154,7 @@ public class PixelGameEngine
     private long _tp1 = 0;
     private long _tp2 = 0;
 
-    private readonly IRenderer _renderer;
+    protected readonly IRenderer renderer;
     public readonly IPlatform Platform;
     private Renderable fontRenderable;
     private HWButton[] btnStates = {
@@ -185,12 +186,13 @@ public class PixelGameEngine
 
     #endregion // Events
 
-    public PixelGameEngine(IRenderer renderer, IPlatform platform, string appName = null)
+    public PixelGameEngine(IRenderer renderer, IPlatform platform, ILogger<PixelGameEngine> logger, string appName = null)
     {
         if (renderer == null) throw new ArgumentNullException(nameof(renderer));
         if (platform == null) throw new ArgumentNullException(nameof(platform));
 
-        this._renderer = renderer;
+        this.logger = logger;
+        this.renderer = renderer;
         this.Platform = platform;
 
         AppName = string.IsNullOrWhiteSpace(appName) ? "Undefined" : appName;
@@ -234,7 +236,7 @@ public class PixelGameEngine
 
     private void construct_fontSheet()
     {
-        Log.Info("Constructing font sheet");
+        logger.LogInformation("Constructing font sheet");
 
         StringBuilder data = new StringBuilder(1024);
         data.Append("?Q`0001oOch0o01o@F40o0<AGD4090LAGD<090@A7ch0?00O7Q`0600>00000000");
@@ -254,7 +256,7 @@ public class PixelGameEngine
         data.Append("O`000P08Od400g`<3V=P0G`673IP0`@3>1`00P@6O`P00g`<O`000GP800000000");
         data.Append("?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020");
 
-        fontRenderable = new Renderable(_renderer);
+        fontRenderable = new Renderable(renderer);
         fontRenderable.Create(128, 48);
 
         int px = 0, py = 0;
@@ -301,11 +303,11 @@ public class PixelGameEngine
 
         if (!_bRealWindowMode)
         {
-            _renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
-            _renderer.DisplayFrame();
-            _renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
+            renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
+            renderer.DisplayFrame();
+            renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
         }
-        _renderer.UpdateViewport(ViewPos, ViewSize);
+        renderer.UpdateViewport(ViewPos, ViewSize);
     }
 
     /// <summary>
@@ -315,7 +317,7 @@ public class PixelGameEngine
     /// <returns></returns>
     public RCode Start()
     {
-        Log.Debug("PixelGameEngine.Start()");
+        logger.LogDebug("PixelGameEngine.Start()");
 
         if (Platform.ApplicationStartUp() != RCode.OK) return RCode.FAIL;
 
@@ -351,7 +353,7 @@ public class PixelGameEngine
             MouseWheelDelta = 0;
         };
 
-        _renderer.RenderFrame += (sender, frameEventArgs) =>
+        renderer.RenderFrame += (sender, frameEventArgs) =>
         {
             //Log.Debug("Renderer.RenderFrame handler");
             // This mainly does rendering, which is why I put it here.
@@ -398,7 +400,7 @@ public class PixelGameEngine
 
         construct_fontSheet();
 
-        _renderer.CreateDevice(FullScreen, EnableVSYNC, ViewPos, ViewSize);
+        renderer.CreateDevice(FullScreen, EnableVSYNC, ViewPos, ViewSize);
 
         // Create Primary layer "0"
         CreateLayer();
@@ -433,14 +435,14 @@ public class PixelGameEngine
         }
 
         // Display Frame
-        _renderer.UpdateViewport(ViewPos, ViewSize);
-        _renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
+        renderer.UpdateViewport(ViewPos, ViewSize);
+        renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
 
         // Ensure layer 0 is active
         Layers[0].bUpdate = true;
         Layers[0].bShow = true;
         DecalMode = DecalMode.NORMAL;
-        _renderer.PrepareDrawing();
+        renderer.PrepareDrawing();
 
         // Draw all active layers
         foreach (var layer in Layers)
@@ -449,33 +451,37 @@ public class PixelGameEngine
             {
                 if (layer.funcHook == null)
                 {
-                    _renderer.ApplyTexture((uint)layer.DrawTarget.Decal.Id);
-                    if (layer.bUpdate)
+                    renderer.ApplyTexture((uint)layer.DrawTarget.Decal.Id);
+                    if (layer.bUpdate /* && !bSuspendTextureTransfer */) // TODO: Implement whatever the hell this is for
                     {
                         layer.DrawTarget.Decal.Update();
                         layer.bUpdate = false;
                     }
 
-                    _renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
+                    renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
 
                     // Display decals in order for this layer
                     foreach (var decal in layer.DecalInstance)
                     {
-                        _renderer.DrawDecal(decal);
+                        renderer.DrawDecal(decal);
                     }
 
                     layer.DecalInstance.Clear();
                 }
                 else
                 {
+                    // Yee-haw!
                     layer.funcHook();
                 }
             }
         }
 
-        _renderer.DisplayFrame();
+        renderer.DisplayFrame();
 
         // TODO: Implement other stuff
+        // Resize code goes here - not sure if I need it?
+        
+        // Frame counter code here
     }
 
     public void olc_UpdateWindowSize(int width, int height)
@@ -525,7 +531,7 @@ public class PixelGameEngine
     }
 
     /// <summary>
-    /// Draws a single Pixel
+    /// Draws a pixel. This is all you need. The rest is fluff.
     /// </summary>
     /// <param name="x"></param>
     /// <param name="y"></param>
@@ -533,28 +539,32 @@ public class PixelGameEngine
     /// <returns></returns>
     public virtual bool Draw(int x, int y, Pixel p)
     {
+        // Make sure we have a draw target
         if (DrawTarget == null)
+        {
             return false;
+        }
+
+        // This just makes the switch expression look cleaner.
+        Func<int, int, Pixel, Pixel> alphaBlend = (x, y, p) =>
+        {
+            Pixel d = DrawTarget.GetPixel(x, y);
+            float a = (p.a / 255.0f) * BlendFactor;
+            float c = 1.0f - a;
+            float r = a * p.r + c * d.r;
+            float g = a * p.g + c * d.g;
+            float b = a * p.b + c * d.b;
+            return new Pixel((byte)r, (byte)g, (byte)b);
+        };
 
         return PixelMode switch
         {
-            csPixelGameEngineCore.Pixel.Mode.NORMAL => DrawTarget.SetPixel(x, y, p),
+            csPixelGameEngineCore.Pixel.Mode.NORMAL               => DrawTarget.SetPixel(x, y, p),
             csPixelGameEngineCore.Pixel.Mode.MASK when p.a == 255 => DrawTarget.SetPixel(x, y, p),
-            csPixelGameEngineCore.Pixel.Mode.ALPHA => DrawTarget.SetPixel(x, y, alphaBlend(x, y, p)),
-            csPixelGameEngineCore.Pixel.Mode.CUSTOM => DrawTarget.SetPixel(x, y, CustomPixelBlender(x, y, DrawTarget.GetPixel(x, y), p)),
+            csPixelGameEngineCore.Pixel.Mode.ALPHA                => DrawTarget.SetPixel(x, y, alphaBlend(x, y, p)),
+            csPixelGameEngineCore.Pixel.Mode.CUSTOM               => DrawTarget.SetPixel(x, y, CustomPixelBlender(x, y, DrawTarget.GetPixel(x, y), p)),
             _ => false
         };
-    }
-
-    private Pixel alphaBlend(int x, int y, Pixel p)
-    {
-        Pixel d = DrawTarget.GetPixel(x, y);
-        float a = (p.a / 255.0f) * BlendFactor;
-        float c = 1.0f - a;
-        float r = a * p.r + c * d.r;
-        float g = a * p.g + c * d.g;
-        float b = a * p.b + c * d.b;
-        return new Pixel((byte)r, (byte)g, (byte)b);
     }
 
     // Draws a line from (x1,y1) to (x2,y2)
@@ -1147,30 +1157,31 @@ public class PixelGameEngine
     /// <param name="decal"></param>
     /// <param name="scale">If null, will use vec2d_f.UNIT</param>
     /// <param name="tint">If null, will use Pixel.WHITE</param>
-    public void DrawDecal(DecalInstance decal)
+    public void DrawDecal(vf2d pos, Decal decal, vf2d scale, Pixel tint)
     {
-        //vf2d vScreenSpacePos = new vf2d
-        //{
-        //    x = (pos.x * InvScreenSize.x) * 2.0f - 1.0f,
-        //    y = ((pos.y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f
-        //};
-        //vf2d vScreenSpaceDim = new vf2d
-        //{
-        //    x = vScreenSpacePos.x + (2.0f * decal.sprite.Width * InvScreenSize.x) * scale.x,
-        //    y = vScreenSpacePos.y - (2.0f * decal.sprite.Height * InvScreenSize.y) * scale.y
-        //};
+        vf2d vScreenSpacePos = new vf2d
+        {
+            x = pos.x * InvScreenSize.x * 2.0f - 1.0f,
+            y = (pos.y * InvScreenSize.y * 2.0f - 1.0f) * -1.0f
+        };
+        vf2d vScreenSpaceDim = new vf2d
+        {
+            x = vScreenSpacePos.x + (2.0f * decal.sprite.Width * InvScreenSize.x) * scale.x,
+            y = vScreenSpacePos.y - (2.0f * decal.sprite.Height * InvScreenSize.y) * scale.y
+        };
 
-        //DecalInstance di = new DecalInstance
-        //{
-        //    decal = decal,
-        //    tint = tint
-        //};
-        //di.pos[0] = new vf2d { x = vScreenSpacePos.x, y = vScreenSpacePos.y };
-        //di.pos[1] = new vf2d { x = vScreenSpacePos.x, y = vScreenSpaceDim.y };
-        //di.pos[2] = new vf2d { x = vScreenSpaceDim.x, y = vScreenSpaceDim.y };
-        //di.pos[3] = new vf2d { x = vScreenSpaceDim.x, y = vScreenSpacePos.y };
+        DecalInstance di = new DecalInstance
+        {
+            decal = decal,
+            tint = [tint, tint, tint, tint],
+            pos = [ vScreenSpacePos, new vf2d(vScreenSpacePos.x, vScreenSpaceDim.y), vScreenSpaceDim, new vf2d(vScreenSpaceDim.x, vScreenSpacePos.y) ],
+            uv = [ new vf2d(0.0f, 0.0f), new vf2d(0.0f, 1.0f), new vf2d(1.0f, 1.0f), new vf2d(1.0f, 0.0f) ],
+            w = [ 1, 1, 1, 1 ],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
 
-        //Layers[(int)TargetLayer].DecalInstance.Add(di);
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
     }
 
     #endregion // Drawing Methods
@@ -1178,7 +1189,7 @@ public class PixelGameEngine
     #region Layer Methods
     public uint CreateLayer()
     {
-        var ld = new LayerDesc(_renderer);
+        var ld = new LayerDesc(renderer);
         ld.DrawTarget.Create((uint)ScreenSize.x, (uint)ScreenSize.y);
         //ld.ResID = _renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
         //_renderer.UpdateTexture(ld.ResID, ld.DrawTarget);

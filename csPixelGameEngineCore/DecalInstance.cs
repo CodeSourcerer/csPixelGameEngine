@@ -8,9 +8,9 @@ namespace csPixelGameEngineCore
     public class DecalInstance
     {
         public Decal     decal  { get; set; }
-        public vf2d[]    pos    { get; private set; }
-        public vf2d[]    uv     { get; private set; }
-        public float[]   w      { get; private set; }
+        public vf2d[]    pos    { get; set; }
+        public vf2d[]    uv     { get; set; }
+        public float[]   w      { get; set; }
         public float[]   z      { get; private set; }
         public Pixel[]   tint   { get; set; }
         public uint      points { get; private set; } = 0;
