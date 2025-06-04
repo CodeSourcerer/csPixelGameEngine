@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Serilog;
 
 namespace csPixelGameEngineCore
 {
@@ -29,6 +30,18 @@ namespace csPixelGameEngineCore
             Update();
         }
 
+        /// <summary>
+        /// Reuses an existing texture resource
+        /// </summary>
+        /// <param name="nExistingTextureResource"></param>
+        /// <param name="spr">I honestly don't know the purpose of this... just don't pass a null</param>
+        public Decal(int nExistingTextureResource, Sprite spr)
+        {
+            if (spr == null) return;
+
+            Id = nExistingTextureResource;
+        }
+
         public void Update()
         {
             if (sprite == null)
@@ -40,6 +53,17 @@ namespace csPixelGameEngineCore
                 _renderer.ApplyTexture((uint)Id);
                 _renderer.UpdateTexture((uint)Id, sprite);
             }
+        }
+
+        public void UpdateSprite()
+        {
+            if (sprite == null)
+            {
+                return;
+            }
+
+            _renderer.ApplyTexture((uint)Id);
+            _renderer.ReadTexture((uint)Id, sprite);
         }
 
         #region IDisposable Support
@@ -58,7 +82,9 @@ namespace csPixelGameEngineCore
                 // TODO: set large fields to null.
                 if (Id != -1)
                 {
+                    Log.Debug("Deleting texture [id:{id}]", Id);
                     _renderer.DeleteTexture((uint)Id);
+                    Id = -1;
                 }
 
                 disposedValue = true;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
@@ -78,6 +79,7 @@ public class PixelGameEngine
     //public GLWindow Window              { get; private set; }
     public bool     FullScreen          { get; private set; }
     public bool     EnableVSYNC         { get; private set; }
+    public bool     ResizeRequested     { get; private set; } = false;
     public vi2d     ViewPos             { get; private set; } = new vi2d(0, 0);
     public vi2d     ViewSize            { get; private set; } = new vi2d(0, 0);
     public vi2d     WindowSize          { get; private set; } = new vi2d(0, 0);
@@ -87,6 +89,7 @@ public class PixelGameEngine
     public Sprite   DrawTarget          { get; private set; }
     public Sprite   DefaultDrawTarget   { get; private set; }
     public vi2d     MousePos            { get; private set; } = new vi2d(0, 0);
+    public vi2d     WindowMousePos      { get; private set; } = new vi2d(0, 0);
     public int      MouseWheelDelta     { get; private set; }
     public vi2d     PixelSize           { get; private set; } = new vi2d(4, 4);
     public vi2d     ScreenPixelSize     { get; private set; } = new vi2d(4, 4);
@@ -157,11 +160,9 @@ public class PixelGameEngine
     protected readonly IRenderer renderer;
     public readonly IPlatform Platform;
     private Renderable fontRenderable;
-    private HWButton[] btnStates = {
-        new HWButton { Released = true, Pressed = false, Held = false },
-        new HWButton { Released = true, Pressed = false, Held = false },
-        new HWButton { Released = true, Pressed = false, Held = false }
-    };
+
+    public const byte nMouseButtons = 5;
+    private HWButton[] btnStates = [ new HWButton(), new HWButton(), new HWButton(), new HWButton(), new HWButton()];
 
     #endregion // Engine properties
 
@@ -182,7 +183,7 @@ public class PixelGameEngine
     /// <summary>
     /// Event that fires after window closes.
     /// </summary>
-    public event EventHandler OnDestroy;
+    public event EventHandler<CancelEventArgs> OnDestroy;
 
     #endregion // Events
 
@@ -210,7 +211,7 @@ public class PixelGameEngine
     /// <remarks>
     /// Original returns an error code. I opted to throw an exception instead.
     /// </remarks>
-    public void Construct(int screen_w, int screen_h, int pixel_w, int pixel_h, bool full_screen = false,
+    public RCode Construct(int screen_w, int screen_h, int pixel_w, int pixel_h, bool full_screen = false,
         bool vsync = false, bool cohesion = false, bool realwindow = false)
     {
         if (screen_w <= 0) throw new ArgumentException("Must be at least 1", nameof(screen_w));
@@ -232,6 +233,8 @@ public class PixelGameEngine
         // Create a sprite that represents the primary drawing target
         //DefaultDrawTarget = window.DrawTarget;
         //drawTarget = DefaultDrawTarget;
+
+        return RCode.OK;
     }
 
     private void construct_fontSheet()
@@ -279,6 +282,8 @@ public class PixelGameEngine
         fontRenderable.Decal.Update();
     }
 
+    #region Screen / Window attributes
+
     /// <summary>
     /// Set the screen size
     /// </summary>
@@ -289,16 +294,17 @@ public class PixelGameEngine
         if (w <= 0) throw new ArgumentException("Must be at least 1", nameof(w));
         if (h <= 0) throw new ArgumentException("Must be at least 1", nameof(h));
 
-        ScreenSize = new vi2d(w, h);
+        ScreenSize.x = w;
+        ScreenSize.y = h;
+
         InvScreenSize = 1.0f / ScreenSize;
 
-        // TODO: Update layers
         foreach (var layer in Layers)
         {
             layer.DrawTarget.Create((uint)ScreenSize.x, (uint)ScreenSize.y);
             layer.bUpdate = true;
         }
-        //Window.DrawTarget = new Sprite(ScreenWidth, ScreenHeight);
+
         SetDrawTarget(0);
 
         if (!_bRealWindowMode)
@@ -307,8 +313,25 @@ public class PixelGameEngine
             renderer.DisplayFrame();
             renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
         }
+
         renderer.UpdateViewport(ViewPos, ViewSize);
     }
+
+    public RCode SetWindowSize(vi2d vPos, vi2d vSize)
+    {
+        return Platform.SetWindowSize(vPos, vSize);
+    }
+
+    // For compatability
+    public int ScreenWidth() => ScreenSize.x;
+    public int ScreenHeight() => ScreenSize.y;
+    public vi2d GetScreenSize() => ScreenSize;
+    public vi2d GetWindowSize() => WindowSize;
+    public vi2d GetWindowPos() => WindowPos;
+    public vi2d GetPixelSize() => PixelSize;
+    public vi2d GetScreenPixelSize() => ScreenPixelSize;
+
+    #endregion // Screen / Window attributes
 
     /// <summary>
     /// This starts the engine and the rendering loop.
@@ -334,16 +357,22 @@ public class PixelGameEngine
 
         // This simulates "OnUserCreate()"
         OnCreate?.Invoke(this, new EventArgs());
-        
-        Platform.Closed += (sender, eventArgs) =>
+
+        Platform.Closing += (sender, eventArgs) =>
         {
-            OnDestroy?.Invoke(sender, EventArgs.Empty);
+            if (!OnUserDestroy())
+            {
+                eventArgs.Cancel = true;
+            }
+            OnDestroy?.Invoke(sender, eventArgs);
         };
 
         Platform.Resize += (sender, eventArgs) =>
         {
             olc_UpdateWindowSize(Platform.WindowWidth, Platform.WindowHeight);
         };
+
+        Platform.Move += (sender, eventArgs) => olc_UpdateWindowPos(Platform.WindowPosX, Platform.WindowPosY);
 
         Platform.UpdateFrame += (sender, frameEventArgs) =>
         {
@@ -365,7 +394,7 @@ public class PixelGameEngine
 
         Platform.MouseWheel += (sender, mouseWheelEventArgs) =>
         {
-            MouseWheelDelta = mouseWheelEventArgs.Delta;
+            MouseWheelDelta = mouseWheelEventArgs.OffsetY;
         };
 
         Platform.MouseMove += (sender, mouseMoveEventArgs) =>
@@ -436,7 +465,7 @@ public class PixelGameEngine
 
         // Display Frame
         renderer.UpdateViewport(ViewPos, ViewSize);
-        renderer.ClearBuffer(csPixelGameEngineCore.Pixel.BLACK, true);
+        renderer.ClearBuffer(csPixelGameEngineCore.Pixel.MAGENTA, true);
 
         // Ensure layer 0 is active
         Layers[0].bUpdate = true;
@@ -478,31 +507,74 @@ public class PixelGameEngine
 
         renderer.DisplayFrame();
 
+        if (ResizeRequested)
+        {
+            ResizeRequested = false;
+            SetScreenSize(WindowSize.x, WindowSize.y);
+        }
         // TODO: Implement other stuff
         // Resize code goes here - not sure if I need it?
         
         // Frame counter code here
     }
 
+    public void olc_UpdateWindowPos(int x, int y)
+    {
+        WindowPos.x = x;
+        WindowPos.y = y;
+
+        olc_UpdateViewport();
+    }
+
     public void olc_UpdateWindowSize(int width, int height)
     {
-        WindowSize = new vi2d { x = width, y = height };
+        WindowSize.x = width;
+        WindowSize.y = height;
+
+        if (_bRealWindowMode)
+        {
+            //vResizeRequested = WindowSize;
+            ResizeRequested = true;
+        }
+
         olc_UpdateViewport();
     }
 
     public void olc_UpdateViewport()
     {
+        if (_bRealWindowMode)
+        {
+            PixelSize.x = 1;
+            PixelSize.y = 1;
+            ViewSize = ScreenSize;
+            ViewPos.x = 0;
+            ViewPos.y = 0;
+            
+            return;
+        }
+
         int windowWidth = ScreenSize.x * PixelSize.x;
         int windowHeight = ScreenSize.y * PixelSize.y;
         float windowAspectRatio = windowWidth / (float)windowHeight;
 
-        var viewY = (int)(WindowSize.x / windowAspectRatio);
-        if (viewY > WindowSize.y)
+        if (_bPixelCohesion)
         {
-            viewY = WindowSize.y;
+            ScreenPixelSize = WindowSize / ScreenSize;
+            ViewSize = (WindowSize / ScreenSize) * ScreenSize;
+        }
+        else
+        {
+            ViewSize.x = WindowSize.x;
+            ViewSize.y = (int)(ViewSize.x / windowAspectRatio);
+
+            if (ViewSize.y > WindowSize.y)
+            {
+                ViewSize.y = WindowSize.y;
+                ViewSize.x = (int)(ViewSize.y * windowAspectRatio);
+            }
         }
 
-        ViewSize = new vi2d { x = WindowSize.x, y = viewY };
+        ViewPos = new vi2d((WindowSize - ViewSize) / 2);
     }
 
     private void updateMouseButtonStates(MouseButtonEventArgs mouseButtonEvent)
@@ -518,10 +590,14 @@ public class PixelGameEngine
     /// </summary>
     /// <param name="b">button</param>
     /// <returns></returns>
-    public HWButton GetMouse(uint button)
-    {
-        return btnStates[button];
-    }
+    public HWButton GetMouse(uint button) => btnStates[button];
+
+    // For compatibility
+    public int GetMouseX() => MousePos.x;
+    public int GetMouseY() => MousePos.y;
+    public vi2d GetMousePos() => MousePos;
+    public int GetMouseWheel() => MouseWheelDelta;
+    public vi2d GetWindowMouse() => WindowMousePos;
 
     #region Drawing Methods
 
@@ -1157,7 +1233,8 @@ public class PixelGameEngine
     /// <param name="decal"></param>
     /// <param name="scale">If null, will use vec2d_f.UNIT</param>
     /// <param name="tint">If null, will use Pixel.WHITE</param>
-    public void DrawDecal(vf2d pos, Decal decal, vf2d scale, Pixel tint)
+    /// <param name="decalMode">I want a way to override the class one that is ALWAYS F*ING SET TO NORMAL, so I'm providing.</param>
+    public void DrawDecal(vf2d pos, Decal decal, vf2d scale, Pixel tint, DecalMode decalMode = DecalMode.NORMAL)
     {
         vf2d vScreenSpacePos = new vf2d
         {
@@ -1173,11 +1250,12 @@ public class PixelGameEngine
         DecalInstance di = new DecalInstance
         {
             decal = decal,
+            points = 4,
             tint = [tint, tint, tint, tint],
             pos = [ vScreenSpacePos, new vf2d(vScreenSpacePos.x, vScreenSpaceDim.y), vScreenSpaceDim, new vf2d(vScreenSpaceDim.x, vScreenSpacePos.y) ],
             uv = [ new vf2d(0.0f, 0.0f), new vf2d(0.0f, 1.0f), new vf2d(1.0f, 1.0f), new vf2d(1.0f, 0.0f) ],
             w = [ 1, 1, 1, 1 ],
-            mode = DecalMode,
+            mode = decalMode,
             structure = DecalStructure
         };
 
@@ -1191,8 +1269,6 @@ public class PixelGameEngine
     {
         var ld = new LayerDesc(renderer);
         ld.DrawTarget.Create((uint)ScreenSize.x, (uint)ScreenSize.y);
-        //ld.ResID = _renderer.CreateTexture((uint)ScreenSize.x, (uint)ScreenSize.y);
-        //_renderer.UpdateTexture(ld.ResID, ld.DrawTarget);
 
         Layers.Add(ld);
         return (uint)(Layers.Count - 1);
@@ -1216,65 +1292,68 @@ public class PixelGameEngine
         }
     }
 
-    public void SetDrawTarget(uint layer, bool dirty = true)
+    public void SetDrawTarget(byte layer, bool dirty = true)
     {
         if (layer < Layers.Count)
         {
-            DrawTarget = Layers[(int)layer].DrawTarget.Sprite;
-            Layers[(int)layer].bUpdate = dirty;
+            DrawTarget = Layers[layer].DrawTarget.Sprite;
+            Layers[layer].bUpdate = dirty;
             TargetLayer = layer;
         }
     }
 
-    public void EnableLayer(uint layer, bool enabled)
+    public Sprite GetDrawTarget() => DrawTarget;
+
+    public int GetDrawTargetWidth() => DrawTarget?.Width ?? 0;
+
+    public int GetDrawTargetHeight() => DrawTarget?.Height ?? 0;
+
+    public void EnableLayer(byte layer, bool enabled)
     {
         if (layer < Layers.Count)
         {
-            Layers[(int)layer].bShow = enabled;
+            Layers[layer].bShow = enabled;
         }
     }
 
-    public void SetLayerOffset(uint layer, vf2d offset)
-    {
-        SetLayerOffset(layer, offset.x, offset.y);
-    }
+    public void SetLayerOffset(byte layer, vf2d offset) => SetLayerOffset(layer, offset.x, offset.y);
 
-    public void SetLayerOffset(uint layer, float xOffset, float yOffset)
+    public void SetLayerOffset(byte layer, float xOffset, float yOffset)
     {
         if (layer < Layers.Count)
         {
-            Layers[(int)layer].vOffset = new vf2d { x = xOffset, y = yOffset };
+            Layers[layer].vOffset = new vf2d(xOffset, yOffset);
         }
     }
 
-    public void SetLayerScale(uint layer, vf2d scale)
-    {
-        SetLayerScale(layer, scale.x, scale.y);
-    }
+    public void SetLayerScale(byte layer, vf2d scale) => SetLayerScale(layer, scale.x, scale.y);
 
-    public void SetLayerScale(uint layer, float xScale, float yScale)
+    public void SetLayerScale(byte layer, float xScale, float yScale)
     {
         if (layer < Layers.Count)
         {
-            Layers[(int)layer].vScale = new vf2d { x = xScale, y = yScale };
+            Layers[layer].vScale = new vf2d(xScale, yScale);
         }
     }
 
-    public void SetLayerTint(uint layer, Pixel tint)
+    public void SetLayerTint(byte layer, Pixel tint)
     {
         if (layer < Layers.Count)
         {
-            Layers[(int)layer].Tint = tint;
+            Layers[layer].Tint = tint;
         }
     }
 
-    public void SetLayerCustomRenderFunction(uint layer, Action func)
+    public void SetLayerCustomRenderFunction(byte layer, Action func)
     {
         if (layer < Layers.Count)
         {
-            Layers[(int)layer].funcHook = func;
+            Layers[layer].funcHook = func;
         }
     }
+
+    public LayerDesc[] GetLayers() => [.. Layers];
+
     #endregion // Layer Methods
 
     #region Overrideable methods you should not override

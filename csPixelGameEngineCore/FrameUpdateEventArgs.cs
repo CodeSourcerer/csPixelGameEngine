@@ -1,19 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace csPixelGameEngineCore
+namespace csPixelGameEngineCore;
+
+public delegate void FrameUpdateEventHandler(object sender, FrameUpdateEventArgs frameUpdateArgs);
+
+public class FrameUpdateEventArgs : EventArgs
 {
-    public delegate void FrameUpdateEventHandler(object sender, FrameUpdateEventArgs frameUpdateArgs);
+    public double ElapsedTime { get; private set; }
 
-    public class FrameUpdateEventArgs : EventArgs
+    public FrameUpdateEventArgs(double elapsed)
+        : base()
     {
-        public double ElapsedTime { get; private set; }
-
-        public FrameUpdateEventArgs(double elapsed)
-            : base()
-        {
-            ElapsedTime = elapsed;
-        }
+        ElapsedTime = elapsed;
     }
 }

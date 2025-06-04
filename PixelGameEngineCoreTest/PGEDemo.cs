@@ -27,7 +27,6 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
     protected override bool OnUserCreate()
     {
         animation = loadTestAnimation();
-
         return true;
     }
 
@@ -39,15 +38,29 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         PixelMode = csPGE.Pixel.Mode.NORMAL;
 
         //drawRandomPixels();
-        drawAnimation();
-        drawMouseButtonStates();
+        //drawAnimation();
+        //drawMouseButtonStates(0, 10);
+        //drawMousePosition(0, 50);
+        drawScreenInfo(0, 60);
 
-        showFPS();
+        //showFPS(0, 0);
 
         return true;
     }
 
-    private void showFPS()
+    protected override bool OnUserDestroy()
+    {
+        logger.LogInformation("PGEDemo.OnUserDestroy()");
+
+        foreach (var frame in animation)
+        {
+            frame.Dispose();
+        }
+
+        return base.OnUserDestroy();
+    }
+
+    private void showFPS(int x, int y)
     {
         curFrameCount++;
         if ((DateTime.Now - dtStartFrame) >= TimeSpan.FromSeconds(1))
@@ -57,7 +70,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
             dtStartFrame = DateTime.Now;
         }
 
-        DrawString(0, 0, $"FPS: {fps}", csPGE.Pixel.WHITE);
+        DrawString(x, y, $"FPS: {fps}", csPGE.Pixel.WHITE);
     }
 
     /// <summary>
@@ -80,7 +93,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         }
 
         //DrawSprite(0, 0, animation[animationFrame].Sprite);
-        DrawDecal(new vf2d(0, 0), animation[animationFrame].Decal, new vf2d(1, 1), csPGE.Pixel.WHITE);
+        DrawDecal(new vf2d(0, 0), animation[animationFrame].Decal, new vf2d(1, 1), new Pixel(0, 0, 255, 255), csPGE.Enums.DecalMode.NORMAL);
     }
 
     /// <summary>
@@ -106,37 +119,53 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
     /// <returns></returns>
     private Renderable[] loadTestAnimation()
     {
-        var testAnimation = new Renderable[10];
+        var testAnimation = new List<Renderable>(9);
         using var rp = new ResourcePack();
         rp.LoadPack("./assets1.pack", "AReallyGoodKeyShouldBeUsed");
 
         // Images in pack go from 1 to 9
-        for (int i = 1, spr_i = 0; i < 10; i++, spr_i++)
+        for (int i = 1; i < 10; i++)
         {
             string file = $"./assets/Walking_00{i}.png";
-            testAnimation[spr_i] = new Renderable(renderer);
-            if (testAnimation[spr_i].Load(file, rp) != csPGE.Enums.RCode.OK)
+            var animFrame = new Renderable(renderer);
+            if (animFrame.Load(file, rp) != csPGE.Enums.RCode.OK)
             {
                 throw new Exception($"Failed to load image {file} from resource pack");
             }
-            //testAnimationDecal[i] = new Decal(testAnimation[i], serviceProvider.GetService<IRenderer>());
+            testAnimation.Add(animFrame);
         }
 
-        return testAnimation;
+        return [..testAnimation];
     }
 
-    private void drawMouseButtonStates()
+    private void drawMouseButtonStates(int x, int y)
     {
-        showMouseButtonState(0, 30, 0);
-        showMouseButtonState(0, 40, 1);
-        showMouseButtonState(0, 50, 2);
+        drawMouseButtonState(x, y, 0);
+        drawMouseButtonState(x, y + 10, 1);
+        drawMouseButtonState(x, y + 20, 2);
     }
 
-    private void showMouseButtonState(int x, int y, uint button)
+    private void drawMouseButtonState(int x, int y, uint button)
     {
         var btnState = GetMouse(button);
 
         string display = $"BTN {button} [Released:{btnState.Released}] [Pressed:{btnState.Pressed}] [Held: {btnState.Held}]";
         DrawString(x, y, display, csPGE.Pixel.WHITE);
+    }
+
+    private void drawMousePosition(int x, int y)
+    {
+        string display = $"Mouse Pos: [{MousePos.x}, {MousePos.y}] Mouse Window Pos: [{WindowMousePos.x}, {WindowMousePos.y}]";
+        DrawString(x, y, display, csPGE.Pixel.WHITE);
+    }
+
+    private void drawScreenInfo(int x, int y)
+    {
+        DrawString(x, y, $"WindowPos: [{WindowPos.x}, {WindowPos.y}]", csPGE.Pixel.WHITE);
+        DrawString(x, y + 10, $"WindowSize: [{WindowSize.x}, {WindowSize.y}]", csPGE.Pixel.WHITE);
+        DrawString(x, y + 20, $"ScreenSize: [{ScreenSize.x}, {ScreenSize.y}]", csPGE.Pixel.WHITE);
+        DrawString(x, y + 30, $"ScreenPixelSize: [{ScreenPixelSize.x},  {ScreenPixelSize.y}]", csPGE.Pixel.WHITE);
+        DrawString(x, y + 40, $"ViewPos: [{ViewPos.x}, {ViewPos.y}]", csPGE.Pixel.WHITE);
+        DrawString(x, y + 50, $"ViewSize: [{ViewSize.x}, {ViewSize.y}]", csPGE.Pixel.WHITE);
     }
 }

@@ -9,8 +9,10 @@ namespace csPixelGameEngineCore
     /// </summary>
     public struct HWButton
     {
-        public bool Pressed  { get; set; }
-        public bool Released { get; set; }
-        public bool Held     { get; set; }
+        public bool Pressed  { get; set; } = false;
+        public bool Released { get; set; } = true;
+        public bool Held     { get; set; } = false;
+
+        public HWButton() { }
     }
 }

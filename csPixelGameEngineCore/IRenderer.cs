@@ -22,6 +22,7 @@ namespace csPixelGameEngineCore
         void DrawDecal(DecalInstance decal);
         uint CreateTexture(int width, int height, bool filtered = false, bool clamp = true);
         void UpdateTexture(uint id, Sprite spr);
+        void ReadTexture(uint id, Sprite spr);
         uint DeleteTexture(uint id);
         void ApplyTexture(uint id);
         void UpdateViewport(vi2d pos, vi2d size);

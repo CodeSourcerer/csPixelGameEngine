@@ -13,8 +13,8 @@ namespace csPixelGameEngineCore
         public float[]   w      { get; set; }
         public float[]   z      { get; private set; }
         public Pixel[]   tint   { get; set; }
-        public uint      points { get; private set; } = 0;
-        public bool      depth  { get; private set; } = false;
+        public uint      points { get; set; } = 0;
+        public bool      depth  { get; set; } = false;
         public DecalMode mode   { get; set; } = DecalMode.NORMAL;
         public DecalStructure structure { get; set; } = DecalStructure.FAN;
 

@@ -1,13 +1,11 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
 using csPixelGameEngineCore;
 using csPixelGameEngineCore.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTK;
-using OpenTK.Graphics;
+//using OpenTK.Windowing.Desktop;
 using Serilog;
 
 namespace PixelGameEngineCoreTest;
@@ -36,9 +34,10 @@ class DemoApp
 
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<GameWindow, GLWindow>()
-                .AddSingleton<PGEDemo>()
-                .AddScoped<IRenderer, GL21Renderer>()
-                .AddScoped<IPlatform, OpenTkPlatform>()
+                .AddSingleton<PixelGameEngine, PGEDemo>()
+                .AddSingleton<IRenderer, GL33Renderer>()
+                //.AddSingleton<IRenderer, GL21Renderer>()
+                .AddSingleton<IPlatform, OpenTkPlatform>()
                 .Configure<ApplicationConfiguration>(configuration.GetSection("Application"))
                 .AddLogging(builder =>
                 {
@@ -56,7 +55,7 @@ class DemoApp
         }
     }
 
-    private PGEDemo pge; // = new PixelGameEngine(AppName);
+    private PixelGameEngine pge; // = new PixelGameEngine(AppName);
 
     private DateTime _dtStartFrame = DateTime.Now;
     private int _curFrameCount = 0;
@@ -77,9 +76,14 @@ class DemoApp
         //loadTestAnimation();
 
         var configuration = serviceProvider.GetRequiredService<IOptions<ApplicationConfiguration>>();
-        pge = serviceProvider.GetRequiredService<PGEDemo>();
+        pge = serviceProvider.GetRequiredService<PixelGameEngine>();
         pge.Construct(configuration.Value.ScreenWidth, configuration.Value.ScreenHeight,
             configuration.Value.PixelWidth, configuration.Value.PixelHeight, false, false);
+
+        // I know this is hacky, but... the original uses globals, so you do what you gotta do.
+        var gameWindow = serviceProvider.GetRequiredService<GameWindow>();
+        ((GLWindow)gameWindow).pge = pge;
+
         pge.Start();
     }
 

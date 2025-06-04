@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
+using Serilog;
 
 namespace csPixelGameEngineCore;
 
@@ -11,8 +12,10 @@ namespace csPixelGameEngineCore;
 /// Convenince class to keep a sprite and a decal together
 /// </summary>
 /// <param name="renderer"></param>
-public class Renderable(IRenderer renderer)
+public class Renderable(IRenderer renderer) : IDisposable
 {
+    private bool disposedValue;
+
     //public RCode Load(string file, ResourcePack pack = null, bool filter = false, bool clamp = true);
     public Decal Decal { get; set; }
     public Sprite Sprite { get; set; }
@@ -33,8 +36,38 @@ public class Renderable(IRenderer renderer)
         }
         catch
         {
+            Log.Warning("Renderable failed to load image {file}", sFile);
             Sprite = null;
             return RCode.FAIL;
         }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                Decal?.Dispose();
+            }
+
+            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // TODO: set large fields to null
+            disposedValue = true;
+        }
+    }
+
+    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+    // ~Renderable()
+    // {
+    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
