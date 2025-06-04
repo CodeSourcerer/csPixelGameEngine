@@ -35,7 +35,7 @@ class DemoApp
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<GameWindow, GLWindow>()
                 .AddSingleton<PixelGameEngine, PGEDemo>()
-                .AddSingleton<IRenderer, GL33Renderer>()
+                .AddSingleton<IRenderer, Renderer_OGL33>()
                 //.AddSingleton<IRenderer, GL21Renderer>()
                 .AddSingleton<IPlatform, OpenTkPlatform>()
                 .Configure<ApplicationConfiguration>(configuration.GetSection("Application"))

@@ -7,10 +7,10 @@ using OpenTK.Graphics.OpenGL;
 
 namespace csPixelGameEngineCore;
 
-public class GL21Renderer : IRenderer
+public class Renderer_OGL21 : IRenderer
 {
     private readonly GameWindow glWindow;
-    private readonly ILogger<GL21Renderer> logger;
+    private readonly ILogger<Renderer_OGL21> logger;
 
     private DecalMode _decalMode;
     public DecalMode DecalMode
@@ -49,7 +49,7 @@ public class GL21Renderer : IRenderer
 
     public event EventHandler<FrameUpdateEventArgs> RenderFrame;
 
-    public GL21Renderer(GameWindow gameWindow, ILogger<GL21Renderer> logger)
+    public Renderer_OGL21(GameWindow gameWindow, ILogger<Renderer_OGL21> logger)
     {
         this.logger = logger;
         logger.LogDebug("Constructing GL21Renderer");

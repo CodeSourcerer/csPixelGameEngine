@@ -13,11 +13,11 @@ using OpenTK.Graphics.OpenGL;
 
 namespace csPixelGameEngineCore;
 
-public class GL33Renderer : IRenderer
+public class Renderer_OGL33 : IRenderer
 {
     public const int OLC_MAX_VERTS = 128;
 
-    private readonly ILogger<GL33Renderer> logger;
+    private readonly ILogger<Renderer_OGL33> logger;
 
     private DecalMode _decalMode;
     public DecalMode DecalMode
@@ -97,7 +97,7 @@ public class GL33Renderer : IRenderer
     /// </summary>
     /// <param name="gameWindow">OpenTk GameWindow object. We need it here cause it does the double buffering swap-a-roo.</param>
     /// <param name="logger"></param>
-    public GL33Renderer(GameWindow gameWindow, ILogger<GL33Renderer> logger)
+    public Renderer_OGL33(GameWindow gameWindow, ILogger<Renderer_OGL33> logger)
     {
         tkGameWindow = gameWindow;
         this.logger = logger;
