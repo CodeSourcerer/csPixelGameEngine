@@ -6,7 +6,7 @@ namespace csPixelGameEngineCore;
 /// Represents a 32-bit RGBA color
 /// </summary>
 /// <remarks>
-/// In the original PGE, you can default the Pixel RGBA component values to anything.
+/// In the C++ PGE, you can default the Pixel RGBA component values to anything.
 /// C#, however, does not allow this. If you do not specify a component value, it will be 0.
 /// </remarks>
 public struct Pixel
@@ -41,6 +41,9 @@ public struct Pixel
     public enum Mode { NORMAL, MASK, ALPHA, CUSTOM };
 
     // C# Does not have unions, but we can sorta fake it.
+    // Note: This is my original implementation. My current one is a bit faster. Just leaving this here
+    // for later reference.
+
     // We'll make an internal r,g,b struct like PGE does and 'n' can just combine all of the
     // properties to a single uint. If there's a better way, I'm all ears.
 
@@ -152,6 +155,8 @@ public struct Pixel
         return r.GetHashCode() ^ g.GetHashCode() ^ b.GetHashCode() ^ a.GetHashCode();
     }
 
+    #region Operator overloads
+
     public static bool operator ==(Pixel p1, Pixel p2)
     {
         // Boxing necessary to prevent recursive calling of this operator
@@ -213,4 +218,6 @@ public struct Pixel
 
     public static implicit operator uint(Pixel p) => p.n;
     public static implicit operator Pixel(uint p) => new Pixel(p);
+    
+    #endregion // Operator overloads
 }

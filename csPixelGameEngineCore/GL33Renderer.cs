@@ -76,7 +76,8 @@ public class GL33Renderer : IRenderer
         public vf2d tex; // 4 bytes
         public Pixel col; // 4 bytes
 
-        public const int size = (sizeof(float) * 3) + (sizeof(float) * 2) + sizeof(int);
+        // sizeof doesn't work on this struct, so... this'll have to do
+        public const int size = (sizeof(float) * 3) + (sizeof(float) * 2) + sizeof(uint);
 
         public locVertex()
         {
@@ -91,6 +92,11 @@ public class GL33Renderer : IRenderer
         }
     }
 
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    /// <param name="gameWindow">OpenTk GameWindow object. We need it here cause it does the double buffering swap-a-roo.</param>
+    /// <param name="logger"></param>
     public GL33Renderer(GameWindow gameWindow, ILogger<GL33Renderer> logger)
     {
         tkGameWindow = gameWindow;
