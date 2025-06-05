@@ -137,7 +137,8 @@ public class OpenTkPlatform : IPlatform
 
     public RCode CreateWindowPane(vi2d windowPosition, vi2d windowSize, bool isFullScreen)
     {
-        logger.LogDebug("OpenTkPlatform.CreateWindowPane()");
+        logger.LogDebug("OpenTkPlatform.CreateWindowPane(windowPosition:{x},{y},windowSize:{width},{height},isFullScreen:{isFullScreen})",
+            windowPosition.x, windowPosition.y, windowSize.x, windowSize.y, isFullScreen);
         SetWindowSize(windowPosition, windowSize);
         glWindow.WindowState = isFullScreen ? WindowState.Fullscreen : WindowState.Normal;
 
@@ -148,8 +149,8 @@ public class OpenTkPlatform : IPlatform
 
     public RCode SetWindowSize(vi2d WindowPos, vi2d WindowSize)
     {
-        glWindow.Location = new Point(WindowPos.x, WindowPos.y);  // new Vector2i(WindowPos.x, WindowPos.y);
-        glWindow.Size     = new Size(WindowSize.x, WindowSize.y); // new Vector2i(WindowSize.x, WindowSize.y);
+        glWindow.Location   = new Point(WindowPos.x, WindowPos.y);  // new Vector2i(WindowPos.x, WindowPos.y);
+        glWindow.ClientSize = new Size(WindowSize.x, WindowSize.y); // new Vector2i(WindowSize.x, WindowSize.y);
         return RCode.OK;
     }
 }

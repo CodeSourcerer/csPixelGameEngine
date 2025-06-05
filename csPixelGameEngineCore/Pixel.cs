@@ -90,7 +90,7 @@ public struct Pixel
     //    set => _rgba.a = value;
     //}
 
-    public uint n { get; set; }
+    public uint n;
 
     public byte r
     {

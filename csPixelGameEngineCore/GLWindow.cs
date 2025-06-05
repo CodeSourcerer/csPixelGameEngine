@@ -49,6 +49,7 @@ public class GLWindow : GameWindow
                GraphicsContextFlags.ForwardCompatible)
     {
         this.appConfig = appConfig.Value;
+
         //GraphicsMode.Default, GameWindowFlags.Default,
         //DisplayDevice.Default
         //Width           = appConfig.ScreenWidth * appConfig.PixelWidth;

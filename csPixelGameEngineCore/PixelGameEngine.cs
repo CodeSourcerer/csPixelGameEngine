@@ -1270,6 +1270,8 @@ public class PixelGameEngine
         var ld = new LayerDesc(renderer);
         ld.DrawTarget.Create((uint)ScreenSize.x, (uint)ScreenSize.y);
 
+        logger.LogDebug("Created layer {layerNum}. GL Texture ID: {textureId}", Layers.Count, ld.DrawTarget.Decal.Id);
+
         Layers.Add(ld);
         return (uint)(Layers.Count - 1);
     }
@@ -1296,6 +1298,8 @@ public class PixelGameEngine
     {
         if (layer < Layers.Count)
         {
+            logger.LogDebug("Drawing to layer {layer}", layer);
+
             DrawTarget = Layers[layer].DrawTarget.Sprite;
             Layers[layer].bUpdate = dirty;
             TargetLayer = layer;

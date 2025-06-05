@@ -69,25 +69,42 @@ public class Renderer_OGL33 : IRenderer
     private Renderable rendBlankQuad;
     private locVertex[] vertexMem = new locVertex[OLC_MAX_VERTS];
 
-    [StructLayout(LayoutKind.Sequential)]
+    // sizeof doesn't work on this struct, so... this'll have to do
+    public const int locVertexSize = (sizeof(float) * 3) + (sizeof(float) * 2) + sizeof(uint);
+
+    [StructLayout(LayoutKind.Explicit, Size = locVertexSize)]
     private struct locVertex
     {
-        public float[] pos = new float[3]; // 6 bytes
-        public vf2d tex; // 4 bytes
-        public Pixel col; // 4 bytes
+        [FieldOffset(0)]
+        public float posX;
 
-        // sizeof doesn't work on this struct, so... this'll have to do
-        public const int size = (sizeof(float) * 3) + (sizeof(float) * 2) + sizeof(uint);
+        [FieldOffset(sizeof(float))]
+        public float posY;
+
+        [FieldOffset(sizeof(float) * 2)]
+        public float posZ;
+
+        [FieldOffset(sizeof(float) * 3)]
+        public float texX;
+
+        [FieldOffset(sizeof(float) * 4)]
+        public float texY;
+
+        [FieldOffset(sizeof(float) * 5)]
+        public uint col;
 
         public locVertex()
         {
 
         }
 
-        public locVertex(float[] pos, vf2d tex, Pixel col)
+        public locVertex(float[] pos, float[] tex, Pixel col)
         {
-            this.pos = pos;
-            this.tex = tex;
+            posX = pos[0];
+            posY = pos[1];
+            posZ = pos[2];
+            texX = tex[0];
+            texY = tex[1];
             this.col = col;
         }
     }
@@ -104,7 +121,7 @@ public class Renderer_OGL33 : IRenderer
 
         tkGameWindow.RenderFrame += (sender, eventArgs) => RenderFrame?.Invoke(sender, new FrameUpdateEventArgs(eventArgs.Time));
 
-        logger.LogDebug("GL33Renderer created");
+        logger.LogDebug("GL33Renderer created. locVertexSize {locVertexSize}", locVertexSize);
     }
 
     public void ApplyTexture(uint id)
@@ -125,6 +142,8 @@ public class Renderer_OGL33 : IRenderer
 
     public RCode CreateDevice(bool bFullScreen, bool bVSYNC, params object[] p)
     {
+        tkGameWindow.VSync = bVSYNC ? VSyncMode.On : VSyncMode.Off;
+
         bSync = bVSYNC;
 
         m_nFS = GL.CreateShader(ShaderType.FragmentShader);
@@ -165,12 +184,12 @@ public class Renderer_OGL33 : IRenderer
         GL.BindBuffer(BufferTarget.ArrayBuffer, m_vbQuad);
 
         locVertex[] verts = new locVertex[OLC_MAX_VERTS];
-        GL.BufferData(BufferTarget.ArrayBuffer, locVertex.size * OLC_MAX_VERTS, verts, BufferUsageHint.StreamDraw);
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, locVertex.size, 0);
+        GL.BufferData(BufferTarget.ArrayBuffer, locVertexSize * OLC_MAX_VERTS, verts, BufferUsageHint.StreamDraw);
+        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, locVertexSize, 0);
         GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, locVertex.size, 3 * sizeof(float));
+        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, locVertexSize, 3 * sizeof(float));
         GL.EnableVertexAttribArray(1);
-        GL.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, locVertex.size, 5 * sizeof(float));
+        GL.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, locVertexSize, 5 * sizeof(float));
         GL.EnableVertexAttribArray(2);
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
@@ -241,10 +260,10 @@ public class Renderer_OGL33 : IRenderer
 
         for (uint i = 0; i < decal.points; i++)
         {
-            vertexMem[i] = new locVertex([decal.pos[i].x, decal.pos[i].y, decal.w[i]], new vf2d(decal.uv[i].x, decal.uv[i].y), decal.tint[i]);
+            vertexMem[i] = new locVertex([decal.pos[i].x, decal.pos[i].y, decal.w[i]], [decal.uv[i].x, decal.uv[i].y], decal.tint[i]);
         }
 
-        GL.BufferData(BufferTarget.ArrayBuffer, (int)(locVertex.size * decal.points), vertexMem, BufferUsageHint.StreamDraw);
+        GL.BufferData(BufferTarget.ArrayBuffer, (int)(locVertexSize * decal.points), vertexMem, BufferUsageHint.StreamDraw);
 
         if (DecalMode == DecalMode.WIREFRAME)
         {
@@ -270,11 +289,11 @@ public class Renderer_OGL33 : IRenderer
     public void DrawLayerQuad(vf2d offset, vf2d scale, Pixel tint)
     {
         GL.BindBuffer(BufferTarget.ArrayBuffer, m_vbQuad);
-        locVertex[] verts = [new locVertex([-1.0f, -1.0f, 1.0f], new vf2d(0.0f * scale.x + offset.x, 1.0f * scale.y + offset.y), tint),
-                             new locVertex([ 1.0f, -1.0f, 1.0f], new vf2d(1.0f * scale.x + offset.x, 1.0f * scale.y + offset.y), tint),
-                             new locVertex([-1.0f,  1.0f, 1.0f], new vf2d(0.0f * scale.x + offset.x, 0.0f * scale.y + offset.y), tint),
-                             new locVertex([ 1.0f,  1.0f, 1.0f], new vf2d(1.0f * scale.x + offset.x, 0.0f * scale.y + offset.y), tint)];
-        GL.BufferData(BufferTarget.ArrayBuffer, locVertex.size * 4, verts, BufferUsageHint.StreamDraw);
+        locVertex[] verts = [new locVertex([-1.0f, -1.0f, 1.0f], [0.0f * scale.x + offset.x, 1.0f * scale.y + offset.y], tint),
+                             new locVertex([ 1.0f, -1.0f, 1.0f], [1.0f * scale.x + offset.x, 1.0f * scale.y + offset.y], tint),
+                             new locVertex([-1.0f,  1.0f, 1.0f], [0.0f * scale.x + offset.x, 0.0f * scale.y + offset.y], tint),
+                             new locVertex([ 1.0f,  1.0f, 1.0f], [1.0f * scale.x + offset.x, 0.0f * scale.y + offset.y], tint)];
+        GL.BufferData(BufferTarget.ArrayBuffer, locVertexSize * 4, verts, BufferUsageHint.StreamDraw);
         GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
     }
 

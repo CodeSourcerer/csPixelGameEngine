@@ -38,12 +38,12 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         PixelMode = csPGE.Pixel.Mode.NORMAL;
 
         //drawRandomPixels();
-        //drawAnimation();
-        //drawMouseButtonStates(0, 10);
-        //drawMousePosition(0, 50);
+        drawAnimation();
+        drawMouseButtonStates(0, 10);
+        drawMousePosition(0, 50);
         drawScreenInfo(0, 60);
 
-        //showFPS(0, 0);
+        showFPS(0, 0);
 
         return true;
     }
