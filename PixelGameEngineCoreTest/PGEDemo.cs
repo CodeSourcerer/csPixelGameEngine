@@ -44,6 +44,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         drawScreenInfo(0, 60);
 
         showFPS(0, 0);
+        showPGEFPS(100, 0);
 
         return true;
     }
@@ -71,6 +72,11 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         }
 
         DrawString(x, y, $"FPS: {fps}", csPGE.Pixel.WHITE);
+    }
+
+    private void showPGEFPS(int x, int y)
+    {
+        DrawString(x, y, $"PGE FPS: {GetFPS()}", csPGE.Pixel.GREY);
     }
 
     /// <summary>

@@ -95,6 +95,9 @@ public class PixelGameEngine
     public vi2d     ScreenPixelSize     { get; private set; } = new vi2d(4, 4);
     public vi2d     ScreenSize          { get; private set; } = new vi2d(256, 240);
     public vf2d     InvScreenSize       { get; private set; } = new vf2d(1.0f / 256.0f, 1.0f / 240.0f);
+    public double   FrameTimer          { get; private set; } = 1.0;
+    public uint     FrameCount          { get; private set; } = 0;
+    public uint     LastFPS             { get; private set; } = 0;
     public DecalMode DecalMode          { get; set; } = DecalMode.NORMAL;
     public DecalStructure DecalStructure { get; set; } = DecalStructure.FAN;
 
@@ -282,6 +285,8 @@ public class PixelGameEngine
         fontRenderable.Decal.Update();
     }
 
+    public uint GetFPS() => LastFPS;
+
     #region Screen / Window attributes
 
     /// <summary>
@@ -448,6 +453,8 @@ public class PixelGameEngine
         TimeSpan tsElapsed = TimeSpan.FromTicks(_tp2 - _tp1);
         _tp1 = DateTime.Now.Ticks;
 
+        var elapsedTime = tsElapsed.TotalSeconds;
+
         // Handle mouse button held state
         for (int btn = 0; btn < btnStates.Length; btn++)
         {
@@ -462,6 +469,14 @@ public class PixelGameEngine
             ViewSize = ScreenSize;
             ViewPos = new(0, 0);
         }
+
+        // TODO: add "ManualRenderEnable" check
+        // TODO - implement this:
+        // if (bConsoleShow)
+        // {
+        //     SetDrawTarget((uint8_t)0);
+        //     UpdateConsole();
+        // }
 
         // Display Frame
         renderer.UpdateViewport(ViewPos, ViewSize);
@@ -513,8 +528,14 @@ public class PixelGameEngine
             SetScreenSize(WindowSize.x, WindowSize.y);
         }
         // TODO: Implement other stuff
-        // Resize code goes here - not sure if I need it?
-        
+        FrameTimer += elapsedTime;
+        FrameCount++;
+        if (FrameTimer >= 1.0)
+        {
+            LastFPS = FrameCount;
+            FrameTimer -= 1.0;
+            FrameCount = 0;
+        }
         // Frame counter code here
     }
 
