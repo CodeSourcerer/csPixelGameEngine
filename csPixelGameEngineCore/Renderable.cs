@@ -36,7 +36,7 @@ public class Renderable(IRenderer renderer) : IDisposable
         }
         catch
         {
-            Log.Warning("Renderable failed to load image {file}", sFile);
+            Log.Logger.Warning("Renderable failed to load image {file}", sFile);
             Sprite = null;
             return RCode.FAIL;
         }
@@ -44,6 +44,8 @@ public class Renderable(IRenderer renderer) : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
+        Log.Logger.Debug("Renderable.Dispose({disposing})", disposing);
+
         if (!disposedValue)
         {
             if (disposing)

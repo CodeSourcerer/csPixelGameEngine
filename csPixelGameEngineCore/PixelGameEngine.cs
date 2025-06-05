@@ -72,7 +72,7 @@ public delegate Pixel PixelBlender(int x, int y, Pixel pSrc, Pixel pDst);
 
 public class PixelGameEngine
 {
-    private readonly ILogger<PixelGameEngine> logger;
+    protected readonly ILogger<PixelGameEngine> logger;
 
     #region Engine properties
     public string   AppName             { get; private set; }
@@ -87,7 +87,6 @@ public class PixelGameEngine
     public int      DrawTargetWidth     { get; private set; }
     public int      DrawTargetHeight    { get; private set; }
     public Sprite   DrawTarget          { get; private set; }
-    public Sprite   DefaultDrawTarget   { get; private set; }
     public vi2d     MousePos            { get; private set; } = new vi2d(0, 0);
     public vi2d     WindowMousePos      { get; private set; } = new vi2d(0, 0);
     public int      MouseWheelDelta     { get; private set; }
@@ -95,6 +94,7 @@ public class PixelGameEngine
     public vi2d     ScreenPixelSize     { get; private set; } = new vi2d(4, 4);
     public vi2d     ScreenSize          { get; private set; } = new vi2d(256, 240);
     public vf2d     InvScreenSize       { get; private set; } = new vf2d(1.0f / 256.0f, 1.0f / 240.0f);
+    public double   LastElapsed         { get; private set; } = 0.0;
     public double   FrameTimer          { get; private set; } = 1.0;
     public uint     FrameCount          { get; private set; } = 0;
     public uint     LastFPS             { get; private set; } = 0;
@@ -286,6 +286,7 @@ public class PixelGameEngine
     }
 
     public uint GetFPS() => LastFPS;
+    public double GetElapsedTime() => LastElapsed;
 
     #region Screen / Window attributes
 
@@ -454,6 +455,7 @@ public class PixelGameEngine
         _tp1 = DateTime.Now.Ticks;
 
         var elapsedTime = tsElapsed.TotalSeconds;
+        LastElapsed = elapsedTime;
 
         // Handle mouse button held state
         for (int btn = 0; btn < btnStates.Length; btn++)
@@ -664,11 +666,15 @@ public class PixelGameEngine
         };
     }
 
+    public void DrawLine(vi2d pos1, vi2d pos2, Pixel p, uint pattern = 0xFFFFFFFF) => DrawLine(pos1.x, pos1.y, pos2.x, pos2.y, p, pattern);
+
     // Draws a line from (x1,y1) to (x2,y2)
     public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
     {
         if (p == default)
+        {
             p = csPixelGameEngineCore.Pixel.WHITE;
+        }
 
         int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
         dx = x2 - x1; dy = y2 - y1;
@@ -1237,7 +1243,7 @@ public class PixelGameEngine
     // Clears entire draw target to Pixel
     public void Clear(Pixel p)
     {
-        int pixelCount = DrawTarget.ColorData.Length;
+        //int pixelCount = DrawTarget.ColorData.Length;
         DrawTarget.ColorData.AsSpan().Fill(p);
         //for (int i = 0; i < pixelCount; i++)
         //    DrawTarget.ColorData[i] = p;

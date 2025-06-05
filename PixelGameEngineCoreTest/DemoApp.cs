@@ -25,6 +25,7 @@ class DemoApp
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
+                .MinimumLevel.Verbose()
                 .CreateLogger();
 
             IConfigurationBuilder configBuilder = new ConfigurationBuilder()

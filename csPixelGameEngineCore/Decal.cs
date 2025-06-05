@@ -71,6 +71,7 @@ public class Decal : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
+        Log.Logger.Debug("Decal.Dispose({disposing})", disposing);
         if (!disposedValue)
         {
             if (disposing)
@@ -82,7 +83,7 @@ public class Decal : IDisposable
             // TODO: set large fields to null.
             if (Id != -1)
             {
-                Log.Debug("Deleting texture [id:{id}]", Id);
+                Log.Logger.Debug("Deleting texture [id:{id}]", Id);
                 _renderer.DeleteTexture((uint)Id);
                 Id = -1;
             }

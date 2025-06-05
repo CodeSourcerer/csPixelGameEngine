@@ -39,6 +39,8 @@ public class Sprite
     
     public Sprite(int w, int h)
     {
+        Log.Logger.Debug("Sprite({w},{h}) ctor", w, h);
+
         if (w <= 0) throw new ArgumentException("Argument must be greater than 0", nameof(w));
         if (h <= 0) throw new ArgumentException("Argument must be greater than 0", nameof(h));
 
@@ -49,6 +51,8 @@ public class Sprite
 
     public Sprite(string sImageFile, ResourcePack pack)
     {
+        Log.Logger.Debug("Sprite({sImageFile}, ResourcePack) ctor", sImageFile);
+
         LoadFromFile(sImageFile, pack, true);
     }
 
@@ -193,7 +197,7 @@ public class Sprite
             }
             else
             {
-                Log.Debug("Attempted to get pixel outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+                Log.Logger.Debug("Attempted to get pixel outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
                 return Pixel.BLANK;
             }
         }
@@ -221,7 +225,7 @@ public class Sprite
             return true;
         }
 
-        Log.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+        Log.Logger.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
         return false;
     }
 
@@ -242,7 +246,7 @@ public class Sprite
             return true;
         }
 
-        Log.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+        Log.Logger.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
         return false;
     }
 

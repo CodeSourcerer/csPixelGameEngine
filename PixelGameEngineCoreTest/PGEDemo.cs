@@ -19,6 +19,8 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
     private DateTime dtAnimation = DateTime.Now;
     private int animationFrame = 0;
     private int animationDirection = 1;
+    private TimeSpan tsRandomCrap = TimeSpan.Zero;
+    private uint randomCrapLayer;
     private int curFrameCount = 0;
     private int fps = 0;
 
@@ -27,6 +29,10 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
     protected override bool OnUserCreate()
     {
         animation = loadTestAnimation();
+
+        randomCrapLayer = CreateLayer();
+        Layers[(int)randomCrapLayer].bShow = true;
+
         return true;
     }
 
@@ -38,6 +44,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         PixelMode = csPGE.Pixel.Mode.NORMAL;
 
         //drawRandomPixels();
+        drawRandomStuff(fElapsedTime);
         drawAnimation();
         drawMouseButtonStates(0, 10);
         drawMousePosition(0, 50);
@@ -51,7 +58,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
 
     protected override bool OnUserDestroy()
     {
-        logger.LogInformation("PGEDemo.OnUserDestroy()");
+        this.logger.LogInformation("PGEDemo.OnUserDestroy()");
 
         foreach (var frame in animation)
         {
@@ -116,6 +123,34 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 c = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
                 Draw(x, y, new Pixel(c));
             }
+        }
+    }
+
+    /// <summary>
+    /// So random!
+    /// </summary>
+    private void drawRandomStuff(float elapsedTime)
+    {
+        tsRandomCrap += TimeSpan.FromSeconds(elapsedTime);
+
+        if (tsRandomCrap.TotalSeconds > 2)
+        {
+            tsRandomCrap = TimeSpan.Zero;
+
+            var randomCrapLayerDesc = Layers[(int)randomCrapLayer];
+            SetDrawTarget(randomCrapLayerDesc.DrawTarget.Sprite);
+            Clear(csPGE.Pixel.BLANK);
+
+            // Draw some random lines
+            for (int line = 0; line < 10; line++)
+            {
+                uint pattern = (uint)rnd.Next(int.MaxValue);
+                uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
+                DrawLine(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), color, pattern);
+            }
+            randomCrapLayerDesc.bUpdate = true;
+
+            SetDrawTarget(null);
         }
     }
 
