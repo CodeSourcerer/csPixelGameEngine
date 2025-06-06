@@ -1133,6 +1133,170 @@ public class PixelGameEngine
     }
 
     /// <summary>
+    /// Draw a textured triangle
+    /// </summary>
+    /// <param name="points">Array of 3 points</param>
+    /// <param name="tex">Array of 3 texture coordinates</param>
+    /// <param name="color">Array of 3 colors</param>
+    /// <param name="sprTex">Sprite with the texture</param>
+    /// <exception cref="ArgumentException"></exception>
+    public void FillTexturedTriangle(vi2d[] points, vf2d[] tex, Pixel[] color, Sprite sprTex)
+    {
+        if (points.Length < 3) throw new ArgumentException("Must pass array of 3 points", nameof(points));
+        if (tex.Length < 3) throw new ArgumentException("Must pass array of 3 texture coordinates", nameof(tex));
+        if (color.Length < 3) throw new ArgumentException("Must pass array of 3 colors", nameof(color));
+
+        vi2d p1 = points[0];
+		vi2d p2 = points[1];
+		vi2d p3 = points[2];
+
+		if (p2.y < p1.y)
+        {
+            (p1.y, p2.y) = (p2.y, p1.y);
+            (p1.x, p2.x) = (p2.x, p1.x);
+            (tex[0].x, tex[1].x) = (tex[1].x, tex[0].x);
+            (tex[0].y, tex[1].y) = (tex[1].y, tex[0].y);
+            (color[0], color[1]) = (color[1], color[0]);
+        }
+		if (p3.y < p1.y)
+        {
+            (p1.y, p3.y) = (p3.y, p1.y);
+            (p1.x, p3.x) = (p3.x, p1.x);
+            (tex[0].x, tex[2].x) = (tex[2].x, tex[0].x);
+            (tex[0].y, tex[2].y) = (tex[2].y, tex[0].y);
+            (color[0], color[2]) = (color[2], color[0]);
+        }
+		if (p3.y < p2.y)
+        {
+            (p2.y, p3.y) = (p3.y, p2.y);
+            (p2.x, p3.x) = (p3.x, p2.x);
+            (tex[1].x, tex[2].x) = (tex[2].x, tex[1].x);
+            (tex[1].y, tex[2].y) = (tex[2].y, tex[1].y);
+            (color[1], color[2]) = (color[2], color[1]);
+        }
+
+		var dPos1 = p2 - p1;
+		vf2d dTex1 = tex[1] - tex[0];
+		int dcr1 = color[1].r - color[0].r;
+		int dcg1 = color[1].g - color[0].g;
+		int dcb1 = color[1].b - color[0].b;
+		int dca1 = color[1].a - color[0].a;
+
+		var dPos2 = p3 - p1;
+		vf2d dTex2 = tex[2] - tex[0];
+		int dcr2 = color[2].r - color[0].r;
+		int dcg2 = color[2].g - color[0].g;
+		int dcb2 = color[2].b - color[0].b;
+		int dca2 = color[2].a - color[0].a;
+
+		float dax_step = 0, dbx_step = 0, dcr1_step = 0, dcr2_step = 0,	dcg1_step = 0, dcg2_step = 0, dcb1_step = 0, dcb2_step = 0,	dca1_step = 0, dca2_step = 0;
+		vf2d vTex1Step = new (), vTex2Step = new ();
+
+		if (dPos1.y != 0)
+		{
+			dax_step = dPos1.x / (float)Math.Abs(dPos1.y);
+			vTex1Step = dTex1 / (float)Math.Abs(dPos1.y);
+			dcr1_step = dcr1 / (float)Math.Abs(dPos1.y);
+			dcg1_step = dcg1 / (float)Math.Abs(dPos1.y);
+			dcb1_step = dcb1 / (float)Math.Abs(dPos1.y);
+			dca1_step = dca1 / (float)Math.Abs(dPos1.y);
+		}
+
+		if (dPos2.y != 0)
+		{
+			dbx_step = dPos2.x / (float)Math.Abs(dPos2.y);
+			vTex2Step = dTex2 / (float)Math.Abs(dPos2.y);
+			dcr2_step = dcr2 / (float)Math.Abs(dPos2.y);
+			dcg2_step = dcg2 / (float)Math.Abs(dPos2.y);
+			dcb2_step = dcb2 / (float)Math.Abs(dPos2.y);
+			dca2_step = dca2 / (float)Math.Abs(dPos2.y);
+		}
+
+		vi2d vStart;
+		vi2d vEnd;
+		int vStartIdx;
+
+        for (int pass = 0; pass < 2; pass++)
+        {
+            if (pass == 0)
+            {
+                vStart = p1; vEnd = p2; vStartIdx = 0;
+            }
+            else
+            {
+                dPos1 = p3 - p2;
+                dTex1 = tex[2] - tex[1];
+                dcr1 = color[2].r - color[1].r;
+                dcg1 = color[2].g - color[1].g;
+                dcb1 = color[2].b - color[1].b;
+                dca1 = color[2].a - color[1].a;
+                dcr1_step = 0; dcg1_step = 0; dcb1_step = 0; dca1_step = 0;
+
+                if (dPos2.y != 0)
+                {
+                    dbx_step = dPos2.x / (float)Math.Abs(dPos2.y);
+                }
+
+                if (dPos1.y != 0)
+                {
+                    dax_step = dPos1.x / (float)Math.Abs(dPos1.y);
+                    vTex1Step = dTex1 / (float)Math.Abs(dPos1.y);
+                    dcr1_step = dcr1 / (float)Math.Abs(dPos1.y);
+                    dcg1_step = dcg1 / (float)Math.Abs(dPos1.y);
+                    dcb1_step = dcb1 / (float)Math.Abs(dPos1.y);
+                    dca1_step = dca1 / (float)Math.Abs(dPos1.y);
+                }
+
+                vStart = p2; vEnd = p3; vStartIdx = 1;
+            }
+
+            if (dPos1.y != 0)
+            {
+                for (int i = vStart.y; i <= vEnd.y; i++)
+                {
+                    int ax = (int)(vStart.x + (i - vStart.y) * dax_step);
+                    int bx = (int)(p1.x + (i - p1.y) * dbx_step);
+
+                    vf2d tex_s = new(tex[vStartIdx].x + (i - vStart.y) * vTex1Step.x, tex[vStartIdx].y + (i - vStart.y) * vTex1Step.y);
+                    vf2d tex_e = new(tex[0].x + (i - p1.y) * vTex2Step.x, tex[0].y + (i - p1.y) * vTex2Step.y);
+
+                    Pixel col_s = new((byte)(color[vStartIdx].r + (byte)((i - vStart.y) * dcr1_step)),
+                                      (byte)(color[vStartIdx].g + (byte)((i - vStart.y) * dcg1_step)),
+                                      (byte)(color[vStartIdx].b + (byte)((i - vStart.y) * dcb1_step)),
+                                      (byte)(color[vStartIdx].a + (byte)((i - vStart.y) * dca1_step)));
+
+                    Pixel col_e = new((byte)(color[0].r + (byte)((i - p1.y) * dcr2_step)),
+                                      (byte)(color[0].g + (byte)((i - p1.y) * dcg2_step)),
+                                      (byte)(color[0].b + (byte)((i - p1.y) * dcb2_step)),
+                                      (byte)(color[0].a + (byte)((i - p1.y) * dca2_step)));
+
+                    if (ax > bx)
+                    {
+                        (ax, bx) = (bx, ax);
+                        (tex_s, tex_e) = (tex_e, tex_s);
+                        (col_s, col_e) = (col_e, col_s);
+                    }
+
+                    float tstep = 1.0f / ((float)(bx - ax));
+                    float t = 0.0f;
+
+                    for (int j = ax; j < bx; j++)
+                    {
+                        Pixel pixel = csPixelGameEngineCore.Pixel.PixelLerp(col_s, col_e, t);
+                        if (sprTex != null)
+                        {
+                            var lerped = tex_s.lerp(tex_e, t);
+                            pixel *= sprTex.Sample(lerped.x, lerped.y);
+                        }
+                        Draw(j, i, pixel);
+                        t += tstep;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Draws an entire sprite at location (x,y)
     /// </summary>
     /// <param name="x"></param>

@@ -33,10 +33,13 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
     private int fps = 0;
 
     private Renderable[] animation;
+    private Renderable texture;
 
     protected override bool OnUserCreate()
     {
         animation = loadTestAnimation();
+        texture = new Renderable(renderer);
+        texture.Load("texture.bmp", null);
 
         randomCrapLayer = CreateLayer();
         Layers[(int)randomCrapLayer].bShow = true;
@@ -183,6 +186,11 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 p3 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
                 FillTriangle(p1, p2, p3, color);
             }
+
+            //FillTexturedTriangle([new vi2d(0, 0), new vi2d(0, ScreenSize.y), new vi2d(ScreenSize.x, ScreenSize.y)],
+            //                     [new vf2d(0, 0), new vf2d(0, 1), new vf2d(1, 1)],
+            //                     [csPGE.Pixel.WHITE, csPGE.Pixel.WHITE, csPGE.Pixel.WHITE],
+            //                     texture.Sprite);
 
             SetDrawTarget(null);
         }

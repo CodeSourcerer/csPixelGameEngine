@@ -138,7 +138,7 @@ public struct Pixel
     public Pixel PixelF(float red, float green, float blue, float alpha) =>
         new Pixel((byte)(red * 255.0f), (byte)(green * 255.0f), (byte)(blue * 255.0f), (byte)(alpha * 255.0f));
 
-    public Pixel PixelLerp(Pixel p1, Pixel p2, float t) => (p2 * t) + p1 * (1.0f - t);
+    public static Pixel PixelLerp(Pixel p1, Pixel p2, float t) => (p2 * t) + p1 * (1.0f - t);
 
     public bool Equals(Pixel other) => n == other.n;
 
