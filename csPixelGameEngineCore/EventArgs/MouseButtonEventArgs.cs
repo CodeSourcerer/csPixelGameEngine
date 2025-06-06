@@ -1,9 +1,8 @@
-﻿using System;
-using csPixelGameEngineCore.Enums;
+﻿using csPixelGameEngineCore.Enums;
 
 namespace csPixelGameEngineCore;
 
-public class MouseButtonEventArgs : EventArgs
+public class MouseButtonEventArgs : System.EventArgs
 {
     public csMouseButton Button { get; private set; }
     public bool IsPressed { get; private set; }

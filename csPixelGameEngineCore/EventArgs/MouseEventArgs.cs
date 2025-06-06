@@ -1,8 +1,6 @@
-﻿using System;
+﻿namespace csPixelGameEngineCore;
 
-namespace csPixelGameEngineCore;
-
-public class MouseEventArgs : EventArgs
+public class MouseEventArgs : System.EventArgs
 {
     public int X { get => Position.x; }
     public int Y { get => Position.y; }

@@ -1,8 +1,6 @@
-﻿using System;
+﻿namespace csPixelGameEngineCore;
 
-namespace csPixelGameEngineCore;
-
-public class MouseWheelEventArgs : EventArgs
+public class MouseWheelEventArgs : System.EventArgs
 {
     public int OffsetX { get; private set; }
     public int OffsetY { get; private set; }

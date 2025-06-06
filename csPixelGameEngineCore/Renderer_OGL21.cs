@@ -3,10 +3,13 @@ using csPixelGameEngineCore.Enums;
 using Microsoft.Extensions.Logging;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
-//using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Desktop;
 
 namespace csPixelGameEngineCore;
 
+/// <summary>
+/// OpenGL 2.1 renderer. Note: Not compatible with latest version of OpenTK
+/// </summary>
 public class Renderer_OGL21 : IRenderer
 {
     private readonly GameWindow glWindow;
@@ -57,14 +60,14 @@ public class Renderer_OGL21 : IRenderer
         if (gameWindow == null) throw new ArgumentNullException(nameof(gameWindow));
 
         glWindow = gameWindow;
-        glWindow.RenderFrame += (sender, eventargs) =>
-        {
-            RenderFrame?.Invoke(sender, new FrameUpdateEventArgs(eventargs.Time));
-        };
-        //glWindow.RenderFrame += eventArgs =>
+        //glWindow.RenderFrame += (sender, eventargs) =>
         //{
-        //    RenderFrame?.Invoke(this, new FrameUpdateEventArgs(eventArgs.Time));
+        //    RenderFrame?.Invoke(sender, new FrameUpdateEventArgs(eventargs.Time));
         //};
+        glWindow.RenderFrame += eventArgs =>
+        {
+            RenderFrame?.Invoke(this, new FrameUpdateEventArgs(eventArgs.Time));
+        };
     }
 
     public void ApplyTexture(uint id)

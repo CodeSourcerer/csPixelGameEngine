@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Tracing;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
 using Microsoft.Extensions.Logging;
-using OpenTK;
 using OpenTK.Graphics.OpenGL;
-//using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Desktop;
 
 namespace csPixelGameEngineCore;
 
@@ -119,7 +115,7 @@ public class Renderer_OGL33 : IRenderer
         tkGameWindow = gameWindow;
         this.logger = logger;
 
-        tkGameWindow.RenderFrame += (sender, eventArgs) => RenderFrame?.Invoke(sender, new FrameUpdateEventArgs(eventArgs.Time));
+        tkGameWindow.RenderFrame += eventArgs => RenderFrame?.Invoke(this, new FrameUpdateEventArgs(eventArgs.Time));
 
         logger.LogDebug("GL33Renderer created. locVertexSize {locVertexSize}", locVertexSize);
     }

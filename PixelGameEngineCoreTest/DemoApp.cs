@@ -4,8 +4,7 @@ using csPixelGameEngineCore.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OpenTK;
-//using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.Desktop;
 using Serilog;
 
 namespace PixelGameEngineCoreTest;

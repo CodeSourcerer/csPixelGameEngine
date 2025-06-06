@@ -219,13 +219,13 @@ public class Sprite
     /// <returns>true if set, false if not (outside of sprite boundaries)</returns>
     public bool SetPixel(int x, int y, Pixel p)
     {
-        if (x < Width && y < Height)
+        if (x >= 0 && y >= 0 && x < Width && y < Height)
         {
             ColorData[y * Width + x] = p;
             return true;
         }
 
-        Log.Logger.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+        //Log.Logger.Verbose("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
         return false;
     }
 
@@ -240,13 +240,13 @@ public class Sprite
     /// <returns>true if set, false if not (outside of sprite boundaries)</returns>
     public bool SetPixel(int x, int y, uint c)
     {
-        if (x < Width && y < Height)
+        if (x >= 0 && y >= 0 && x < Width && y < Height)
         {
             ColorData[y * Width + x].n = c;
             return true;
         }
 
-        Log.Logger.Debug("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
+        //Log.Logger.Verbose("Attempted to draw outside the bounds of the sprite! [x:{x}] [y:{y}] [Width:{width}] [Height:{height}]", x, y, Width, Height);
         return false;
     }
 

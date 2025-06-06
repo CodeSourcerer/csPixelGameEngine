@@ -148,6 +148,14 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
                 DrawLine(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), color, pattern);
             }
+
+            // Draw some random circles
+            for (int circle = 0; circle < 10; circle++)
+            {
+                uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
+                DrawCircle(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(ScreenSize.y / 2), color);
+                FillCircle(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(50), color);
+            }
             randomCrapLayerDesc.bUpdate = true;
 
             SetDrawTarget(null);
