@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
@@ -878,7 +879,14 @@ public class PixelGameEngine
         FillRect(pos.x, pos.y, size.x, size.y, p);
     }
 
-    // Fills a rectangle at (x,y) to (x+w,y+h)
+    /// <summary>
+    /// Fills a rectangle at (x,y) to (x+w,y+h)
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="w"></param>
+    /// <param name="h"></param>
+    /// <param name="p"></param>
     public void FillRect(int x, int y, int w, int h, Pixel p)
     {
         int x2 = x + w;
@@ -919,15 +927,26 @@ public class PixelGameEngine
         DrawTriangle(pos1.x, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
     }
 
-    // Draws a triangle between points (x1,y1), (x2,y2) and (x3,y3)
+    /// <summary>
+    /// Draws a triangle between points (x1,y1), (x2,y2) and (x3,y3)
+    /// </summary>
+    /// <param name="x1"></param>
+    /// <param name="y1"></param>
+    /// <param name="x2"></param>
+    /// <param name="y2"></param>
+    /// <param name="x3"></param>
+    /// <param name="y3"></param>
+    /// <param name="p"></param>
     public void DrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, Pixel p)
     {
+        DrawLine(x1, y1, x2, y2, p);
+        DrawLine(x2, y2, x3, y3, p);
+        DrawLine(x3, y3, x1, y1, p);
     }
 
     public void FillTriangle(vi2d pos1, vi2d pos2, vi2d pos3, Pixel p)
     {
         FillTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
-        //DrawFilledTriangle(pos1.y, pos1.y, pos2.x, pos2.y, pos3.x, pos3.y, p);
     }
 
     // Flat fills a triangle between points (x1,y1), (x2,y2) and (x3,y3)
@@ -1113,7 +1132,13 @@ public class PixelGameEngine
         }
     }
 
-    // Draws an entire sprite at location (x,y)
+    /// <summary>
+    /// Draws an entire sprite at location (x,y)
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="sprite"></param>
+    /// <param name="scale"></param>
     public void DrawSprite(int x, int y, Sprite sprite, int scale = 1)
     {
         if (sprite == null)
@@ -1147,8 +1172,18 @@ public class PixelGameEngine
         DrawPartialSprite(pos.x, pos.y, sprite, sourcepos.x, sourcepos.y, size.x, size.y, scale);
     }
 
-    // Draws an area of a sprite at location (x,y), where the
-    // selected area is (ox,oy) to (ox+w,oy+h)
+    /// <summary>
+    /// Draws an area of a sprite at location (x,y), where the
+    /// selected area is (ox,oy) to (ox+w,oy+h)
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="sprite"></param>
+    /// <param name="ox"></param>
+    /// <param name="oy"></param>
+    /// <param name="w"></param>
+    /// <param name="h"></param>
+    /// <param name="scale"></param>
     public void DrawPartialSprite(int x, int y, Sprite sprite, int ox, int oy, int w, int h, uint scale = 1)
     {
         if (sprite == null)
@@ -1240,7 +1275,10 @@ public class PixelGameEngine
         PixelMode = m;
     }
 
-    // Clears entire draw target to Pixel
+    /// <summary>
+    /// Clears entire draw target to Pixel
+    /// </summary>
+    /// <param name="p"></param>
     public void Clear(Pixel p)
     {
         //int pixelCount = DrawTarget.ColorData.Length;
@@ -1248,6 +1286,8 @@ public class PixelGameEngine
         //for (int i = 0; i < pixelCount; i++)
         //    DrawTarget.ColorData[i] = p;
     }
+
+    public void ClearBuffer(Pixel p, bool bDepth) => renderer.ClearBuffer(p, bDepth);
 
     //=====================================================================
     // Decal Drawing

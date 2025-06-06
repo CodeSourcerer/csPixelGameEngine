@@ -11,6 +11,13 @@ using Microsoft.Extensions.Logging;
 
 namespace PixelGameEngineCoreTest;
 
+/// <summary>
+/// PixelGameEngine Demo. Just like PGE, we extend the PixelGameEngine class.
+/// </summary>
+/// <param name="renderer"></param>
+/// <param name="platform"></param>
+/// <param name="config"></param>
+/// <param name="logger"></param>
 internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<ApplicationConfiguration> config, ILogger<PGEDemo> logger)
     : PixelGameEngine(renderer, platform, logger, config.Value.AppName)
 {
@@ -21,6 +28,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
     private int animationDirection = 1;
     private TimeSpan tsRandomCrap = TimeSpan.Zero;
     private uint randomCrapLayer;
+    private uint textLayer;
     private int curFrameCount = 0;
     private int fps = 0;
 
@@ -32,6 +40,8 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
 
         randomCrapLayer = CreateLayer();
         Layers[(int)randomCrapLayer].bShow = true;
+        textLayer = CreateLayer();
+        Layers[(int)textLayer].bShow = true;
 
         return true;
     }
@@ -46,12 +56,16 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         //drawRandomPixels();
         drawRandomStuff(fElapsedTime);
         drawAnimation();
+        
+        drawTo(textLayer);
+
         drawMouseButtonStates(0, 10);
         drawMousePosition(0, 50);
         drawScreenInfo(0, 60);
-
         showFPS(0, 0);
         showPGEFPS(100, 0);
+
+        SetDrawTarget(null);
 
         return true;
     }
@@ -137,9 +151,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         {
             tsRandomCrap = TimeSpan.Zero;
 
-            var randomCrapLayerDesc = Layers[(int)randomCrapLayer];
-            SetDrawTarget(randomCrapLayerDesc.DrawTarget.Sprite);
-            Clear(csPGE.Pixel.BLANK);
+            drawTo(randomCrapLayer);
 
             // Draw some random lines
             for (int line = 0; line < 10; line++)
@@ -156,7 +168,21 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 DrawCircle(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(ScreenSize.y / 2), color);
                 FillCircle(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(50), color);
             }
-            randomCrapLayerDesc.bUpdate = true;
+
+            // Draw some random triangles (which happens to also be just lines)
+            for (int tris = 0; tris < 5; tris++)
+            {
+                uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
+                var p1 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                var p2 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                var p3 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                DrawTriangle(p1, p2, p3, color);
+
+                p1 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                p2 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                p3 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                FillTriangle(p1, p2, p3, color);
+            }
 
             SetDrawTarget(null);
         }
@@ -216,5 +242,13 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         DrawString(x, y + 30, $"ScreenPixelSize: [{ScreenPixelSize.x},  {ScreenPixelSize.y}]", csPGE.Pixel.WHITE);
         DrawString(x, y + 40, $"ViewPos: [{ViewPos.x}, {ViewPos.y}]", csPGE.Pixel.WHITE);
         DrawString(x, y + 50, $"ViewSize: [{ViewSize.x}, {ViewSize.y}]", csPGE.Pixel.WHITE);
+    }
+
+    private void drawTo(uint layer)
+    {
+        var ld = Layers[(int)layer];
+        SetDrawTarget(ld.DrawTarget.Sprite);
+        Clear(csPGE.Pixel.BLANK);
+        ld.bUpdate = true;
     }
 }

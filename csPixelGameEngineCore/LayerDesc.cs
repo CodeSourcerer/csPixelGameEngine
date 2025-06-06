@@ -10,7 +10,7 @@ public class LayerDesc(IRenderer renderer)
     public bool       bShow      { get; set; } = false;
     public bool       bUpdate    { get; set; } = false;
     public Renderable DrawTarget { get; set; } = new Renderable(renderer);
-    public uint       ResID      { get; set; }
+    public uint       ResID      { get; set; } = 0;
     public Pixel      Tint       { get; set; } = Pixel.WHITE;
     public Action     funcHook   { get; set; }
     public List<DecalInstance> DecalInstance { get; } = new List<DecalInstance>();
