@@ -11,7 +11,8 @@ namespace csPixelGameEngineCore;
 /// </summary>
 public class Sprite
 {
-    public enum Mode { NORMAL, PERIODIC };
+    public enum Mode { NORMAL, PERIODIC, CLAMP };
+    public enum Flip { NONE, HORIZ, VERT };
 
     public int Width { get; private set; }
     public int Height { get; private set; }

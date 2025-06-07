@@ -9,6 +9,8 @@ using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
 using Microsoft.Extensions.Logging;
 using OpenTK.Input;
+using static csPixelGameEngineCore.Sprite;
+using static System.Formats.Asn1.AsnWriter;
 
 /*
 	+-------------------------------------------------------------+
@@ -1296,6 +1298,8 @@ public class PixelGameEngine
         }
     }
 
+    public void DrawSprite(vi2d pos, Sprite sprite, int scale = 1, Flip flip = Flip.NONE) => DrawSprite(pos.x, pos.y, sprite, scale, flip);
+
     /// <summary>
     /// Draws an entire sprite at location (x,y)
     /// </summary>
@@ -1303,37 +1307,51 @@ public class PixelGameEngine
     /// <param name="y"></param>
     /// <param name="sprite"></param>
     /// <param name="scale"></param>
-    public void DrawSprite(int x, int y, Sprite sprite, int scale = 1)
+    public void DrawSprite(int x, int y, Sprite sprite, int scale = 1, Flip flip = Flip.NONE)
     {
         if (sprite == null)
             return;
 
-        Pixel p;
-        int iScale, jScale;
+        int fxs = 0, fxm = 1, fx = 0;
+        int fys = 0, fym = 1, fy = 0;
+        if (flip == Flip.HORIZ)
+        {
+            fxs = sprite.Width - 1;
+            fxm = -1;
+        }
+        if (flip == Flip.VERT)
+        {
+            fys = sprite.Height - 1;
+            fym = -1;
+        }
+
         if (scale > 1)
         {
-            for (int i = 0; i < sprite.Width; i++)
-                for (int j = 0; j < sprite.Height; j++)
-                {
-                    p = sprite.GetPixel(i, j);
-                    iScale = x + i * scale;
-                    jScale = y + j * scale;
-                    for (int _is = 0; _is < scale; _is++)
-                        for (int js = 0; js < scale; js++)
-                            Draw(iScale + _is, jScale + js, p);
-                }
+            fx = fxs;
+            for (int i = 0; i < sprite.Width; i++, fx += fxm)
+            {
+                fy = fys;
+                for (int j = 0; j < sprite.Height; j++, fy += fym)
+                    for (uint @is = 0; @is < scale; @is++)
+                        for (uint js = 0; js < scale; js++)
+                            Draw((int)(x + (i * scale) + @is), (int)(y + (j * scale) + js), sprite.GetPixel(fx, fy));
+            }
         }
         else
         {
-            for (int i = 0; i < sprite.Width; i++)
-                for (int j = 0; j < sprite.Height; j++)
-                    Draw(x + i, y + j, sprite.GetPixel(i, j));
+            fx = fxs;
+            for (int i = 0; i < sprite.Width; i++, fx += fxm)
+            {
+                fy = fys;
+                for (int j = 0; j < sprite.Height; j++, fy += fym)
+                    Draw(x + i, y + j, sprite.GetPixel(fx, fy));
+            }
         }
     }
 
-    public void DrawPartialSprite(vi2d pos, Sprite sprite, vi2d sourcepos, vi2d size, uint scale = 1)
+    public void DrawPartialSprite(vi2d pos, Sprite sprite, vi2d sourcepos, vi2d size, uint scale = 1, Flip flip = Flip.NONE)
     {
-        DrawPartialSprite(pos.x, pos.y, sprite, sourcepos.x, sourcepos.y, size.x, size.y, scale);
+        DrawPartialSprite(pos.x, pos.y, sprite, sourcepos.x, sourcepos.y, size.x, size.y, scale, flip);
     }
 
     /// <summary>
@@ -1348,36 +1366,44 @@ public class PixelGameEngine
     /// <param name="w"></param>
     /// <param name="h"></param>
     /// <param name="scale"></param>
-    public void DrawPartialSprite(int x, int y, Sprite sprite, int ox, int oy, int w, int h, uint scale = 1)
+    public void DrawPartialSprite(int x, int y, Sprite sprite, int ox, int oy, int w, int h, uint scale = 1, Flip flip = Flip.NONE)
     {
         if (sprite == null)
             return;
 
+        int fxs = 0, fxm = 1, fx = 0;
+        int fys = 0, fym = 1, fy = 0;
+        if (flip == Flip.HORIZ)
+        {
+            fxs = w - 1;
+            fxm = -1;
+        }
+        if (flip == Flip.VERT)
+        {
+            fys = h - 1;
+            fym = -1;
+        }
+
         if (scale > 1)
         {
-            for (int i = 0; i < w; i++)
+            fx = fxs;
+            for (int i = 0; i < w; i++, fx += fxm)
             {
-                for (int j = 0; j < h; j++)
-                {
-                    Pixel p = sprite.GetPixel(i + ox, j + oy);
-                    for (uint _is = 0; _is < scale; _is++)
-                    {
+                fy = fys;
+                for (int j = 0; j < h; j++, fy += fym)
+                    for (uint @is = 0; @is < scale; @is++)
                         for (uint js = 0; js < scale; js++)
-                        {
-                            Draw((int)(x + (i * scale) + _is), (int)(y + (j * scale) + js), p);
-                        }
-                    }
-                }
+                            Draw((int)(x + (i * scale) + @is), (int)(y + (j * scale) + js), sprite.GetPixel(fx + ox, fy + oy));
             }
         }
         else
         {
-            for (int i = 0; i < w; i++)
+            fx = fxs;
+            for (int i = 0; i < w; i++, fx += fxm)
             {
-                for (int j = 0; j < h; j++)
-                {
-                    Draw(x + i, y + j, sprite.GetPixel(i + ox, j + oy));
-                }
+                fy = fys;
+                for (int j = 0; j < h; j++, fy += fym)
+                    Draw(x + i, y + j, sprite.GetPixel(fx + ox, fy + oy));
             }
         }
     }
@@ -1490,6 +1516,76 @@ public class PixelGameEngine
             structure = DecalStructure
         };
 
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPartialDecal(vf2d pos, Decal decal, vf2d source_pos, vf2d source_size, vf2d scale, Pixel tint)
+    {
+        vf2d vScreenSpacePos = new()
+        {
+            x =   (pos.x * InvScreenSize.x) * 2.0f - 1.0f,
+            y = -((pos.y * InvScreenSize.y) * 2.0f - 1.0f)
+        };
+
+
+        vf2d vScreenSpaceDim = new()
+        {
+            x =   ((pos.x + source_size.x * scale.x) * InvScreenSize.x) * 2.0f - 1.0f,
+            y = -(((pos.y + source_size.y * scale.y) * InvScreenSize.y) * 2.0f - 1.0f)
+        };
+
+        vf2d vWindow = ViewSize;
+        var vQuantisedPos = ((vScreenSpacePos * vWindow) + new vf2d(0.5f,  0.5f)).floor() / vWindow;
+        var vQuantisedDim = ((vScreenSpaceDim * vWindow) + new vf2d(0.5f, -0.5f)).ceil()  / vWindow;
+
+        vf2d uvtl = (source_pos + new vf2d(0.0001f, 0.0001f)) * decal.vUVScale;
+        vf2d uvbr = (source_pos + source_size - new vf2d(0.0001f, 0.0001f)) * decal.vUVScale;
+
+        DecalInstance di = new()
+        {
+            points = 4,
+            decal = decal,
+            tint = [ tint, tint, tint, tint ],
+            pos = [ new vf2d(vQuantisedPos.x, vQuantisedPos.y), new vf2d(vQuantisedPos.x, vQuantisedDim.y),
+                    new vf2d(vQuantisedDim.x, vQuantisedDim.y), new vf2d(vQuantisedDim.x, vQuantisedPos.y) ],
+            uv = [ new vf2d(uvtl.x, uvtl.y), new vf2d(uvtl.x, uvbr.y), new vf2d(uvbr.x, uvbr.y), new vf2d(uvbr.x, uvtl.y) ],
+            w = [ 1,1,1,1 ],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+        
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPartialDecal(vf2d pos, vf2d size, Decal decal, vf2d source_pos, vf2d source_size, Pixel tint)
+    {
+        vf2d vScreenSpacePos = new()
+        {
+            x =  (pos.x * InvScreenSize.x) * 2.0f - 1.0f,
+            y = ((pos.y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f
+        };
+
+        vf2d vScreenSpaceDim = new()
+        {
+            x = vScreenSpacePos.x + (2.0f * size.x * InvScreenSize.x),
+            y = vScreenSpacePos.y - (2.0f * size.y * InvScreenSize.y)
+        };
+
+        vf2d uvtl = (source_pos) * decal.vUVScale;
+        vf2d uvbr = uvtl + (source_size * decal.vUVScale);
+
+        DecalInstance di = new()
+        {
+            points = 4,
+            decal = decal,
+            tint = [ tint, tint, tint, tint ],
+            pos = [ new vf2d(vScreenSpacePos.x, vScreenSpacePos.y), new vf2d(vScreenSpacePos.x, vScreenSpaceDim.y),
+                    new vf2d(vScreenSpaceDim.x, vScreenSpaceDim.y), new vf2d(vScreenSpaceDim.x, vScreenSpacePos.y) ],
+            uv = [ new vf2d(uvtl.x, uvtl.y), new vf2d(uvtl.x, uvbr.y), new vf2d(uvbr.x, uvbr.y), new vf2d(uvbr.x, uvtl.y) ],
+            w = [ 1,1,1,1 ],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
         Layers[(int)TargetLayer].DecalInstance.Add(di);
     }
 
