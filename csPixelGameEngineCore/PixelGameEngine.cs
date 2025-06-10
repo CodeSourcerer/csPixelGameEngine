@@ -1142,15 +1142,15 @@ public class PixelGameEngine
     /// <param name="color">Array of 3 colors</param>
     /// <param name="sprTex">Sprite with the texture</param>
     /// <exception cref="ArgumentException"></exception>
-    public void FillTexturedTriangle(vi2d[] points, vf2d[] tex, Pixel[] color, Sprite sprTex)
+    public void FillTexturedTriangle(vf2d[] points, vf2d[] tex, Pixel[] color, Sprite sprTex)
     {
         if (points.Length < 3) throw new ArgumentException("Must pass array of 3 points", nameof(points));
         if (tex.Length < 3) throw new ArgumentException("Must pass array of 3 texture coordinates", nameof(tex));
         if (color.Length < 3) throw new ArgumentException("Must pass array of 3 colors", nameof(color));
 
-        vi2d p1 = points[0];
-		vi2d p2 = points[1];
-		vi2d p3 = points[2];
+        vf2d p1 = points[0];
+		vf2d p2 = points[1];
+		vf2d p3 = points[2];
 
 		if (p2.y < p1.y)
         {
@@ -1214,15 +1214,17 @@ public class PixelGameEngine
 			dca2_step = dca2 / (float)Math.Abs(dPos2.y);
 		}
 
-		vi2d vStart;
-		vi2d vEnd;
+		vf2d vStart;
+		vf2d vEnd;
 		int vStartIdx;
 
         for (int pass = 0; pass < 2; pass++)
         {
             if (pass == 0)
             {
-                vStart = p1; vEnd = p2; vStartIdx = 0;
+                vStart = p1;
+                vEnd = p2;
+                vStartIdx = 0;
             }
             else
             {
@@ -1254,7 +1256,7 @@ public class PixelGameEngine
 
             if (dPos1.y != 0)
             {
-                for (int i = vStart.y; i <= vEnd.y; i++)
+                for (int i = (int)vStart.y; i <= vEnd.y; i++)
                 {
                     int ax = (int)(vStart.x + (i - vStart.y) * dax_step);
                     int bx = (int)(p1.x + (i - p1.y) * dbx_step);
@@ -1294,6 +1296,50 @@ public class PixelGameEngine
                         t += tstep;
                     }
                 }
+            }
+        }
+    }
+
+    public void FillTexturedPolygon(vf2d[] points, vf2d[] tex, Pixel[] color, Sprite sprTex, DecalStructure structure)
+    {
+        if (structure == DecalStructure.LINE)
+        {
+            return;
+        }
+
+        if (points.Length < 3 || tex.Length < 3 || color.Length < 3)
+        {
+            return;
+        }
+
+        if (structure == DecalStructure.LIST)
+        {
+            for (int tri = 0; tri < points.Length / 3; tri++)
+            {
+                vf2d[] vP = [ points[tri * 3 + 0], points[tri * 3 + 1], points[tri * 3 + 2] ];
+                vf2d[] vT = [ tex[tri * 3 + 0], tex[tri * 3 + 1], tex[tri * 3 + 2] ];
+                Pixel[] vC = [ color[tri * 3 + 0], color[tri * 3 + 1], color[tri * 3 + 2] ];
+                FillTexturedTriangle(vP, vT, vC, sprTex);
+            }
+        }
+        else if (structure == DecalStructure.STRIP)
+        {
+            for (int tri = 2; tri < points.Length; tri++)
+            {
+                vf2d[] vP = [ points[tri - 2], points[tri - 1], points[tri] ];
+                vf2d[] vT = [ tex[tri - 2], tex[tri - 1], tex[tri] ];
+                Pixel[] vC = [ color[tri - 2], color[tri - 1], color[tri] ];
+                FillTexturedTriangle(vP, vT, vC, sprTex);
+            }
+        }
+        else if (structure == DecalStructure.FAN)
+        {
+            for (int tri = 2; tri < points.Length; tri++)
+            {
+                vf2d[] vP = [ points[0], points[tri - 1], points[tri] ];
+                vf2d[] vT = [ tex[0], tex[tri - 1], tex[tri] ];
+                Pixel[] vC = { color[0], color[tri - 1], color[tri] };
+                FillTexturedTriangle(vP, vT, vC, sprTex);
             }
         }
     }
@@ -1588,6 +1634,167 @@ public class PixelGameEngine
         };
         Layers[(int)TargetLayer].DecalInstance.Add(di);
     }
+
+    public void DrawExplicitDecal(Decal decal, vf2d[] pos, vf2d[] uv, Pixel[] col, uint elements)
+    {
+        DecalInstance di = new()
+        {
+            decal = decal,
+            pos = new vf2d[elements],
+            uv = new vf2d[elements],
+            w = new float[elements],
+            tint = new Pixel[elements],
+            points = elements,
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+
+        for (uint i = 0; i < elements; i++)
+        {
+            di.pos[i]  = new () { x = (pos[i].x * InvScreenSize.x) * 2.0f - 1.0f, y = ((pos[i].y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f };
+            di.uv[i]   = uv[i];
+            di.tint[i] = col[i];
+            di.w[i]    = 1.0f;
+        }
+
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPolygonDecal(Decal decal, vf2d[] pos, vf2d[] uv, Pixel tint)
+    {
+        DecalInstance di = new()
+        {
+            decal = decal,
+            points = (uint)pos.Length,
+            pos = new vf2d[pos.Length],
+            uv = new vf2d[pos.Length],
+            w = new float[pos.Length],
+            tint = new Pixel[pos.Length],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+
+        for (uint i = 0; i < di.points; i++)
+        {
+            di.pos[i] = new vf2d(pos[i].x * InvScreenSize.x * 2.0f - 1.0f, (pos[i].y * InvScreenSize.y * 2.0f - 1.0f) * -1.0f);
+            di.uv[i] = uv[i];
+            di.tint[i] = tint;
+            di.w[i] = 1.0f;
+        }
+        
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPolygonDecal(Decal decal, vf2d[] pos, vf2d[] uv, Pixel[] tint)
+    {
+        DecalInstance di = new()
+        {
+            decal = decal,
+            points = (uint)pos.Length,
+            pos = new vf2d[pos.Length],
+            uv = new vf2d[pos.Length],
+            w = new float[pos.Length],
+            tint = new Pixel[pos.Length],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+
+        for (uint i = 0; i < di.points; i++)
+        {
+            di.pos[i] = new vf2d(pos[i].x * InvScreenSize.x * 2.0f - 1.0f, (pos[i].y * InvScreenSize.y * 2.0f - 1.0f) * -1.0f);
+            di.uv[i] = uv[i];
+            di.tint[i] = tint[i];
+            di.w[i] = 1.0f;
+        }
+
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPolygonDecal(Decal decal, vf2d[] pos, float[] depth, vf2d[] uv, Pixel tint)
+    {
+        DecalInstance di = new()
+        {
+            decal = decal,
+            points = (uint)pos.Length,
+            pos = new vf2d[pos.Length],
+            uv = new vf2d[pos.Length],
+            w = new float[pos.Length],
+            tint = new Pixel[pos.Length],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+
+        for (uint i = 0; i < di.points; i++)
+        {
+            di.pos[i] = new vf2d(pos[i].x * InvScreenSize.x * 2.0f - 1.0f, (pos[i].y * InvScreenSize.y * 2.0f - 1.0f) * -1.0f);
+            di.uv[i] = uv[i];
+            di.tint[i] = tint;
+            di.w[i] = depth[i];
+        }
+
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPolygonDecal(Decal decal, vf2d[] pos, float[] depth, vf2d[] uv, Pixel[] colors, Pixel tint)
+    {
+        DecalInstance di = new()
+        {
+            decal = decal,
+            points = (uint)pos.Length,
+            pos = new vf2d[pos.Length],
+            uv = new vf2d[pos.Length],
+            w = new float[pos.Length],
+            tint = new Pixel[pos.Length],
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+
+        for (uint i = 0; i < di.points; i++)
+        {
+            di.pos[i] = new vf2d(pos[i].x * InvScreenSize.x * 2.0f - 1.0f, (pos[i].y * InvScreenSize.y * 2.0f - 1.0f) * -1.0f);
+            di.uv[i] = uv[i];
+            di.tint[i] = colors[i] * tint;
+            di.w[i] = depth[i];
+        }
+
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPolygonDecal(Decal decal, vf2d[] pos, vf2d[] uv, Pixel[] colors, Pixel tint)
+    {
+        Pixel[] newColors = new Pixel[colors.Length];
+        new Span<Pixel>(newColors).Fill(csPixelGameEngineCore.Pixel.WHITE);
+
+        for (int i = 0; i < colors.Length; i++)
+        {
+            newColors[i] = colors[i] * tint;
+        }
+
+        DrawPolygonDecal(decal, pos, uv, newColors);
+    }
+
+    public void DrawLineDecal(vf2d pos1, vf2d pos2, Pixel p)
+    {
+        var dm = DecalMode;
+        DecalMode = DecalMode.WIREFRAME;
+        DrawPolygonDecal(null, [pos1, pos2], [new vf2d(0, 0), new vf2d(0, 0)], p);
+        DecalMode = dm;
+    }
+
+    public void DrawRectDecal(vf2d pos, vf2d size, Pixel col)
+    {
+        var dm = DecalMode;
+        DecalMode = DecalMode.WIREFRAME;
+        vf2d newSize = size;
+        vf2d[] points = [ pos, new vf2d(pos.x, pos.y + newSize.y), pos + newSize, new vf2d(pos.x + newSize.x, pos.y) ];
+        vf2d[] uvs = [ new vf2d(), new vf2d(), new vf2d(), new vf2d() ];
+        Pixel[] cols = [ col, col, col, col ];
+        DrawExplicitDecal(null, points, uvs, cols, 4);
+        DecalMode = dm;
+    }
+
+    public void SetDecalMode(DecalMode mode) => DecalMode = mode;
+    public void SetDecalStructure(DecalStructure structure) => DecalStructure = structure;
 
     #endregion // Drawing Methods
 
