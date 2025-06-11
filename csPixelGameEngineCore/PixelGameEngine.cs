@@ -78,7 +78,6 @@ public class PixelGameEngine
 
     #region Engine properties
     public string   AppName             { get; private set; }
-    //public GLWindow Window              { get; private set; }
     public bool     FullScreen          { get; private set; }
     public bool     EnableVSYNC         { get; private set; }
     public bool     ResizeRequested     { get; private set; } = false;
@@ -101,6 +100,7 @@ public class PixelGameEngine
     public double   FrameTimer          { get; private set; } = 1.0;
     public uint     FrameCount          { get; private set; } = 0;
     public uint     LastFPS             { get; private set; } = 0;
+    public uint     FPS                 { get; private set; }
     public DecalMode DecalMode          { get; set; } = DecalMode.NORMAL;
     public DecalStructure DecalStructure { get; set; } = DecalStructure.FAN;
 
@@ -108,9 +108,7 @@ public class PixelGameEngine
     /// Pixel aspect ratio
     /// </summary>
     public vf2d     Pixel               { get; private set; } = new vf2d(1.0f, 1.0f);
-    public uint     FPS                 { get; private set; }
     public uint     TargetLayer         { get; private set; }
-    
     public List<LayerDesc>  Layers      { get; private set; } = new List<LayerDesc>();
     
     private List<PGEX> _extensions = new List<PGEX>();
@@ -230,24 +228,19 @@ public class PixelGameEngine
         if (pixel_w <= 0) throw new ArgumentException("Must be at least 1", nameof(pixel_w));
         if (pixel_h <= 0) throw new ArgumentException("Must be at least 1", nameof(pixel_h));
 
-        //Window = window;
         _bPixelCohesion = cohesion;
         _bRealWindowMode = realwindow;
         ScreenSize = new vi2d(screen_w, screen_h);
         InvScreenSize = new vf2d(1.0f / screen_w, 1.0f / screen_h);
         PixelSize = new vi2d(pixel_w, pixel_h);
         WindowSize = ScreenSize * PixelSize;
-        FullScreen = full_screen; //(window.WindowState == OpenTK.WindowState.Fullscreen);
-        EnableVSYNC = vsync; //(window.VSync == OpenTK.VSyncMode.On);
+        FullScreen = full_screen;
+        EnableVSYNC = vsync;
         Pixel = 2.0f / ScreenSize;
 
         HWButton keyState = new();
         Span<HWButton> keyStates = new Span<HWButton>(keyboardState);
         keyStates.Fill(keyState);
-
-        // Create a sprite that represents the primary drawing target
-        //DefaultDrawTarget = window.DrawTarget;
-        //drawTarget = DefaultDrawTarget;
 
         return RCode.OK;
     }
@@ -460,12 +453,62 @@ public class PixelGameEngine
 
     // Externalized API
 
-    public virtual void olc_ConfigureSystem()
+    /// <summary>
+    /// Looking at what this is used for in the C++ code, this is completely unnecessary in C#.
+    /// </summary>
+    public void olc_ConfigureSystem()
+    {
+
+    }
+
+    public void olc_Terminate()
+    {
+
+    }
+
+    public void olc_Reanimate()
+    {
+
+    }
+
+    public bool olc_IsRunning() => true;
+
+    public void olc_DropFiles(int x, int y, string[] files)
+    {
+
+    }
+
+    public void olc_UpdateMouse(int x, int y)
+    {
+
+    }
+
+    public void olc_UpdateMouseWheel(int delta)
+    {
+
+    }
+
+    public void olc_UpdateMouseState(int button, bool state)
+    {
+
+    }
+
+    public void olc_UpdateMouseFocus(bool state)
+    {
+
+    }
+
+    public void olc_ConstructFontSheet()
     {
 
     }
 
     public void olc_UpdateKeyState(int key, bool state) => keyNewState[key] = state;
+
+    public void olc_UpdateKeyFocus(bool state)
+    {
+
+    }
 
     public void olc_PrepareEngine()
     {
