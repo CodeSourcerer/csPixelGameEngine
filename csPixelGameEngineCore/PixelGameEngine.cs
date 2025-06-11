@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -8,10 +7,7 @@ using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
 using Microsoft.Extensions.Logging;
-using OpenTK.Input;
 using static csPixelGameEngineCore.Sprite;
-using static System.Formats.Asn1.AsnWriter;
-using OpenTK.Compute.OpenCL;
 
 /*
 	+-------------------------------------------------------------+
