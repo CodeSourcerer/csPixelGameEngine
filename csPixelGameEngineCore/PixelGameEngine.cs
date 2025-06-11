@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using OpenTK.Input;
 using static csPixelGameEngineCore.Sprite;
 using static System.Formats.Asn1.AsnWriter;
+using OpenTK.Compute.OpenCL;
 
 /*
 	+-------------------------------------------------------------+
@@ -77,6 +78,8 @@ public class PixelGameEngine
 {
     protected readonly ILogger<PixelGameEngine> logger;
 
+    public const byte TabSizeInSpaces = 4;
+
     #region Engine properties
     public string   AppName             { get; private set; }
     //public GLWindow Window              { get; private set; }
@@ -97,6 +100,7 @@ public class PixelGameEngine
     public vi2d     ScreenPixelSize     { get; private set; } = new vi2d(4, 4);
     public vi2d     ScreenSize          { get; private set; } = new vi2d(256, 240);
     public vf2d     InvScreenSize       { get; private set; } = new vf2d(1.0f / 256.0f, 1.0f / 240.0f);
+    public vi2d[]   FontSpacing         { get; private set; }
     public double   LastElapsed         { get; private set; } = 0.0;
     public double   FrameTimer          { get; private set; } = 1.0;
     public uint     FrameCount          { get; private set; } = 0;
@@ -167,8 +171,13 @@ public class PixelGameEngine
     public readonly IPlatform Platform;
     private Renderable fontRenderable;
 
-    public const byte nMouseButtons = 5;
-    private HWButton[] btnStates = [ new HWButton(), new HWButton(), new HWButton(), new HWButton(), new HWButton()];
+    // Keyboard and mouse states
+    private bool[] keyNewState = new bool[256];
+    private bool[] keyOldState = new bool[256];
+    private HWButton[] keyboardState = new HWButton[256];
+
+    public const byte MouseButtons = 5;
+    private HWButton[] btnStates = [ new (), new (), new (), new (), new ()];
 
     #endregion // Engine properties
 
@@ -236,6 +245,10 @@ public class PixelGameEngine
         EnableVSYNC = vsync; //(window.VSync == OpenTK.VSyncMode.On);
         Pixel = 2.0f / ScreenSize;
 
+        HWButton keyState = new();
+        Span<HWButton> keyStates = new Span<HWButton>(keyboardState);
+        keyStates.Fill(keyState);
+
         // Create a sprite that represents the primary drawing target
         //DefaultDrawTarget = window.DrawTarget;
         //drawTarget = DefaultDrawTarget;
@@ -286,10 +299,22 @@ public class PixelGameEngine
         }
 
         fontRenderable.Decal.Update();
+
+        byte[] spacing = [
+            0x03,0x25,0x16,0x08,0x07,0x08,0x08,0x04,0x15,0x15,0x08,0x07,0x15,0x07,0x24,0x08,
+            0x08,0x17,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x24,0x15,0x06,0x07,0x16,0x17,
+            0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x17,0x08,0x08,0x17,0x08,0x08,0x08,
+            0x08,0x08,0x08,0x08,0x17,0x08,0x08,0x08,0x08,0x17,0x08,0x15,0x08,0x15,0x08,0x08,
+            0x24,0x18,0x17,0x17,0x17,0x17,0x17,0x17,0x17,0x33,0x17,0x17,0x33,0x18,0x17,0x17,
+            0x17,0x17,0x17,0x17,0x07,0x17,0x17,0x18,0x18,0x17,0x17,0x07,0x33,0x07,0x08,0x00 ];
+
+        FontSpacing = (from c in spacing select new vi2d(c >> 4, c & 15)).ToArray();
     }
 
     public uint GetFPS() => LastFPS;
     public double GetElapsedTime() => LastElapsed;
+
+    public HWButton GetKey(Key k) => keyboardState[(byte)k];
 
     #region Screen / Window attributes
 
@@ -401,6 +426,14 @@ public class PixelGameEngine
             OnFrameRender?.Invoke(sender, new FrameUpdateEventArgs(frameEventArgs.ElapsedTime));
         };
 
+        Platform.KeyDown += (sender, eventArgs) =>
+        {
+            logger.LogDebug("Key pressed: {key}, ScanCode: {scanCode}", eventArgs.PressedKey, eventArgs.ScanCode);
+            olc_UpdateKeyState((int)eventArgs.PressedKey, true);
+        };
+
+        Platform.KeyUp += (sender, eventArgs) => olc_UpdateKeyState((int)eventArgs.PressedKey, false);
+
         Platform.MouseWheel += (sender, mouseWheelEventArgs) =>
         {
             MouseWheelDelta = mouseWheelEventArgs.OffsetY;
@@ -427,10 +460,14 @@ public class PixelGameEngine
         return 0;
     }
 
+    // Externalized API
+
     public virtual void olc_ConfigureSystem()
     {
 
     }
+
+    public void olc_UpdateKeyState(int key, bool state) => keyNewState[key] = state;
 
     public void olc_PrepareEngine()
     {
@@ -459,6 +496,35 @@ public class PixelGameEngine
 
         var elapsedTime = tsElapsed.TotalSeconds;
         LastElapsed = elapsedTime;
+
+        // TODO:
+        //if (bConsoleSuspendTime)
+        //    fElapsedTime = 0.0f;
+
+        Action<HWButton[], bool[], bool[], uint> ScanHardware = (keys, oldState, newState, keyCount) =>
+        {
+            for (uint i = 0; i < keyCount; i++)
+            {
+                keys[i].Pressed = false;
+                keys[i].Released = false;
+                if (newState[i] != oldState[i])
+                {
+                    if (newState[i])
+                    {
+                        keys[i].Pressed = !keys[i].Held;
+                        keys[i].Held = true;
+                    }
+                    else
+                    {
+                        keys[i].Released = true;
+                        keys[i].Held = false;
+                    }
+                }
+                oldState[i] = newState[i];
+            }
+        };
+
+        ScanHardware(keyboardState, keyOldState, keyNewState, 256);
 
         // Handle mouse button held state
         for (int btn = 0; btn < btnStates.Length; btn++)
@@ -532,7 +598,7 @@ public class PixelGameEngine
             ResizeRequested = false;
             SetScreenSize(WindowSize.x, WindowSize.y);
         }
-        // TODO: Implement other stuff
+
         FrameTimer += elapsedTime;
         FrameCount++;
         if (FrameTimer >= 1.0)
@@ -541,7 +607,6 @@ public class PixelGameEngine
             FrameTimer -= 1.0;
             FrameCount = 0;
         }
-        // Frame counter code here
     }
 
     public void olc_UpdateWindowPos(int x, int y)
@@ -1454,10 +1519,25 @@ public class PixelGameEngine
         }
     }
 
-    public void DrawString(vi2d pos, string sText, Pixel col, uint scale = 1)
+    /// <summary>
+    /// Clears entire draw target to Pixel
+    /// </summary>
+    /// <param name="p"></param>
+    public void Clear(Pixel p)
     {
-        DrawString(pos.x, pos.y, sText, col, scale);
+        //int pixelCount = DrawTarget.ColorData.Length;
+        DrawTarget.ColorData.AsSpan().Fill(p);
+        //for (int i = 0; i < pixelCount; i++)
+        //    DrawTarget.ColorData[i] = p;
     }
+
+    public void ClearBuffer(Pixel p, bool bDepth) => renderer.ClearBuffer(p, bDepth);
+
+    //=====================================================================
+    // String Functions
+    //=====================================================================
+
+    public void DrawString(vi2d pos, string sText, Pixel col, uint scale = 1) => DrawString(pos.x, pos.y, sText, col, scale);
 
     /// <summary>
     /// Draws a single line of text
@@ -1511,19 +1591,57 @@ public class PixelGameEngine
         PixelMode = m;
     }
 
-    /// <summary>
-    /// Clears entire draw target to Pixel
-    /// </summary>
-    /// <param name="p"></param>
-    public void Clear(Pixel p)
+    public vi2d GetTextSize(string s)
     {
-        //int pixelCount = DrawTarget.ColorData.Length;
-        DrawTarget.ColorData.AsSpan().Fill(p);
-        //for (int i = 0; i < pixelCount; i++)
-        //    DrawTarget.ColorData[i] = p;
+        vi2d size = new (0, 1);
+        vi2d pos = new (0, 1);
+        foreach (char c in s)
+        {
+            if (c == '\n')
+            {
+                pos.y++;
+                pos.x = 0;
+            }
+            else if(c == '\t')
+            {
+                pos.x += TabSizeInSpaces;
+            }
+            else
+            {
+                pos.x++;
+            }
+            size.x = Math.Max(size.x, pos.x);
+            size.y = Math.Max(size.y, pos.y);
+        }
+        return size * 8;
     }
 
-    public void ClearBuffer(Pixel p, bool bDepth) => renderer.ClearBuffer(p, bDepth);
+    public vi2d GetTextSizeProp(string s)
+    {
+        vi2d size = new (0, 1);
+        vi2d pos = new (0, 1);
+        foreach (char c in s)
+        {
+            if (c == '\n')
+            {
+                pos.y++;
+                pos.x = 0;
+            }
+            else if(c == '\t')
+            {
+                pos.x += TabSizeInSpaces;
+            }
+            else
+            {
+                pos.x += FontSpacing[c - 32].y;
+            }
+            size.x = Math.Max(size.x, pos.x);
+            size.y = Math.Max(size.y, pos.y);
+        }
+
+        size.y *= 8;
+        return size;
+    }
 
     //=====================================================================
     // Decal Drawing
@@ -1651,7 +1769,7 @@ public class PixelGameEngine
 
         for (uint i = 0; i < elements; i++)
         {
-            di.pos[i]  = new () { x = (pos[i].x * InvScreenSize.x) * 2.0f - 1.0f, y = ((pos[i].y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f };
+            di.pos[i]  = new vf2d((pos[i].x * InvScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f);
             di.uv[i]   = uv[i];
             di.tint[i] = col[i];
             di.w[i]    = 1.0f;
@@ -1777,7 +1895,7 @@ public class PixelGameEngine
     {
         var dm = DecalMode;
         DecalMode = DecalMode.WIREFRAME;
-        DrawPolygonDecal(null, [pos1, pos2], [new vf2d(0, 0), new vf2d(0, 0)], p);
+        DrawPolygonDecal(null, [pos1, pos2], [new (0, 0), new (0, 0)], p);
         DecalMode = dm;
     }
 
@@ -1786,11 +1904,28 @@ public class PixelGameEngine
         var dm = DecalMode;
         DecalMode = DecalMode.WIREFRAME;
         vf2d newSize = size;
-        vf2d[] points = [ pos, new vf2d(pos.x, pos.y + newSize.y), pos + newSize, new vf2d(pos.x + newSize.x, pos.y) ];
-        vf2d[] uvs = [ new vf2d(), new vf2d(), new vf2d(), new vf2d() ];
+        vf2d[] points = [ pos, new (pos.x, pos.y + newSize.y), pos + newSize, new (pos.x + newSize.x, pos.y) ];
+        vf2d[] uvs = [ new (), new (), new (), new () ];
         Pixel[] cols = [ col, col, col, col ];
         DrawExplicitDecal(null, points, uvs, cols, 4);
         DecalMode = dm;
+    }
+
+    public void FillRectDecal(vf2d pos, vf2d size, Pixel col)
+    {
+        vf2d vNewSize = size;
+        vf2d[] points = [ pos, new (pos.x, pos.y + vNewSize.y), pos + vNewSize, new (pos.x + vNewSize.x, pos.y) ];
+        vf2d[] uvs = [ new (0, 0), new (0, 0), new (0, 0), new (0, 0) ];
+        Pixel[] cols = [ col, col, col, col ];
+        DrawExplicitDecal(null, points, uvs, cols, 4);
+    }
+
+    public void GradientFillRectDecal(vf2d pos, vf2d size, Pixel colTL, Pixel colBL, Pixel colBR, Pixel colTR)
+    {
+        vf2d[] points = [ pos, new(pos.x, pos.y + size.y), pos + size, new(pos.x + size.x, pos.y) ];
+        vf2d[] uvs = [ new(0, 0), new(0, 0), new(0, 0), new(0, 0) ];
+        Pixel[] cols = [ colTL, colBL, colBR, colTR ];
+        DrawExplicitDecal(null, points, uvs, cols, 4);
     }
 
     public void SetDecalMode(DecalMode mode) => DecalMode = mode;
@@ -1893,6 +2028,19 @@ public class PixelGameEngine
     public LayerDesc[] GetLayers() => [.. Layers];
 
     #endregion // Layer Methods
+
+    // More functions for compatibility
+    public void SetPixelMode(Pixel.Mode m) => PixelMode = m;
+    public Pixel.Mode GetPixelMode() => PixelMode;
+    public void SetPixelBlend(float blend) => BlendFactor = blend;
+
+    /// <summary>
+    /// This sets a custom pixel blending function and switches to the CUSTOM pixel blending mode.
+    /// 
+    /// You can also set the CustomPixelBlender property.
+    /// </summary>
+    /// <param name="pixelBlendFunc">Pixel blending function</param>
+    public void SetPixelMode(PixelBlender pixelBlendFunc) => CustomPixelBlender = pixelBlendFunc;
 
     #region Overrideable methods you should not override
 

@@ -38,4 +38,6 @@ public interface IPlatform
     event EventHandler<MouseButtonEventArgs> MouseDown;
     event EventHandler<MouseButtonEventArgs> MouseUp;
     event EventHandler<FrameUpdateEventArgs> UpdateFrame;
+    event EventHandler<KeyboardEventArgs> KeyDown;
+    event EventHandler<KeyboardEventArgs> KeyUp;
 }
