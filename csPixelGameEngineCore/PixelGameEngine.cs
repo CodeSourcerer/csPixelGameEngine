@@ -311,6 +311,8 @@ public class PixelGameEngine
         FontSpacing = (from c in spacing select new vi2d(c >> 4, c & 15)).ToArray();
     }
 
+    public Sprite GetFontSprite() => fontRenderable.Sprite;
+
     public uint GetFPS() => LastFPS;
     public double GetElapsedTime() => LastElapsed;
 
@@ -1526,7 +1528,7 @@ public class PixelGameEngine
     public void Clear(Pixel p)
     {
         //int pixelCount = DrawTarget.ColorData.Length;
-        DrawTarget.ColorData.AsSpan().Fill(p);
+        DrawTarget.ColData.AsSpan().Fill(p);
         //for (int i = 0; i < pixelCount; i++)
         //    DrawTarget.ColorData[i] = p;
     }

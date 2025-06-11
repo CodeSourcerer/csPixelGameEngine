@@ -28,7 +28,7 @@ namespace csPixelGameEngineCoreTests
         {
             Sprite testSprite = new Sprite(w, h);
 
-            int actualSize = testSprite.ColorData.Length;
+            int actualSize = testSprite.ColData.Length;
 
             Assert.AreEqual(expectedSize, actualSize, "Size of sprite ColorData array is invalid");
         }

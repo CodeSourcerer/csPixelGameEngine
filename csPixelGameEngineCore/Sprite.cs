@@ -23,11 +23,11 @@ public class Sprite
         {
             Width = value.x;
             Height = value.y;
-            ColorData = new Pixel[Width * Height];
-            ColorData.AsSpan().Fill(Pixel.BLACK);
+            ColData = new Pixel[Width * Height];
+            ColData.AsSpan().Fill(Pixel.BLACK);
         }
     }
-    public Pixel[] ColorData { get; private set; }
+    public Pixel[] ColData { get; private set; }
 
     public Mode ModeSample { get; private set; } = Mode.NORMAL;
 
@@ -65,11 +65,11 @@ public class Sprite
         {
             Width = br.ReadInt32();
             Height = br.ReadInt32();
-            ColorData = new Pixel[Width * Height];
+            ColData = new Pixel[Width * Height];
 
             for (int i = 0; i < (Width * Height); i++)
             {
-                ColorData[i] = br.ReadUInt32();
+                ColData[i] = br.ReadUInt32();
             }
         };
 
@@ -100,7 +100,7 @@ public class Sprite
 
     public RCode SaveToPGESprFile(string sImageFile)
     {
-        if (ColorData == null)
+        if (ColData == null)
         {
             return RCode.FAIL;
         }
@@ -113,7 +113,7 @@ public class Sprite
             bw.Write(Height);
             for (int i = 0; i < (Width * Height); i++)
             {
-                bw.Write(ColorData[i]);
+                bw.Write(ColData[i]);
             }
             bw.Close();
 
@@ -161,7 +161,7 @@ public class Sprite
 
         Width = bmp.Width;
         Height = bmp.Height;
-        ColorData = new Pixel[Width * Height];
+        ColData = new Pixel[Width * Height];
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < Height; y++)
@@ -178,7 +178,7 @@ public class Sprite
 
     public void Fill(Pixel col)
     {
-        Span<Pixel> dest = ColorData;
+        Span<Pixel> dest = ColData;
         dest.Fill(col);
     }
 
@@ -194,7 +194,7 @@ public class Sprite
         {
             if (x < Width && y < Height)
             {
-                return ColorData[y * Width + x];
+                return ColData[y * Width + x];
             }
             else
             {
@@ -205,7 +205,7 @@ public class Sprite
         else
         {
             // "Periodic" mode
-            return ColorData[Math.Abs(y % Height) * Width + Math.Abs(x % Width)];
+            return ColData[Math.Abs(y % Height) * Width + Math.Abs(x % Width)];
         }
     }
 
@@ -222,7 +222,7 @@ public class Sprite
     {
         if (x >= 0 && y >= 0 && x < Width && y < Height)
         {
-            ColorData[y * Width + x] = p;
+            ColData[y * Width + x] = p;
             return true;
         }
 
@@ -243,7 +243,7 @@ public class Sprite
     {
         if (x >= 0 && y >= 0 && x < Width && y < Height)
         {
-            ColorData[y * Width + x].n = c;
+            ColData[y * Width + x].n = c;
             return true;
         }
 
@@ -276,7 +276,7 @@ public class Sprite
 
         for (int y1 = y; y1 < y2; y1++)
         {
-            Span<Pixel> row = new Span<Pixel>(ColorData, y1 * Width + x, x2 - x);
+            Span<Pixel> row = new Span<Pixel>(ColData, y1 * Width + x, x2 - x);
             row.Fill(p);
         }
 
@@ -358,8 +358,8 @@ public class Sprite
 
         for (int sy = src_y, dy = dst_y; sy < (src_y + h); sy++, dy++)
         {
-            Memory<Pixel> srcPixelsRow = new Memory<Pixel>(ColorData, Width * sy + src_x, w);
-            Memory<Pixel> dstPixelsRow = new Memory<Pixel>(dest.ColorData, dest.Width * dy + dst_x, w);
+            Memory<Pixel> srcPixelsRow = new Memory<Pixel>(ColData, Width * sy + src_x, w);
+            Memory<Pixel> dstPixelsRow = new Memory<Pixel>(dest.ColData, dest.Width * dy + dst_x, w);
             srcPixelsRow.CopyTo(dstPixelsRow);
         }
     }
@@ -371,8 +371,8 @@ public class Sprite
     public Sprite Duplicate()
     {
         var spr = new Sprite(Width, Height);
-        var src = new Memory<Pixel>(ColorData);
-        var dst = new Memory<Pixel>(spr.ColorData);
+        var src = new Memory<Pixel>(ColData);
+        var dst = new Memory<Pixel>(spr.ColData);
 
         src.CopyTo(dst);
         spr.ModeSample = ModeSample;
@@ -392,11 +392,15 @@ public class Sprite
 
         for (int sy = 0, dy = 0; sy < (vSize.y + vPos.y); sy++, dy++)
         {
-            var srcPixelsRow = new Memory<Pixel>(ColorData, Width * sy + vPos.x, vSize.x);
-            var dstPixelsRow = new Memory<Pixel>(spr.ColorData, spr.Width * dy, vSize.x);
+            var srcPixelsRow = new Memory<Pixel>(ColData, Width * sy + vPos.x, vSize.x);
+            var dstPixelsRow = new Memory<Pixel>(spr.ColData, spr.Width * dy, vSize.x);
             srcPixelsRow.CopyTo(dstPixelsRow);
         }
 
         return spr;
     }
+
+    // For compatibility
+    public Pixel[] GetData() => ColData;
+    public void SetSize(int w, int h) => Size = new(w, h);
 }

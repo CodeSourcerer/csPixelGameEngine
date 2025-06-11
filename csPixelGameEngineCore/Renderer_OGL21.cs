@@ -223,12 +223,12 @@ public class Renderer_OGL21 : IRenderer
 
     public void UpdateTexture(uint id, Sprite spr)
     {
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, spr.Width, spr.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColorData);
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, spr.Width, spr.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColData);
     }
 
     public void ReadTexture(uint id, Sprite spr)
     {
-        GL.ReadPixels(0, 0, spr.Width, spr.Height, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColorData);
+        GL.ReadPixels(0, 0, spr.Width, spr.Height, PixelFormat.Rgba, PixelType.UnsignedByte, spr.ColData);
     }
 
     public void UpdateViewport(vi2d pos, vi2d size)
