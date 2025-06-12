@@ -60,7 +60,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         drawRandomStuff(fElapsedTime);
         drawAnimation();
         
-        drawTo(textLayer);
+        drawTo(textLayer, true);
 
         drawMouseButtonStates(0, 10);
         drawMousePosition(0, 50);
@@ -123,7 +123,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         }
 
         //DrawSprite(0, 0, animation[animationFrame].Sprite);
-        DrawDecal(new vf2d(0, 0), animation[animationFrame].Decal, new vf2d(1, 1), new Pixel(0, 0, 255, 255), csPGE.Enums.DecalMode.NORMAL);
+        DrawDecal(new vf2d(0, 0), animation[animationFrame].Decal, new vf2d(1, 1), new Pixel(255, 255, 255, 255), csPGE.Enums.DecalMode.NORMAL);
     }
 
     /// <summary>
@@ -143,6 +143,20 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         }
     }
 
+    private struct GradientTriangle
+    {
+        public vi2d[] points { get; init; }
+        public uint[] colors { get; init; }
+
+        public GradientTriangle()
+        {
+            points = [new(), new(), new()];
+            colors = [0, 0, 0];
+        }
+    }
+
+    private GradientTriangle[] gradTris = [new(), new(), new(), new(), new()];
+
     /// <summary>
     /// So random!
     /// </summary>
@@ -154,7 +168,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         {
             tsRandomCrap = TimeSpan.Zero;
 
-            drawTo(randomCrapLayer);
+            drawTo(randomCrapLayer, true);
 
             // Draw some random lines
             for (int line = 0; line < 10; line++)
@@ -198,19 +212,26 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 FillCircle(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(50), color);
             }
 
-            // Draw some random triangles (which happens to also be just lines)
+            // Draw some random triangles
             for (int tris = 0; tris < 5; tris++)
             {
                 uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
-                var p1 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
-                var p2 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
-                var p3 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                vi2d p1 = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                vi2d p2 = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                vi2d p3 = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
                 DrawTriangle(p1, p2, p3, color);
 
-                p1 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
-                p2 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
-                p3 = new vi2d(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                p1 = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                p2 = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                p3 = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
                 FillTriangle(p1, p2, p3, color);
+
+                gradTris[tris].points[0] = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                gradTris[tris].points[1] = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                gradTris[tris].points[2] = new(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y));
+                gradTris[tris].colors[0] = (uint)rnd.Next(int.MaxValue) | 0xFF000000;
+                gradTris[tris].colors[1] = (uint)rnd.Next(int.MaxValue) | 0xFF000000;
+                gradTris[tris].colors[2] = (uint)rnd.Next(int.MaxValue) | 0xFF000000;
             }
 
             //FillTexturedTriangle([new vi2d(0, 0), new vi2d(0, ScreenSize.y), new vi2d(ScreenSize.x, ScreenSize.y)],
@@ -220,6 +241,17 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
 
             SetDrawTarget(null);
         }
+
+        // Draw decals - they must be drawn every frame
+        drawTo(randomCrapLayer, false);
+
+        foreach (var tri in gradTris)
+        {
+            //FillTriangleDecal(tri.points[0], tri.points[1], tri.points[2], tri.colors[0]);
+            GradientTriangleDecal(tri.points[0], tri.points[1], tri.points[2], tri.colors[0], tri.colors[1], tri.colors[2]);
+        }
+
+        SetDrawTarget(null);
     }
 
     /// <summary>
@@ -278,11 +310,14 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
         DrawString(x, y + 50, $"ViewSize: [{ViewSize.x}, {ViewSize.y}]", csPGE.Pixel.WHITE);
     }
 
-    private void drawTo(uint layer)
+    private void drawTo(uint layer, bool clear)
     {
         var ld = Layers[(int)layer];
         SetDrawTarget(ld.DrawTarget.Sprite);
-        Clear(csPGE.Pixel.BLANK);
+        if (clear)
+        {
+            Clear(csPGE.Pixel.BLANK);
+        }
         ld.bUpdate = true;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -2043,6 +2044,22 @@ public class PixelGameEngine
         vf2d[] uvs = [ new(0, 0), new(0, 0), new(0, 0), new(0, 0) ];
         Pixel[] cols = [ colTL, colBL, colBR, colTR ];
         DrawExplicitDecal(null, points, uvs, cols, 4);
+    }
+
+    public void FillTriangleDecal(vf2d p0, vf2d p1, vf2d p2, Pixel col)
+    {
+        vf2d[] points = [ p0, p1, p2 ];
+        vf2d[] uvs = [ new(0, 0), new(0, 0), new(0, 0) ];
+        Pixel[] cols = [ col, col, col ];
+        DrawExplicitDecal(null, points, uvs, cols, 3);
+    }
+
+    public void GradientTriangleDecal(vf2d p0, vf2d p1, vf2d p2, Pixel c0, Pixel c1, Pixel c2)
+    {
+        vf2d[] points = [ p0, p1, p2 ];
+        vf2d[] uvs = [ new(0, 0), new(0, 0), new(0, 0) ];
+        Pixel[] cols = [ c0, c1, c2 ];
+        DrawExplicitDecal(null, points, uvs, cols, 3);
     }
 
     public void SetDecalMode(DecalMode mode) => DecalMode = mode;

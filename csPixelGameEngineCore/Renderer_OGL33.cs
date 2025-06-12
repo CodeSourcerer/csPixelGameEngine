@@ -193,7 +193,7 @@ public class Renderer_OGL33 : IRenderer
         // Create blank texture for spriteless decals
         rendBlankQuad = new Renderable(this);
         rendBlankQuad.Create(1, 1);
-        rendBlankQuad.Sprite.ColData[0] = Pixel.GREEN;
+        rendBlankQuad.Sprite.ColData[0] = Pixel.WHITE;
         rendBlankQuad.Decal.Update();
 
         logger.LogInformation("GL 3.3 Device created");
