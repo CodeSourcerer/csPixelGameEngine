@@ -1921,8 +1921,39 @@ public class PixelGameEngine
             di.pos[i] = pos + new vf2d(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
             di.pos[i] = di.pos[i] * InvScreenSize * 2.0f - new vf2d(1, 1);
             di.pos[i].y *= -1.0f;
-            di.w[i] = 1;
         }
+
+        Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPartialRotatedDecal(vf2d pos, Decal decal, float angle, vf2d center, vf2d source_pos, vf2d source_size, vf2d scale, Pixel tint)
+    {
+        DecalInstance di = new()
+        {
+            decal = decal,
+            pos = [ (new vf2d(0, 0) - center) * scale,
+                    (new vf2d(0, decal.sprite.Height) - center) * scale,
+                    (new vf2d(decal.sprite.Width, decal.sprite.Height) - center) * scale,
+                    (new vf2d(decal.sprite.Width, 0) - center) * scale],
+            w = [ 1, 1, 1, 1 ],
+            tint = [ tint, tint, tint, tint ],
+            points = 4,
+            mode = DecalMode,
+            structure = DecalStructure
+        };
+
+        float c = (float)Math.Cos(angle), s = (float)Math.Sin(angle);
+
+        for (int i = 0; i < 4; i++)
+        {
+            di.pos[i] = pos + new vf2d(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
+            di.pos[i] = di.pos[i] * InvScreenSize * 2.0f - new vf2d(1, 1);
+            di.pos[i].y *= -1.0f;
+        }
+
+        vf2d uvtl = source_pos * decal.vUVScale;
+        vf2d uvbr = uvtl + (source_size * decal.vUVScale);
+        di.uv = [ new(uvtl.x, uvtl.y), new(uvtl.x, uvbr.y), new(uvbr.x, uvbr.y), new(uvbr.x, uvtl.y) ];
 
         Layers[(int)TargetLayer].DecalInstance.Add(di);
     }
