@@ -171,10 +171,21 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
                 vi2d p1 = new(-rnd.Next(ScreenSize.x), -rnd.Next(ScreenSize.y));
                 vi2d p2 = new(rnd.Next(ScreenSize.x) * 2, rnd.Next(ScreenSize.y) * 2);
-                ClipLineToScreen(ref p1, ref p2);
+                if (!ClipLineToScreen(ref p1, ref p2))
+                {
+                    // both points make a line that is not visible. Try again
+                    this.logger.LogDebug("Line not visible, generating another");
+                    line--;
+                    continue;
+                }
+
                 if (p1.x < 0 || p1.y < 0 || p1.x > ScreenSize.x || p1.y > ScreenSize.y)
                 {
                     this.logger.LogWarning("OMG!! p1 didn't get clipped! [p1.x:{p1x}] [p1.y:{p1y}]", p1.x, p1.y);
+                }
+                if (p2.x < 0 || p2.y < 0 || p2.x > ScreenSize.x || p2.y > ScreenSize.y)
+                {
+                    this.logger.LogWarning("OMG!! p2 didn't get clipped! [p2.x:{p2x}] [p2.y:{p2y}]", p2.x, p2.y);
                 }
                 DrawLine(p1, p2, csPGE.Pixel.DARK_GREEN);
             }

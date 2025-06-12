@@ -1568,6 +1568,12 @@ public class PixelGameEngine
         }
     }
 
+    /// <summary>
+    /// Takes 2 points and clips them to be within the visible area of the screen.
+    /// </summary>
+    /// <param name="in_p1"></param>
+    /// <param name="in_p2"></param>
+    /// <returns>True if both points are within the visible area, false if line drawn is outside visible area</returns>
     public bool ClipLineToScreen(ref vi2d in_p1, ref vi2d in_p2)
     {
         // https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
