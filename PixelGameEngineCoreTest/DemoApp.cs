@@ -21,12 +21,14 @@ class DemoApp
     {
         try
         {
+            // Create a logger, cause logging is handy dandy.
             Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
                 .WriteTo.Console()
                 .MinimumLevel.Verbose()
                 .CreateLogger();
 
+            // Build configuration from json. To keep it simple, not worrying about environments.
             IConfigurationBuilder configBuilder = new ConfigurationBuilder()
                 .AddJsonFile($"{Environment.CurrentDirectory}/appsettings.json");
 

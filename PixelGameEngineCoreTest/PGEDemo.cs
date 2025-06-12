@@ -164,6 +164,21 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
                 DrawLine(rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), rnd.Next(ScreenSize.x), rnd.Next(ScreenSize.y), color, pattern);
             }
 
+            // Bigger lines
+            for (int line = 0; line < 10; line++)
+            {
+                uint pattern = (uint)rnd.Next(int.MaxValue);
+                uint color = (uint)rnd.Next(0xFFFFFF) | 0xFF000000;
+                vi2d p1 = new(-rnd.Next(ScreenSize.x), -rnd.Next(ScreenSize.y));
+                vi2d p2 = new(rnd.Next(ScreenSize.x) * 2, rnd.Next(ScreenSize.y) * 2);
+                ClipLineToScreen(ref p1, ref p2);
+                if (p1.x < 0 || p1.y < 0 || p1.x > ScreenSize.x || p1.y > ScreenSize.y)
+                {
+                    this.logger.LogWarning("OMG!! p1 didn't get clipped! [p1.x:{p1x}] [p1.y:{p1y}]", p1.x, p1.y);
+                }
+                DrawLine(p1, p2, csPGE.Pixel.DARK_GREEN);
+            }
+
             // Draw some random circles
             for (int circle = 0; circle < 10; circle++)
             {

@@ -777,7 +777,15 @@ public class PixelGameEngine
 
     public void DrawLine(vi2d pos1, vi2d pos2, Pixel p, uint pattern = 0xFFFFFFFF) => DrawLine(pos1.x, pos1.y, pos2.x, pos2.y, p, pattern);
 
-    // Draws a line from (x1,y1) to (x2,y2)
+    /// <summary>
+    /// Draws a line from (x1,y1) to (x2,y2)
+    /// </summary>
+    /// <param name="x1"></param>
+    /// <param name="y1"></param>
+    /// <param name="x2"></param>
+    /// <param name="y2"></param>
+    /// <param name="p"></param>
+    /// <param name="pattern"></param>
     public void DrawLine(int x1, int y1, int x2, int y2, Pixel p, uint pattern = 0xFFFFFFFF)
     {
         if (p == default)
@@ -1560,6 +1568,68 @@ public class PixelGameEngine
         }
     }
 
+    public bool ClipLineToScreen(ref vi2d in_p1, ref vi2d in_p2)
+    {
+        // https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+        int SEG_I = 0b0000, SEG_L = 0b0001, SEG_R = 0b0010, SEG_B = 0b0100, SEG_T = 0b1000;
+        Func<vi2d, int> Segment = v =>
+		{
+            int i = SEG_I;
+            if (v.x < 0) i |= SEG_L; else if (v.x > ScreenSize.x) i |= SEG_R;
+            if (v.y < 0) i |= SEG_B; else if (v.y > ScreenSize.y) i |= SEG_T;
+            return i;
+        };
+
+        int s1 = Segment(in_p1), s2 = Segment(in_p2);
+
+        while (true)
+        {
+            if ((s1 | s2) == 0)
+            {
+                return true;
+            }
+            else if ((s1 & s2) != 0)
+            {
+                return false;
+            }
+            else
+            {
+                int s3 = s2 > s1 ? s2 : s1;
+                vi2d n = new();
+                if ((s3 & SEG_T) != 0)
+                {
+                    n.x = in_p1.x + (in_p2.x - in_p1.x) * (ScreenSize.y - in_p1.y) / (in_p2.y - in_p1.y);
+                    n.y = ScreenSize.y;
+                }
+                else if ((s3 & SEG_B) != 0)
+                {
+                    n.x = in_p1.x + (in_p2.x - in_p1.x) * (0 - in_p1.y) / (in_p2.y - in_p1.y); n.y = 0;
+                }
+                else if ((s3 & SEG_R) != 0)
+                {
+                    n.x = ScreenSize.x;
+                    n.y = in_p1.y + (in_p2.y - in_p1.y) * (ScreenSize.x - in_p1.x) / (in_p2.x - in_p1.x);
+                }
+                else if ((s3 & SEG_L) != 0)
+                {
+                    n.x = 0;
+                    n.y = in_p1.y + (in_p2.y - in_p1.y) * (0 - in_p1.x) / (in_p2.x - in_p1.x);
+                }
+
+                if (s3 == s1)
+                {
+                    in_p1 = n;
+                    s1 = Segment(in_p1);
+                }
+                else
+                {
+                    in_p2 = n;
+                    s2 = Segment(in_p2);
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// Clears entire draw target to Pixel
     /// </summary>
@@ -2116,5 +2186,34 @@ public class PixelGameEngine
     {
         return true;
     }
+
+    /// <summary>
+    /// Called when a text entry is confirmed with the enter key
+    /// </summary>
+    /// <param name="text"></param>
+    protected virtual void OnTextEntryComplete(string text)
+    {
+
+    }
+
+    /// <summary>
+    /// Called when a console command is executed
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
+    protected virtual bool OnConsoleCommand(string command)
+    {
+        return true;
+    }
+
     #endregion // Overrideable methods you should not override
+
+    public void pgex_Register(PGEX pgex)
+    {
+        // This should probably be improved
+        if (!_extensions.Any(ext => ext == pgex))
+        {
+            _extensions.Add(pgex);
+        }
+    }
 }

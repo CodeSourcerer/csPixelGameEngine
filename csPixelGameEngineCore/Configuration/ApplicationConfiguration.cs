@@ -1,5 +1,8 @@
 ﻿namespace csPixelGameEngineCore.Configuration;
 
+/// <summary>
+/// Basic configuration for our game / app. Could certainly add much more.
+/// </summary>
 public class ApplicationConfiguration
 {
     public string AppName { get; init; }
