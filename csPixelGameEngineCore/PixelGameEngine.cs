@@ -9,6 +9,7 @@ using System.Xml.Linq;
 using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
 using Microsoft.Extensions.Logging;
+using static System.Formats.Asn1.AsnWriter;
 using static csPixelGameEngineCore.Sprite;
 
 /*
@@ -1956,6 +1957,53 @@ public class PixelGameEngine
         di.uv = [ new(uvtl.x, uvtl.y), new(uvtl.x, uvbr.y), new(uvbr.x, uvbr.y), new(uvbr.x, uvtl.y) ];
 
         Layers[(int)TargetLayer].DecalInstance.Add(di);
+    }
+
+    public void DrawPartialWarpedDecal(Decal decal, vf2d[] pos, vf2d source_pos, vf2d source_size, Pixel tint)
+    {
+        if (pos.Length != 4) throw new ArgumentException("Should contain 4 points", nameof(pos));
+
+        DecalInstance di = new()
+        {
+            decal = decal,
+            pos = [ new vf2d(), new vf2d(), new vf2d(), new vf2d() ],
+            w = [ 1, 1, 1, 1 ],
+            tint = [ tint, tint, tint, tint ],
+            points = 4,
+            uv = [ new(0, 0), new(0, 1), new(1, 1), new(1, 0) ]
+        };
+        vf2d center = new();
+        float rd = (pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y);
+        if (rd != 0)
+        {
+            vf2d uvtl = source_pos * decal.vUVScale;
+            vf2d uvbr = uvtl + (source_size * decal.vUVScale);
+            di.uv = [ new(uvtl.x, uvtl.y), new(uvtl.x, uvbr.y), new(uvbr.x, uvbr.y), new(uvbr.x, uvtl.y) ];
+
+            rd = 1.0f / rd;
+            float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+            float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+            if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+            {
+                center = pos[0] + rn * (pos[2] - pos[0]);
+            }
+            float[] d = [0,0,0,0];
+            for (int i = 0; i < 4; i++)
+            {
+                d[i] = (float)(pos[i] - center).mag();
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                di.uv[i] *= q;
+                di.w[i] *= q;
+                di.pos[i] = new((pos[i].x * InvScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f);
+            }
+
+            di.mode = DecalMode;
+            di.structure = DecalStructure;
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
+        }
     }
 
     public void DrawPolygonDecal(Decal decal, vf2d[] pos, vf2d[] uv, Pixel tint)
