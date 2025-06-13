@@ -1711,6 +1711,31 @@ public class PixelGameEngine
         PixelMode = m;
     }
 
+    public void DrawStringDecal(vf2d pos, string sText, Pixel col, vf2d scale)
+    {
+        vf2d spos = new(0, 0);
+
+        foreach (var c in sText)
+        {
+            if (c == '\n')
+            {
+                spos.x = 0;
+                spos.y += (8.0f * scale.y);
+            }
+            else if (c == '\t')
+            {
+                spos.x += (8.0f * TabSizeInSpaces * scale.x);
+            }
+            else
+            {
+                int ox = (c - 32) % 16;
+                int oy = (c - 32) / 16;
+                DrawPartialDecal(pos + spos, fontRenderable.Decal, new(ox * 8.0f, oy * 8.0f), new(8.0f, 8.0f), scale, col);
+                spos.x += (8.0f * scale.x);
+            }
+        }
+    }
+
     public vi2d GetTextSize(string s)
     {
         vi2d size = new (0, 1);
@@ -1980,6 +2005,51 @@ public class PixelGameEngine
             vf2d uvbr = uvtl + (source_size * decal.vUVScale);
             di.uv = [ new(uvtl.x, uvtl.y), new(uvtl.x, uvbr.y), new(uvbr.x, uvbr.y), new(uvbr.x, uvtl.y) ];
 
+            rd = 1.0f / rd;
+            float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
+            float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
+            if (!(rn < 0.0f || rn > 1.0f || sn < 0.0f || sn > 1.0f))
+            {
+                center = pos[0] + rn * (pos[2] - pos[0]);
+            }
+            float[] d = [0,0,0,0];
+            for (int i = 0; i < 4; i++)
+            {
+                d[i] = (float)(pos[i] - center).mag();
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                float q = d[i] == 0.0f ? 1.0f : (d[i] + d[(i + 2) & 3]) / d[(i + 2) & 3];
+                di.uv[i] *= q;
+                di.w[i] *= q;
+                di.pos[i] = new((pos[i].x * InvScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * InvScreenSize.y) * 2.0f - 1.0f) * -1.0f);
+            }
+
+            di.mode = DecalMode;
+            di.structure = DecalStructure;
+            Layers[(int)TargetLayer].DecalInstance.Add(di);
+        }
+    }
+
+    public void DrawWarpedDecal(Decal decal, vf2d[] pos, Pixel tint)
+    {
+        // Thanks Nathan Reed, a brilliant article explaining whats going on here
+        // http://www.reedbeta.com/blog/quadrilateral-interpolation-part-1/
+        if (pos.Length != 4) throw new ArgumentException("Should contain 4 points", nameof(pos));
+
+        DecalInstance di = new()
+        {
+            decal = decal,
+            pos = [ new vf2d(), new vf2d(), new vf2d(), new vf2d() ],
+            w = [ 1, 1, 1, 1 ],
+            tint = [ tint, tint, tint, tint ],
+            points = 4,
+            uv = [ new(0, 0), new(0, 1), new(1, 1), new(1, 0) ]
+        };
+        vf2d center = new();
+        float rd = (pos[2].x - pos[0].x) * (pos[3].y - pos[1].y) - (pos[3].x - pos[1].x) * (pos[2].y - pos[0].y);
+        if (rd != 0)
+        {
             rd = 1.0f / rd;
             float rn = ((pos[3].x - pos[1].x) * (pos[0].y - pos[1].y) - (pos[3].y - pos[1].y) * (pos[0].x - pos[1].x)) * rd;
             float sn = ((pos[2].x - pos[0].x) * (pos[0].y - pos[1].y) - (pos[2].y - pos[0].y) * (pos[0].x - pos[1].x)) * rd;
