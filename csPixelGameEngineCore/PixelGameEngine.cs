@@ -80,31 +80,34 @@ public class PixelGameEngine
     public const byte TabSizeInSpaces = 4;
 
     #region Engine properties
-    public string   AppName             { get; private set; }
-    public bool     FullScreen          { get; private set; }
-    public bool     EnableVSYNC         { get; private set; }
-    public bool     ResizeRequested     { get; private set; } = false;
-    public vi2d     ViewPos             { get; private set; } = new vi2d(0, 0);
-    public vi2d     ViewSize            { get; private set; } = new vi2d(0, 0);
-    public vi2d     WindowSize          { get; private set; } = new vi2d(0, 0);
-    public vi2d     WindowPos           { get; private set; } = new vi2d(0, 0);
-    public int      DrawTargetWidth     { get; private set; }
-    public int      DrawTargetHeight    { get; private set; }
-    public Sprite   DrawTarget          { get; private set; }
-    public vi2d     MousePos            { get; private set; } = new vi2d(0, 0);
-    public vi2d     WindowMousePos      { get; private set; } = new vi2d(0, 0);
-    public int      MouseWheelDelta     { get; private set; }
-    public vi2d     PixelSize           { get; private set; } = new vi2d(4, 4);
-    public vi2d     ScreenPixelSize     { get; private set; } = new vi2d(4, 4);
-    public vi2d     ScreenSize          { get; private set; } = new vi2d(256, 240);
-    public vf2d     InvScreenSize       { get; private set; } = new vf2d(1.0f / 256.0f, 1.0f / 240.0f);
-    public vi2d[]   FontSpacing         { get; private set; }
-    public double   LastElapsed         { get; private set; } = 0.0;
-    public double   FrameTimer          { get; private set; } = 1.0;
-    public uint     FrameCount          { get; private set; } = 0;
-    public uint     LastFPS             { get; private set; } = 0;
-    public uint     FPS                 { get; private set; }
-    public DecalMode DecalMode          { get; set; } = DecalMode.NORMAL;
+    public string   AppName              { get; private set; }
+    public bool     FullScreen           { get; private set; }
+    public bool     EnableVSYNC          { get; private set; }
+    public bool     ResizeRequested      { get; private set; } = false;
+    public vi2d     ViewPos              { get; private set; } = new (0, 0);
+    public vi2d     ViewSize             { get; private set; } = new (0, 0);
+    public vi2d     WindowSize           { get; private set; } = new (0, 0);
+    public vi2d     WindowPos            { get; private set; } = new (0, 0);
+    public int      DrawTargetWidth      { get; private set; }
+    public int      DrawTargetHeight     { get; private set; }
+    public Sprite   DrawTarget           { get; private set; }
+    public vi2d     MousePos             { get; private set; } = new (0, 0);
+    public vi2d     MouseWindowPos       { get; private set; } = new (0, 0);
+    public vi2d     MousePosCache        { get; private set; } = new (0, 0);
+    public int      MouseWheelDelta      { get; private set; } = 0;
+    public int      MouseWheelDeltaCache { get; private set; } = 0;
+    public bool     HasMouseFocus        { get; private set; }
+    public vi2d     PixelSize            { get; private set; } = new (4, 4);
+    public vi2d     ScreenPixelSize      { get; private set; } = new (4, 4);
+    public vi2d     ScreenSize           { get; private set; } = new (256, 240);
+    public vf2d     InvScreenSize        { get; private set; } = new (1.0f / 256.0f, 1.0f / 240.0f);
+    public vi2d[]   FontSpacing          { get; private set; }
+    public double   LastElapsed          { get; private set; } = 0.0;
+    public double   FrameTimer           { get; private set; } = 1.0;
+    public uint     FrameCount           { get; private set; } = 0;
+    public uint     LastFPS              { get; private set; } = 0;
+    public uint     FPS                  { get; private set; }
+    public DecalMode DecalMode           { get; set; } = DecalMode.NORMAL;
     public DecalStructure DecalStructure { get; set; } = DecalStructure.FAN;
 
     /// <summary>
@@ -174,7 +177,9 @@ public class PixelGameEngine
     private HWButton[] keyboardState = new HWButton[256];
 
     public const byte MouseButtons = 5;
-    private HWButton[] btnStates = [ new (), new (), new (), new (), new ()];
+    private HWButton[] mouseState = new HWButton[MouseButtons];
+    private bool[] mouseNewState = new bool[MouseButtons];
+    private bool[] mouseOldState = new bool[MouseButtons];
 
     #endregion // Engine properties
 
@@ -242,8 +247,11 @@ public class PixelGameEngine
         Pixel = 2.0f / ScreenSize;
 
         HWButton keyState = new();
-        Span<HWButton> keyStates = new Span<HWButton>(keyboardState);
+        Span<HWButton> keyStates = new (keyboardState);
         keyStates.Fill(keyState);
+
+        Span<HWButton> mouseStates = new (mouseState);
+        mouseStates.Fill(keyState); // Shhh... it's fine!
 
         return RCode.OK;
     }
@@ -483,22 +491,46 @@ public class PixelGameEngine
 
     public void olc_UpdateMouse(int x, int y)
     {
-
+        // Mouse coords come in screen space
+        // But leave in pixel space
+        HasMouseFocus = true;
+        MouseWindowPos = new (x, y);
+        // Full Screen mode may have a weird viewport we must clamp to
+        x -= ViewPos.x;
+        y -= ViewPos.y;
+        MousePosCache.x = (int)((float)x / (WindowSize.x - (ViewPos.x * 2)) * ScreenSize.x);
+        MousePosCache.y = (int)((float)y / (WindowSize.y - (ViewPos.y * 2)) * ScreenSize.y);
+        if (MousePosCache.x >= ScreenSize.x)
+        {
+            MousePosCache.x = ScreenSize.x - 1;
+        }
+        if (MousePosCache.y >= ScreenSize.y)
+        {
+            MousePosCache.y = ScreenSize.y - 1;
+        }
+        if (MousePosCache.x < 0)
+        {
+            MousePosCache.x = 0;
+        }
+        if (MousePosCache.y < 0)
+        {
+            MousePosCache.y = 0;
+        }
     }
 
     public void olc_UpdateMouseWheel(int delta)
     {
-
+        MouseWheelDeltaCache += delta;
     }
 
     public void olc_UpdateMouseState(int button, bool state)
     {
-
+        mouseNewState[button] = state;
     }
 
     public void olc_UpdateMouseFocus(bool state)
     {
-
+        HasMouseFocus = state;
     }
 
     public void olc_ConstructFontSheet()
@@ -569,11 +601,17 @@ public class PixelGameEngine
         };
 
         ScanHardware(keyboardState, keyOldState, keyNewState, 256);
+        ScanHardware(mouseState, mouseOldState, mouseNewState, MouseButtons);
+
+        // Cache mouse coordinates so they remain consistent during frame
+        MousePos = MousePosCache;
+        MouseWheelDelta = MouseWheelDeltaCache;
+        MouseWheelDeltaCache = 0;
 
         // Handle mouse button held state
-        for (int btn = 0; btn < btnStates.Length; btn++)
+        for (int btn = 0; btn < mouseState.Length; btn++)
         {
-            btnStates[btn].Held = btnStates[btn].Pressed;
+            mouseState[btn].Held = mouseState[btn].Pressed;
         }
 
         OnUserUpdate((float)tsElapsed.TotalSeconds);
@@ -716,8 +754,8 @@ public class PixelGameEngine
     {
         // Event not generated when button held, so below does not work.
         //btnStates[(int)mouseButtonEvent.Button].Held     = btnStates[(int)mouseButtonEvent.Button].Pressed && mouseButtonEvent.IsPressed;
-        btnStates[(int)mouseButtonEvent.Button].Pressed  =  mouseButtonEvent.IsPressed;
-        btnStates[(int)mouseButtonEvent.Button].Released = !mouseButtonEvent.IsPressed;
+        mouseState[(int)mouseButtonEvent.Button].Pressed  =  mouseButtonEvent.IsPressed;
+        mouseState[(int)mouseButtonEvent.Button].Released = !mouseButtonEvent.IsPressed;
     }
 
     /// <summary>
@@ -725,14 +763,14 @@ public class PixelGameEngine
     /// </summary>
     /// <param name="b">button</param>
     /// <returns></returns>
-    public HWButton GetMouse(uint button) => btnStates[button];
+    public HWButton GetMouse(uint button) => mouseState[button];
 
     // For compatibility
     public int GetMouseX() => MousePos.x;
     public int GetMouseY() => MousePos.y;
     public vi2d GetMousePos() => MousePos;
     public int GetMouseWheel() => MouseWheelDelta;
-    public vi2d GetWindowMouse() => WindowMousePos;
+    public vi2d GetWindowMouse() => MouseWindowPos;
 
     #region Drawing Methods
 
@@ -1735,6 +1773,155 @@ public class PixelGameEngine
             }
         }
     }
+
+    public void DrawStringPropDecal(vf2d pos, string sText, Pixel col, vf2d scale)
+    {
+        vf2d spos = new(0, 0);
+
+        foreach (var c in sText)
+        {
+            if (c == '\n')
+            {
+                spos.x = 0;
+                spos.y += (8.0f * scale.y);
+            }
+            else if (c == '\t')
+            {
+                spos.x += (8.0f * TabSizeInSpaces * scale.x);
+            }
+            else
+            {
+                int ox = (c - 32) % 16;
+                int oy = (c - 32) / 16;
+                DrawPartialDecal(pos + spos, fontRenderable.Decal, new(ox * 8.0f + FontSpacing[c - 32].x, oy * 8.0f), new(FontSpacing[c - 32].y, 8.0f), scale, col);
+                spos.x += (FontSpacing[c - 32].y * scale.x);
+            }
+        }
+    }
+
+    // Thanks Oso-Grande/Sopadeoso For these awesom and stupidly clever Text Rotation routines... duh XD
+    public void DrawRotatedStringDecal(vf2d pos, string sText, float fAngle, vf2d center, Pixel col, vf2d scale)
+    {
+        vf2d spos = new(0, 0);
+
+        foreach (var c in sText)
+        {
+            if (c == '\n')
+            {
+                spos.x = center.x;
+                spos.y -= 8.0f;
+            }
+            else if (c == '\t')
+            {
+                spos.x += (8.0f * TabSizeInSpaces * scale.x);
+            }
+            else
+            {
+                int ox = (c - 32) % 16;
+                int oy = (c - 32) / 16;
+                DrawPartialRotatedDecal(pos, fontRenderable.Decal, fAngle, spos, new(ox * 8.0f, oy * 8.0f), new(8.0f, 8.0f), scale, col);
+                spos.x -= (8.0f * scale.x);
+            }
+        }
+    }
+
+    public void DrawRotatedStringPropDecal(vf2d pos, string sText, float fAngle, vf2d center, Pixel col, vf2d scale)
+    {
+        vf2d spos = center;
+
+        foreach (var c in sText)
+        {
+            if (c == '\n')
+            {
+                spos.x = center.x;
+                spos.y -= 8.0f;
+            }
+            else if (c == '\t')
+            {
+                spos.x += (8.0f * TabSizeInSpaces * scale.x);
+            }
+            else
+            {
+                int ox = (c - 32) % 16;
+                int oy = (c - 32) / 16;
+                DrawPartialRotatedDecal(pos, fontRenderable.Decal, fAngle, spos, new(ox * 8.0f + FontSpacing[c - 32].x, oy * 8.0f), new(FontSpacing[c - 32].y, 8.0f), scale, col);
+                spos.x -= FontSpacing[c - 32].y;
+            }
+        }
+    }
+
+    public void DrawStringProp(int x, int y, string sText, Pixel col, uint scale)
+    {
+        uint sx = 0;
+        uint sy = 0;
+        Pixel.Mode m = PixelMode;
+
+        if (m != csPixelGameEngineCore.Pixel.Mode.CUSTOM)
+        {
+            if (col.a != 255)
+            {
+                SetPixelMode(csPixelGameEngineCore.Pixel.Mode.ALPHA);
+            }
+            else
+            {
+                SetPixelMode(csPixelGameEngineCore.Pixel.Mode.MASK);
+            }
+        }
+        foreach (var c in sText)
+        {
+            if (c == '\n')
+            {
+                sx = 0;
+                sy += (8 * scale);
+            }
+            else if (c == '\t')
+            {
+                sx += 8 * TabSizeInSpaces * scale;
+            }
+            else
+            {
+                int ox = (c - 32) % 16;
+                int oy = (c - 32) / 16;
+
+                if (scale > 1)
+                {
+                    for (int i = 0; i < FontSpacing[c - 32].y; i++)
+                    {
+                        for (int j = 0; j < 8; j++)
+                        {
+                            if (fontRenderable.Sprite.GetPixel(i + ox * 8 + FontSpacing[c - 32].x, j + oy * 8).r > 0)
+                            {
+                                for (int @is = 0; @is < scale; @is++)
+                                {
+                                    for (int js = 0; js < scale; js++)
+                                    {
+                                        Draw((int)(x + sx + (i * scale) + @is), (int)(y + sy + (j * scale) + js), col);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < FontSpacing[c - 32].y; i++)
+                    {
+                        for (int j = 0; j < 8; j++)
+                        {
+                            if (fontRenderable.Sprite.GetPixel(i + ox * 8 + FontSpacing[c - 32].x, j + oy * 8).r > 0)
+                            {
+                                Draw((int)(x + sx + i), (int)(y + sy + j), col);
+                            }
+                        }
+                    }
+                }
+                sx += (uint)(FontSpacing[c - 32].y * scale);
+            }
+        }
+        SetPixelMode(m);
+    }
+
+    public void DrawStringProp(vi2d pos, string sText, Pixel col, uint scale) => DrawStringProp(pos.x, pos.y, sText, col, scale);
 
     public vi2d GetTextSize(string s)
     {

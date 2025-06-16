@@ -288,7 +288,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
 
     private void drawMousePosition(int x, int y)
     {
-        string display = $"Mouse Pos: [{MousePos.x}, {MousePos.y}] Mouse Window Pos: [{WindowMousePos.x}, {WindowMousePos.y}]";
+        string display = $"Mouse Pos: [{MousePos.x}, {MousePos.y}] Mouse Window Pos: [{MouseWindowPos.x}, {MouseWindowPos.y}]";
         DrawString(x, y, display, csPGE.Pixel.WHITE);
     }
 
