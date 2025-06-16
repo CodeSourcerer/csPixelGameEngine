@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Drawing;
 using System.IO;
 using csPixelGameEngineCore.Enums;
+using ImageMagick;
 using Serilog;
 
 namespace csPixelGameEngineCore;
@@ -127,7 +127,7 @@ public class Sprite
 
     public RCode LoadFromFile(string sImageFile, ResourcePack pack, bool throwOnError = false)
     {
-        Bitmap bmp;
+        using var imageFile = new MagickImage();
 
         if (pack == null && !File.Exists(sImageFile))
         {
@@ -143,12 +143,12 @@ public class Sprite
                 // Load sprite from input stream
                 ResourceBuffer rb = pack.GetFileBuffer(sImageFile);
                 var imageData = rb.Memory.ToArray();
-                bmp = new Bitmap(new MemoryStream(imageData));
+                imageFile.Read(imageData);
             }
             else
             {
                 // Load sprite from file
-                bmp = new Bitmap(sImageFile);
+                imageFile.Read(sImageFile);
             }
         }
         catch (Exception ex)
@@ -159,19 +159,19 @@ public class Sprite
             return RCode.FAIL;
         }
 
-        Width = bmp.Width;
-        Height = bmp.Height;
+        Width = (int)imageFile.Width;
+        Height = (int)imageFile.Height;
         ColData = new Pixel[Width * Height];
+        var pixelData = imageFile.GetPixels();
         for (int x = 0; x < Width; x++)
         {
             for (int y = 0; y < Height; y++)
             {
-                Color p = bmp.GetPixel(x, y);
-                SetPixel(x, y, new Pixel(p.R, p.G, p.B, p.A));
+                var ip = pixelData[x, y];
+                Pixel p = new(ip[0], ip[1], ip[2], imageFile.ChannelCount == 4 ? ip[3] : (byte)0xFF);
+                SetPixel(x, y, p);
             }
         }
-
-        bmp.Dispose();
 
         return RCode.OK;
     }

@@ -9,6 +9,15 @@ using csPixelGameEngineCore.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 
+/*
+ *  This is a demo application that shows off various functions / features of the Pixel Game Engine.
+ *  
+ *  I personally use this project to test out various features that I port over from the original engine,
+ *  so you may find a lot of random stuff here and commented out code. I leave it in this gloriously
+ *  messy state to demonstrate how to use the various functions.
+ * 
+ */
+
 namespace PixelGameEngineCoreTest;
 
 /// <summary>
@@ -234,7 +243,7 @@ internal class PGEDemo(IRenderer renderer, IPlatform platform, IOptions<Applicat
             SetDrawTarget(null);
         }
 
-        // Draw decals - they must be drawn every frame
+        // Draw decals - they must be drawn every frame for they do not persist frame to frame like sprites do.
         drawTo(randomCrapLayer, false);
 
         foreach (var tri in gradTris)

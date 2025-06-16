@@ -1,26 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
 using Microsoft.Extensions.Logging;
-using static System.Formats.Asn1.AsnWriter;
 using static csPixelGameEngineCore.Sprite;
 
 /*
 	+-------------------------------------------------------------+
-	|           OneLoneCoder Pixel Game Engine v2.28              |
+	|           OneLoneCoder Pixel Game Engine v2.29              |
 	|  "What do you need? Pixels... Lots of Pixels..." - javidx9  |
 	+-------------------------------------------------------------+
 
 	What is this?
 	~~~~~~~~~~~~~
-    This is a C# port of the Pixel Game Engine.
+    This is a C# port of the Pixel Game Engine (https://github.com/OneLoneCoder/olcPixelGameEngine)
+
+    It should be fairly close in functionality to the version stated at the top. It's a giant
+    header file with a lot going on, so it's possible I missed things or just haven't gotten
+    around to porting some particular piece of code yet.
+
 
 	License (OLC-3)
 	~~~~~~~~~~~~~~~
@@ -52,23 +54,31 @@ using static csPixelGameEngineCore.Sprite;
 	ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 	SUCH DAMAGE.
 
-Please refer to the original PixelGameEngine source here:
-https://github.com/OneLoneCoder/olcPixelGameEngine
 
-Notes from the Porting Author
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-I have tried to keep this as true to the original as I can, but I have taken the liberty
-of making some changes. I deviate from the original in the following cases:
+    Notes from the Author
+    ~~~~~~~~~~~~~~~~~~~~~
+    I have tried to keep this as true to the original as I can, but I have taken the liberty
+    of making some changes. I deviate from the original in the following cases:
+    
+    - This is a multifile project. I don't think this will be an issue with C# programmers.
 
-- It doesn't affect portability between the original
-  Ex: Checking inputs to functions and throwing exceptions
-      Using different, but similar data types
-- Something isn't supported in C# that is in C++
-  Ex: Generics in C# are not the same as templates in C++, so some changes
-      had to be made there.
-- C# Naming conventions vs C++
-  Ex: C++ tends to use the hungarian notation for variables, C# does not.
+    - It doesn't affect "portability" between the original
+      Examples:
+        * Checking inputs to functions and throwing exceptions
+        * Using different, but similar data types
+        * Properties vs getters and setters, though I think I included them just for completeness
+
+    - Something isn't supported in C# that is in C++
+      Examples:
+        * Generics in C# are not the same as templates in C++, so some changes had to be made there.
+        * Used some roughly analogous types to C++ types that don't exist in C# (such as vector)
+
+    - Naming conventions. PGE uses hungarian notation. I copied it in some places, but
+      generally I did not use it.
+
+    - I try to offer alternatives to doing things a more C# way, where appropriate.      
 */
+
 namespace csPixelGameEngineCore;
 
 public delegate Pixel PixelBlender(int x, int y, Pixel pSrc, Pixel pDst);
