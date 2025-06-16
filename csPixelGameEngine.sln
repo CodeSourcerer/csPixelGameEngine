@@ -10,18 +10,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7DD8E592-EF55-4D93-817C-C96B8A12AE4A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		gfx2d.cpp = gfx2d.cpp
-		olcPixelGameEngine.h = olcPixelGameEngine.h
-		README.md = README.md
+		csPixelGameEngineCore\README.md = csPixelGameEngineCore\README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PixelGameEngineCoreTest", "PixelGameEngineCoreTest\PixelGameEngineCoreTest.csproj", "{6C251B4B-113E-4FD9-B00E-C47D4EF16033}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cpp_src", "cpp_src", "{1573E809-FCCD-41DD-B33C-500A09200EE7}"
-	ProjectSection(SolutionItems) = preProject
-		cpp_src\class_pge.h = cpp_src\class_pge.h
-		cpp_src\pge_cleaned.h = cpp_src\pge_cleaned.h
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,9 +36,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{1573E809-FCCD-41DD-B33C-500A09200EE7} = {7DD8E592-EF55-4D93-817C-C96B8A12AE4A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5C1A314D-9766-483F-BFF0-07E3C4FB0612}
