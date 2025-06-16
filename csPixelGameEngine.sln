@@ -10,7 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7DD8E592-EF55-4D93-817C-C96B8A12AE4A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		csPixelGameEngineCore\README.md = csPixelGameEngineCore\README.md
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PixelGameEngineCoreTest", "PixelGameEngineCoreTest\PixelGameEngineCoreTest.csproj", "{6C251B4B-113E-4FD9-B00E-C47D4EF16033}"
