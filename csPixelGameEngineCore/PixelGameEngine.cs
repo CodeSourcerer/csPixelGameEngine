@@ -88,6 +88,7 @@ public class PixelGameEngine
     protected readonly ILogger<PixelGameEngine> logger;
 
     public const byte TabSizeInSpaces = 4;
+    public const byte MouseButtons = 10;
 
     #region Engine properties
     public string   AppName              { get; private set; }
@@ -186,7 +187,6 @@ public class PixelGameEngine
     private bool[] keyOldState = new bool[256];
     private HWButton[] keyboardState = new HWButton[256];
 
-    public const byte MouseButtons = 5;
     private HWButton[] mouseState = new HWButton[MouseButtons];
     private bool[] mouseNewState = new bool[MouseButtons];
     private bool[] mouseOldState = new bool[MouseButtons];
@@ -448,23 +448,22 @@ public class PixelGameEngine
 
         Platform.MouseWheel += (sender, mouseWheelEventArgs) =>
         {
-            MouseWheelDelta = mouseWheelEventArgs.OffsetY;
+            olc_UpdateMouseWheel(mouseWheelEventArgs.OffsetY);
         };
 
         Platform.MouseMove += (sender, mouseMoveEventArgs) =>
         {
-            MousePos.x = mouseMoveEventArgs.X;
-            MousePos.y = mouseMoveEventArgs.Y;
+            olc_UpdateMouse(mouseMoveEventArgs.X, mouseMoveEventArgs.Y);
         };
 
         Platform.MouseDown += (sender, mouseButtonEventArgs) =>
         {
-            updateMouseButtonStates(mouseButtonEventArgs);
+            olc_UpdateMouseState((int)mouseButtonEventArgs.Button, true);
         };
 
         Platform.MouseUp += (sender, mouseButtonEventArgs) =>
         {
-            updateMouseButtonStates(mouseButtonEventArgs);
+            olc_UpdateMouseState((int)mouseButtonEventArgs.Button, false);
         };
 
         Platform.StartSystemEventLoop();
@@ -618,12 +617,6 @@ public class PixelGameEngine
         MouseWheelDelta = MouseWheelDeltaCache;
         MouseWheelDeltaCache = 0;
 
-        // Handle mouse button held state
-        for (int btn = 0; btn < mouseState.Length; btn++)
-        {
-            mouseState[btn].Held = mouseState[btn].Pressed;
-        }
-
         OnUserUpdate((float)tsElapsed.TotalSeconds);
 
         if (_bRealWindowMode)
@@ -758,14 +751,6 @@ public class PixelGameEngine
         }
 
         ViewPos = new vi2d((WindowSize - ViewSize) / 2);
-    }
-
-    private void updateMouseButtonStates(MouseButtonEventArgs mouseButtonEvent)
-    {
-        // Event not generated when button held, so below does not work.
-        //btnStates[(int)mouseButtonEvent.Button].Held     = btnStates[(int)mouseButtonEvent.Button].Pressed && mouseButtonEvent.IsPressed;
-        mouseState[(int)mouseButtonEvent.Button].Pressed  =  mouseButtonEvent.IsPressed;
-        mouseState[(int)mouseButtonEvent.Button].Released = !mouseButtonEvent.IsPressed;
     }
 
     /// <summary>
