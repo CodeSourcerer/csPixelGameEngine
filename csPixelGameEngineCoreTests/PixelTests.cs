@@ -11,10 +11,10 @@ namespace csPixelGameEngineCoreTests
         {
             Pixel p1 = new Pixel(0x12345678);
 
-            Assert.AreEqual<byte>(0x12, p1.r, "unexpected red value");
-            Assert.AreEqual<byte>(0x34, p1.g, "unexpected green value");
-            Assert.AreEqual<byte>(0x56, p1.b, "unexpected blue value");
-            Assert.AreEqual<byte>(0x78, p1.a, "unexpected alpha value");
+            Assert.AreEqual<byte>(0x78, p1.r, "unexpected red value");
+            Assert.AreEqual<byte>(0x56, p1.g, "unexpected green value");
+            Assert.AreEqual<byte>(0x34, p1.b, "unexpected blue value");
+            Assert.AreEqual<byte>(0x12, p1.a, "unexpected alpha value");
         }
 
         [TestMethod]

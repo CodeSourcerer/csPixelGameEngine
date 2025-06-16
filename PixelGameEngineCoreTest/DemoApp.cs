@@ -1,151 +1,80 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
 using csPixelGameEngineCore;
-using log4net;
-using log4net.Config;
+using csPixelGameEngineCore.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OpenTK;
-using OpenTK.Graphics;
+using Microsoft.Extensions.Options;
+using OpenTK.Windowing.Desktop;
+using Serilog;
 
-namespace PixelGameEngineCoreTest
+namespace PixelGameEngineCoreTest;
+
+// Normally we would extend the PixelGameEngine class here to be more in line with the original design,
+// but in C++ PGE, platform and renderer are static globals, which is blasphemy (and not allowed) in C#.
+// So we shall inject those objects into PGE like good civilized C# developers. This does however make
+// instantiation different, so we will use this class to just set up DI and launch the PGE-derived class.
+class DemoApp
 {
-    class DemoApp
+    private IServiceProvider serviceProvider;
+
+    static void Main(string[] args)
     {
-        public  const string AppName        = "csPixelGameEngine Demo";
-        private const int    screenWidth    = 1024;
-        private const int    screenHeight   = 768;
-
-        private ResourcePack rp;
-        private Sprite[] testAnimation;
-        private Decal[] testAnimationDecal;
-        private static ServiceProvider serviceProvider;
-
-        static void Main(string[] args)
+        try
         {
-            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
-            var gameWindow = new GameWindow(screenWidth, screenHeight, GraphicsMode.Default, AppName, GameWindowFlags.Default, DisplayDevice.Default, 2, 1,
-                GraphicsContextFlags.Default);
+            // Create a logger, cause logging is handy dandy.
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .MinimumLevel.Verbose()
+                .CreateLogger();
 
-            serviceProvider = new ServiceCollection()
-                .AddSingleton(gameWindow)
-                .AddScoped<IRenderer, GL21Renderer>()
-                .AddScoped<IPlatform, OpenTkPlatform>()
+            // Build configuration from json. To keep it simple, not worrying about environments.
+            IConfigurationBuilder configBuilder = new ConfigurationBuilder()
+                .AddJsonFile($"{Environment.CurrentDirectory}/appsettings.json");
+
+            var configuration = configBuilder.Build();
+
+            var serviceProvider = new ServiceCollection()
+                .AddSingleton<GameWindow, GLWindow>()
+                .AddSingleton<PixelGameEngine, PGEDemo>()
+                .AddSingleton<IRenderer, Renderer_OGL33>()
+                //.AddSingleton<IRenderer, GL21Renderer>()
+                .AddSingleton<IPlatform, OpenTkPlatform>()
+                .Configure<ApplicationConfiguration>(configuration.GetSection("Application"))
+                .AddLogging(builder =>
+                {
+                    var logConfig = new LoggerConfiguration().ReadFrom.Configuration(configuration);
+                    builder.AddSerilog(logConfig.CreateLogger(), true);
+                })
                 .BuildServiceProvider();
 
-            DemoApp app = new DemoApp();
+            DemoApp app = new DemoApp(serviceProvider);
             app.Run();
         }
-
-        private PixelGameEngine pge; // = new PixelGameEngine(AppName);
-
-        private Random rnd = new Random();
-        private DateTime _dtStartFrame = DateTime.Now;
-        private int _curFrameCount = 0;
-        private int _fps = 0;
-        private float _rotation = 0.0f;
-        private float _rotationStep = (float)(-Math.PI / 32);
-        private float _fullCircle = (float)(2 * Math.PI);
-
-        public void Run()
+        finally
         {
-            testAnimation = new Sprite[10];
-            testAnimationDecal = new Decal[10];
-            loadTestAnimation();
-
-            //window = new GLWindow((int)screenWidth, (int)screenHeight, 1, 1, AppName);
-            pge = new PixelGameEngine(serviceProvider.GetService<IRenderer>(), serviceProvider.GetService<IPlatform>(), AppName);
-            pge.OnFrameUpdate += updateFrame;
-            pge.Construct(screenWidth, screenHeight, 2, 2, false, false);
-            pge.BlendFactor = 0.5f;
-            pge.Start();
+            Log.CloseAndFlush();
         }
+    }
 
-        private void updateFrame(object sender, FrameUpdateEventArgs frameUpdateArgs)
-        {
-            pge.Clear(Pixel.BLUE);
-            pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.MASK;
-            //testAnimation[1].CopyTo(pge.DefaultDrawTarget, 0, 0, -100, -100);
-            //pge.DrawSprite(0, 0, testAnimation[1]);
-            //pge.DrawDecal(new vec2d_f(), testAnimationDecal[1]);
-            _rotation += _rotationStep % _fullCircle;
-            pge.DrawRotatedDecal(new vec2d_f(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f),
-                                 testAnimationDecal[1],
-                                 _rotation,
-                                 new vec2d_f(testAnimationDecal[1].sprite.Width / 2.0f, testAnimationDecal[1].sprite.Height / 2.0f));
-            pge.DrawWarpedDecal(testAnimationDecal[1],
-                                new vec2d_f[] {
-                                    new vec2d_f(400.0f, 200.0f),
-                                    new vec2d_f(780.0f, 550.0f),
-                                    new vec2d_f(10.0f,  500.0f),
-                                    new vec2d_f(200.0f, 120.0f)
-                                });
-            showCursorPos(0, 20);
-            showMouseWheelDelta(0, 30);
-            showMouseButtonState(0, 40, 0);
-            showMouseButtonState(0, 50, 1);
-            showMouseButtonState(0, 60, 2);
-            //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
+    private PixelGameEngine pge;
 
-            //pge.DrawCircle(100, 100, 100, Pixel.RED);
-            //pge.FillCircle(500, 500, 30, Pixel.GREEN);
-            //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.ALPHA;
-            //pge.FillTriangle(new vec2d_i(304, 200),
-            //                 new vec2d_i(544, 381),
-            //                 new vec2d_i(444, 500),
-            //                 Pixel.MAGENTA);
-            //pge.PixelBlendMode = csPixelGameEngineCore.Enums.BlendMode.NORMAL;
+    public DemoApp(IServiceProvider serviceProvider)
+    {
+        this.serviceProvider = serviceProvider;
+    }
 
-            //drawRandomPixels();
+    public void Run()
+    {
+        var configuration = serviceProvider.GetRequiredService<IOptions<ApplicationConfiguration>>();
+        pge = serviceProvider.GetRequiredService<PixelGameEngine>();
+        pge.Construct(configuration.Value.ScreenWidth, configuration.Value.ScreenHeight,
+            configuration.Value.PixelWidth, configuration.Value.PixelHeight, false, false);
 
-            _curFrameCount++;
-            if ((DateTime.Now - _dtStartFrame) >= TimeSpan.FromSeconds(1))
-            {
-                _fps = _curFrameCount;
-                _curFrameCount = 0;
-                _dtStartFrame = DateTime.Now;
-            }
-            pge.DrawStringDecal(0, 10, $"FPS: {_fps}", Pixel.BLACK);
-        }
+        // I know this is hacky, but... the original uses globals, so you do what you gotta do.
+        var gameWindow = serviceProvider.GetRequiredService<GameWindow>();
+        ((GLWindow)gameWindow).pge = pge;
 
-        private void showCursorPos(int x, int y)
-        {
-            pge.DrawStringDecal(x, y, $"Mouse: {pge.MousePosX}, {pge.MousePosY}", Pixel.BLACK);
-        }
-
-        private void showMouseWheelDelta(int x, int y)
-        {
-            pge.DrawStringDecal(x, y, $"Wheel Delta: {pge.MouseWheelDelta}", Pixel.BLACK);
-        }
-
-        private void showMouseButtonState(int x, int y, uint button)
-        {
-            var btnState = pge.GetMouse(button);
-
-            string display = $"BTN {button} [Released:{btnState.Released}] [Pressed:{btnState.Pressed}] [Held: {btnState.Held}]";
-            pge.DrawStringDecal(x, y, display, Pixel.BLACK);
-        }
-
-        private void drawRandomPixels()
-        {
-            for (uint x = 0; x < pge.ScreenSize.x; x++)
-                for (uint y = 0; y < pge.ScreenSize.y; y++)
-                    pge.Draw(x, y, new Pixel((byte)rnd.Next(255), (byte)rnd.Next(255), (byte)rnd.Next(255)));
-        }
-
-        // Example of loading a resource pack
-        private void loadTestAnimation()
-        {
-            rp = new ResourcePack();
-            rp.LoadPack("./assets1.pack", "AReallyGoodKeyShouldBeUsed");
-
-            for (int i = 0; i < 10; i++)
-            {
-                string file = $"./assets/Walking_00{i}.png";
-                testAnimation[i] = new Sprite(file, rp);
-                testAnimationDecal[i] = new Decal(testAnimation[i], serviceProvider.GetService<IRenderer>());
-            }
-        }
+        pge.Start();
     }
 }

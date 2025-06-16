@@ -1,118 +1,57 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using OpenTK;
-using OpenTK.Graphics;
+﻿using csPixelGameEngineCore.Configuration;
+using Microsoft.Extensions.Options;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Input;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 
-namespace csPixelGameEngineCore
+namespace csPixelGameEngineCore;
+
+public class GLWindow : GameWindow
 {
-    public class GLWindow : GameWindow
+    private PixelGameEngine _pge;
+    public PixelGameEngine pge { get => _pge; set => _pge = _pge ?? value; }
+    private readonly ApplicationConfiguration appConfig;
+
+    public GLWindow(IOptions<ApplicationConfiguration> appConfig)
+        : base(GameWindowSettings.Default, new NativeWindowSettings()
+        {
+            API = ContextAPI.OpenGL,
+            Flags = ContextFlags.Default,
+            Title = appConfig.Value.AppName,
+            ClientSize = new Vector2i(appConfig.Value.ScreenWidth * appConfig.Value.PixelWidth, appConfig.Value.ScreenHeight * appConfig.Value.PixelHeight),
+            Vsync = VSyncMode.Off,
+            WindowState = WindowState.Normal
+        })
     {
-        public Color4   BackgroundColor { get; set; }
-        public Sprite   DrawTarget      { get; set; }
-        public uint     PixelWidth      { get; set; }
-        public uint     PixelHeight     { get; set; }
-        public uint     ScreenWidth     { get; set; }
-        public uint     ScreenHeight    { get; set; }
-        public uint     ViewWidth       { get; set; }
-        public uint     ViewHeight      { get; set; }
-        public uint     ViewX           { get; set; }
-        public uint     ViewY           { get; set; }
+        this.appConfig = appConfig.Value;
 
-        public GLWindow(uint screen_width, uint screen_height, uint pixel_w, uint pixel_h, string title)
-            : base ((int)(screen_width * pixel_w), (int)(screen_height * pixel_h), GraphicsMode.Default, title,
-                    GameWindowFlags.Default, DisplayDevice.Default, 2, 1, GraphicsContextFlags.ForwardCompatible)
+    }
+
+    protected override void OnKeyDown(KeyboardKeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        
+        if (e.Key == Keys.Escape)
         {
-            Width           = (int)(screen_width * pixel_w);
-            Height          = (int)(screen_height * pixel_h);
-            ScreenWidth     = screen_width;
-            ScreenHeight    = screen_height;
-            DrawTarget      = new Sprite(screen_width, screen_height);
-            BackgroundColor = new Color4(255, 0, 0, 255);
-            PixelWidth      = pixel_w;
-            PixelHeight     = pixel_h;
-            ViewX           = 0;
-            ViewY           = 0;
-            VSync           = VSyncMode.Off;
+            Close();
         }
+    }
 
-        protected override void OnUpdateFrame(FrameEventArgs e)
-        {
-            var input = Keyboard.GetState();
+    protected override void OnResize(ResizeEventArgs e)
+    {
+        base.OnResize(e);
 
-            if (input.IsKeyDown(Key.Escape))
-            {
-                Exit();
-            }
+        pge.olc_UpdateWindowSize(e.Width, e.Height);
 
-            base.OnUpdateFrame(e);
-        }
+        GL.Viewport(pge.WindowPos.x, pge.WindowPos.y, pge.ViewSize.x, pge.ViewSize.y);
+    }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            base.OnRenderFrame(e);
+    protected override void OnMove(WindowPositionEventArgs e)
+    {
+        base.OnMove(e);
 
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, (int)ScreenWidth, (int)ScreenHeight, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData);
-
-            GL.Begin(PrimitiveType.Quads);
-            GL.TexCoord2(0.0, 1.0); GL.Vertex3(-1.0f, -1.0f, 0.0f);
-            GL.TexCoord2(0.0, 0.0); GL.Vertex3(-1.0f,  1.0f, 0.0f);
-            GL.TexCoord2(1.0, 0.0); GL.Vertex3( 1.0f,  1.0f, 0.0f);
-            GL.TexCoord2(1.0, 1.0); GL.Vertex3( 1.0f, -1.0f, 0.0f);
-            GL.End();
-
-            SwapBuffers();
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            update_viewport();
-
-            GL.Viewport((int)ViewX, (int)ViewY, (int)ViewWidth, (int)ViewHeight);
-        }
-
-        private void update_viewport()
-        {
-            uint ww = ScreenWidth * PixelWidth;
-            uint wh = ScreenHeight * PixelHeight;
-            float asp_ratio = ww / (float)wh;
-
-            ViewWidth = ww;
-            ViewHeight = (uint)(ViewWidth / asp_ratio);
-
-            if (ViewHeight > wh)
-            {
-                ViewHeight = wh;
-                ViewWidth = (uint)(ViewHeight * asp_ratio);
-            }
-
-            ViewX = (ww - ViewWidth) / 2;
-            ViewY = (wh - ViewHeight) / 2;
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            GL.ClearColor(BackgroundColor);
-
-            GL.Enable(EnableCap.Texture2D);
-            int tex = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2D, tex);
-            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, new int[] { (int)All.Nearest });
-            GL.TexParameterI(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, new int[] { (int)All.Nearest });
-            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)All.Decal);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, (int)ScreenWidth, (int)ScreenHeight, 0, PixelFormat.Rgba, PixelType.UnsignedInt8888, DrawTarget.ColorData);
-
-            base.OnLoad(e);
-        }
-
-        public void SetBackgroundColor(Pixel backColor)
-        {
-            BackgroundColor = new Color4(backColor.r, backColor.g, backColor.b, backColor.a);
-        }
+        pge.olc_UpdateWindowPos(e.X, e.Y);
     }
 }

@@ -1,14 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29306.81
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33122.133
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngine", "csPixelGameEngine\csPixelGameEngine.csproj", "{DB1E0A41-7033-48AE-9676-4538C9635223}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "csPixelGameEngineTests", "csPixelGameEngineTests\csPixelGameEngineTests.csproj", "{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApplication", "TestApplication\TestApplication.csproj", "{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "csPixelGameEngineCore", "csPixelGameEngineCore\csPixelGameEngineCore.csproj", "{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "csPixelGameEngineCoreTests", "csPixelGameEngineCoreTests\csPixelGameEngineCoreTests.csproj", "{F6C3BCAE-FE56-442F-BD81-B6F82958F68C}"
@@ -16,9 +10,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7DD8E592-EF55-4D93-817C-C96B8A12AE4A}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		gfx2d.cpp = gfx2d.cpp
-		olcPixelGameEngine.h = olcPixelGameEngine.h
-		README.md = README.md
+		csPixelGameEngineCore\README.md = csPixelGameEngineCore\README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PixelGameEngineCoreTest", "PixelGameEngineCoreTest\PixelGameEngineCoreTest.csproj", "{6C251B4B-113E-4FD9-B00E-C47D4EF16033}"
@@ -29,18 +21,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DB1E0A41-7033-48AE-9676-4538C9635223}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DB1E0A41-7033-48AE-9676-4538C9635223}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DB1E0A41-7033-48AE-9676-4538C9635223}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DB1E0A41-7033-48AE-9676-4538C9635223}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7AFBCD38-DEFE-4E15-B208-0FDBCFD7CDE8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9E0DF41B-9CC0-4E2D-9BCE-66276F820BF4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C4F6DEB-E382-47B6-A976-AADD82AFDEB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
