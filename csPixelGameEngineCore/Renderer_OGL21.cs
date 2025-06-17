@@ -15,6 +15,8 @@ public class Renderer_OGL21 : IRenderer
     private readonly GameWindow glWindow;
     private readonly ILogger<Renderer_OGL21> logger;
 
+    private float[] matProjection = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+
     private DecalMode _decalMode;
     public DecalMode DecalMode
     {
@@ -69,6 +71,8 @@ public class Renderer_OGL21 : IRenderer
             RenderFrame?.Invoke(this, new FrameUpdateEventArgs(eventArgs.Time));
         };
     }
+
+    public void SetDecalMode(DecalMode mode) => DecalMode = mode;
 
     public void ApplyTexture(uint id)
     {
@@ -148,6 +152,8 @@ public class Renderer_OGL21 : IRenderer
         else
             GL.BindTexture(TextureTarget.Texture2D, decal.decal.Id);
 
+        GL.Disable(EnableCap.CullFace);
+
         if (decal.depth)
         {
             GL.Enable(EnableCap.DepthTest);
@@ -196,6 +202,7 @@ public class Renderer_OGL21 : IRenderer
 
     public void DrawLayerQuad(vf2d offset, vf2d scale, Pixel tint)
     {
+        GL.Disable(EnableCap.CullFace);
         GL.Begin(PrimitiveType.Quads);
         GL.Color4(tint.r, tint.g, tint.b, tint.a);
         GL.TexCoord2(0.0f * scale.x + offset.x, 1.0f * scale.y + offset.y);
@@ -218,7 +225,9 @@ public class Renderer_OGL21 : IRenderer
     {
         GL.Enable(EnableCap.Blend);
         DecalMode = DecalMode.NORMAL;
-        //GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        //DecalStructure = DecalStructure.FAN;
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        GL.Disable(EnableCap.CullFace);
     }
 
     public void UpdateTexture(uint id, Sprite spr)
@@ -234,5 +243,98 @@ public class Renderer_OGL21 : IRenderer
     public void UpdateViewport(vi2d pos, vi2d size)
     {
         GL.Viewport(pos.x, pos.y, size.x, size.y);
+    }
+
+    public void Set3DProjection(float[] mat)
+    {
+        if (mat.Length != 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(mat), "Invalid matrix. Must be array of 16 floats");
+        }
+
+        matProjection = mat;
+    }
+
+    public void DoGPUTask(GPUTask task)
+    {
+        DecalMode = task.mode;
+
+        if (task.decal == null)
+        {
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+        }
+        else
+        {
+            GL.BindTexture(TextureTarget.Texture2D, task.decal.Id);
+        }
+
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.PushMatrix();
+
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.PushMatrix();
+
+        if (task.cull == CullMode.NONE)
+        {
+            GL.CullFace(TriangleFace.Front);
+            GL.Disable(EnableCap.CullFace);
+        }
+        else if (task.cull == CullMode.CW)
+        {
+            GL.CullFace(TriangleFace.Front);
+            GL.Enable(EnableCap.CullFace);
+        }
+        else if (task.cull == CullMode.CCW)
+        {
+            GL.CullFace(TriangleFace.Back);
+            GL.Enable(EnableCap.CullFace);
+        }
+
+        if (task.depth)
+        {
+            GL.Enable(EnableCap.DepthTest);
+
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadMatrix(matProjection);
+
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadMatrix(task.mvp);
+        }
+        else
+        {
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadIdentity();
+
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadIdentity();
+        }
+
+        if (DecalMode == DecalMode.WIREFRAME)
+        {
+            GL.Begin(PrimitiveType.LineLoop);
+        }
+        else
+        {
+            switch (task.structure)
+            {
+                case DecalStructure.FAN:
+                    GL.Begin(PrimitiveType.TriangleFan);
+                    break;
+
+                case DecalStructure.STRIP:
+                    GL.Begin(PrimitiveType.TriangleStrip);
+                    break;
+
+                case DecalStructure.LIST:
+                    GL.Begin(PrimitiveType.Triangles);
+                    break;
+
+                case DecalStructure.LINE:
+                    GL.Begin(PrimitiveType.Lines);
+                    break;
+            }
+        }
+
+        float[] f = [];
     }
 }
