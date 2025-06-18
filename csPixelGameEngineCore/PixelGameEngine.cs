@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -327,6 +328,7 @@ public class PixelGameEngine
     public double GetElapsedTime() => LastElapsed;
 
     public HWButton GetKey(Key k) => keyboardState[(byte)k];
+    public ReadOnlyDictionary<int, Key> GetKeyMap() => Platform.KeyMap.AsReadOnly();
 
     #region Screen / Window attributes
 
