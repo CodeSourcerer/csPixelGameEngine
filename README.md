@@ -13,9 +13,53 @@ never line up with the original code because C++ is just fundamentally different
 match. Also, the Pixel Game Engine gets updated quite regularly and it is challenging for me to keep up with all of those changes myself.
 
 # Building
+
+## Windows
+
 This engine is currently set up to target .NET 8. You can include the `csPixelGameEngineCore` project in your solution for you to 
 reference, or build it separately and include the compiled .dll file in your project. I do not currently have this project in nuget, but if
 there is a demand for it, I will consider it.
+
+## Ubuntu
+
+### Prerequesites
+
+First, you need to install the Microsoft Package Repository by running the following commands.
+```bash
+wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+```
+
+Then you need to install the dotnet sdk with the following commands.
+```bash
+sudo apt-get update
+sudo apt-get install -y dotnet-sdk-8.0
+```
+
+Verify it's installed by running
+```bash
+dotnet --version
+```
+### Actually building
+
+```bash
+git clone https://github.com/CodeSourcerer/csPixelGameEngine
+
+cd csPixelGameEngine
+
+dotnet restore
+
+dotnet build
+```
+
+Once that's finished, run the project by doing the following:
+
+```bash
+cd PixelGameEngineCoreTest
+
+dotnet run
+```
 
 # Other Projects
 ## PixelGameEngineCoreTest
