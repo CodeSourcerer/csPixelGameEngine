@@ -335,6 +335,30 @@ public class Renderer_OGL21 : IRenderer
             }
         }
 
-        float[] f = [];
+        float[] f = [ task.tint.r / 255, task.tint.g / 255, task.tint.b / 255, task.tint.a / 255 ];
+
+        if (task.depth)
+        {
+            for (int n = 0; n < task.vb.Length; n++)
+            {
+                Pixel p = task.vb[n].c;
+                GL.Color4((byte)(p.r * f[0]), (byte)(p.g * f[1]), (byte)(p.b * f[2]), (byte)(p.a * f[3]));
+                GL.Vertex4(task.vb[n].u, task.vb[n].v, 0.0f, task.vb[n].w);
+                GL.TexCoord2(task.vb[n].x, task.vb[n].y);
+            }
+        }
+
+        GL.End();
+
+        if (task.depth)
+        {
+            GL.Disable(EnableCap.DepthTest);
+        }
+
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.PopMatrix();
+
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.PopMatrix();
     }
 }

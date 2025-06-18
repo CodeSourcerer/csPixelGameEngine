@@ -62,11 +62,19 @@ public class Renderer_OGL33 : IRenderer
     private int m_vbQuad = 0;
     private int m_vaQuad = 0;
 
+    private int m_uniMVP = 0;
+    private int m_uniIs3D = 0;
+    private int m_uniTint = 0;
+
     private Renderable rendBlankQuad;
     private locVertex[] vertexMem = new locVertex[OLC_MAX_VERTS];
+    private float[] matProjection = [ 1, 0, 0, 0,
+                                      0, 1, 0, 0,
+                                      0, 0, 1, 0,
+                                      0, 0, 0, 1 ];
 
     // sizeof doesn't work on this struct, so... this'll have to do
-    public const int locVertexSize = (sizeof(float) * 3) + (sizeof(float) * 2) + sizeof(uint);
+    public const int locVertexSize = (sizeof(float) * 6) + sizeof(uint);
 
     [StructLayout(LayoutKind.Explicit, Size = locVertexSize)]
     private struct locVertex
@@ -81,12 +89,15 @@ public class Renderer_OGL33 : IRenderer
         public float posZ;
 
         [FieldOffset(sizeof(float) * 3)]
-        public float texX;
+        public float w;
 
         [FieldOffset(sizeof(float) * 4)]
-        public float texY;
+        public float texX;
 
         [FieldOffset(sizeof(float) * 5)]
+        public float texY;
+
+        [FieldOffset(sizeof(float) * 6)]
         public uint col;
 
         public locVertex()
@@ -94,11 +105,12 @@ public class Renderer_OGL33 : IRenderer
 
         }
 
-        public locVertex(float[] pos, float[] tex, Pixel col)
+        public locVertex(float[] pos, float[] tex, float w, Pixel col)
         {
             posX = pos[0];
             posY = pos[1];
             posZ = pos[2];
+            this.w = w;
             texX = tex[0];
             texY = tex[1];
             this.col = col;
@@ -119,6 +131,8 @@ public class Renderer_OGL33 : IRenderer
 
         logger.LogDebug("GL33Renderer created. locVertexSize {locVertexSize}", locVertexSize);
     }
+
+    public void SetDecalMode(DecalMode mode) => DecalMode = mode;
 
     public void ApplyTexture(uint id)
     {
@@ -159,12 +173,15 @@ public class Renderer_OGL33 : IRenderer
 
         StringBuilder VS = new StringBuilder();
         VS.AppendLine("#version 330 core");
-        VS.AppendLine("layout(location = 0) in vec3 aPos;");
+        VS.AppendLine("layout(location = 0) in vec4 aPos;");
         VS.AppendLine("layout(location = 1) in vec2 aTex;");
         VS.AppendLine("layout(location = 2) in vec4 aCol;");
+        VS.AppendLine("uniform mat4 mvp;");
+        VS.AppendLine("uniform int is3d;");
+        VS.AppendLine("uniform vec4 tint;");
         VS.AppendLine("out vec2 oTex;");
         VS.AppendLine("out vec4 oCol;");
-        VS.AppendLine("void main(){ float p = 1.0 / aPos.z; gl_Position = p * vec4(aPos.x, aPos.y, 0.0, 1.0); oTex = p * aTex; oCol = aCol;}");
+        VS.AppendLine("void main(){ if(is3d!=0) {gl_Position = mvp * vec4(aPos.x, aPos.y, aPos.z, 1.0); oTex = aTex;} else {float p = 1.0 / aPos.z; gl_Position = p * vec4(aPos.x, aPos.y, 0.0, 1.0); oTex = p * aTex;} oCol = aCol * tint;}");
         GL.ShaderSource(m_nVS, VS.ToString());
         GL.CompileShader(m_nVS);
 
@@ -172,6 +189,14 @@ public class Renderer_OGL33 : IRenderer
         GL.AttachShader(m_nQuadShader, m_nFS);
         GL.AttachShader(m_nQuadShader, m_nVS);
         GL.LinkProgram(m_nQuadShader);
+
+        m_uniMVP = GL.GetUniformLocation(m_nQuadShader, "mvp");
+        m_uniIs3D = GL.GetUniformLocation(m_nQuadShader, "is3d");
+        m_uniTint = GL.GetUniformLocation(m_nQuadShader, "tint");
+        GL.Uniform1(m_uniIs3D, 0);
+        GL.UniformMatrix4(m_uniMVP, 16, false, matProjection);
+        float[] f = [ 100.0f, 100.0f, 100.0f, 100.0f ];
+        GL.Uniform4(m_uniTint, 4, f);
 
         // Create Quad
         GL.GenBuffers(1, out m_vbQuad);
@@ -181,11 +206,11 @@ public class Renderer_OGL33 : IRenderer
 
         locVertex[] verts = new locVertex[OLC_MAX_VERTS];
         GL.BufferData(BufferTarget.ArrayBuffer, locVertexSize * OLC_MAX_VERTS, verts, BufferUsageHint.StreamDraw);
-        GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, locVertexSize, 0);
+        GL.VertexAttribPointer(0, 4, VertexAttribPointerType.Float, false, locVertexSize, 0);
         GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, locVertexSize, 3 * sizeof(float));
+        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, locVertexSize, 4 * sizeof(float));
         GL.EnableVertexAttribArray(1);
-        GL.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, locVertexSize, 5 * sizeof(float));
+        GL.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, locVertexSize, 6 * sizeof(float));
         GL.EnableVertexAttribArray(2);
         GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         GL.BindVertexArray(0);
@@ -248,6 +273,7 @@ public class Renderer_OGL33 : IRenderer
 
     public void DrawDecal(DecalInstance decal)
     {
+        GL.Disable(EnableCap.CullFace);
         DecalMode = decal.mode;
 
         GL.BindTexture(TextureTarget.Texture2D, decal.decal?.Id ?? rendBlankQuad.Decal.Id);
@@ -256,10 +282,14 @@ public class Renderer_OGL33 : IRenderer
 
         for (uint i = 0; i < decal.points; i++)
         {
-            vertexMem[i] = new locVertex([decal.pos[i].x, decal.pos[i].y, decal.w[i]], [decal.uv[i].x, decal.uv[i].y], decal.tint[i]);
+            vertexMem[i] = new locVertex([decal.pos[i].x, decal.pos[i].y, decal.w[i]], [decal.uv[i].x, decal.uv[i].y], 0.0f, decal.tint[i]);
         }
 
         GL.BufferData(BufferTarget.ArrayBuffer, (int)(locVertexSize * decal.points), vertexMem, BufferUsageHint.StreamDraw);
+        GL.Uniform1(m_uniIs3D, 0);
+
+        float[] f = [ 1.0f, 1.0f, 1.0f, 1.0f ];
+        GL.Uniform4(m_uniTint, 1, f);
 
         if (DecalMode == DecalMode.WIREFRAME)
         {
@@ -278,6 +308,9 @@ public class Renderer_OGL33 : IRenderer
                 case DecalStructure.LIST:
                     GL.DrawArrays(PrimitiveType.Triangles, 0, (int)decal.points);
                     break;
+                case DecalStructure.LINE:
+                    GL.DrawArrays(PrimitiveType.Lines, 0, (int)decal.points);
+                    break;
             }
         }
     }
@@ -285,11 +318,16 @@ public class Renderer_OGL33 : IRenderer
     public void DrawLayerQuad(vf2d offset, vf2d scale, Pixel tint)
     {
         GL.BindBuffer(BufferTarget.ArrayBuffer, m_vbQuad);
-        locVertex[] verts = [new locVertex([-1.0f, -1.0f, 1.0f], [0.0f * scale.x + offset.x, 1.0f * scale.y + offset.y], tint),
-                             new locVertex([ 1.0f, -1.0f, 1.0f], [1.0f * scale.x + offset.x, 1.0f * scale.y + offset.y], tint),
-                             new locVertex([-1.0f,  1.0f, 1.0f], [0.0f * scale.x + offset.x, 0.0f * scale.y + offset.y], tint),
-                             new locVertex([ 1.0f,  1.0f, 1.0f], [1.0f * scale.x + offset.x, 0.0f * scale.y + offset.y], tint)];
+        locVertex[] verts = [new locVertex([-1.0f, -1.0f, 1.0f], [0.0f * scale.x + offset.x, 1.0f * scale.y + offset.y], 0.0f, tint),
+                             new locVertex([ 1.0f, -1.0f, 1.0f], [1.0f * scale.x + offset.x, 1.0f * scale.y + offset.y], 0.0f, tint),
+                             new locVertex([-1.0f,  1.0f, 1.0f], [0.0f * scale.x + offset.x, 0.0f * scale.y + offset.y], 0.0f, tint),
+                             new locVertex([ 1.0f,  1.0f, 1.0f], [1.0f * scale.x + offset.x, 0.0f * scale.y + offset.y], 0.0f, tint)];
         GL.BufferData(BufferTarget.ArrayBuffer, locVertexSize * 4, verts, BufferUsageHint.StreamDraw);
+
+        GL.Uniform1(m_uniIs3D, 0);
+        float[] f = [ 1.0f, 1.0f, 1.0f, 1.0f ];
+        GL.Uniform4(m_uniTint, 1, f);
+
         GL.DrawArrays(PrimitiveType.TriangleStrip, 0, 4);
     }
 
@@ -304,6 +342,13 @@ public class Renderer_OGL33 : IRenderer
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.UseProgram(m_nQuadShader);
         GL.BindVertexArray(m_vaQuad);
+        float[] f = [ 1.0f, 1.0f, 1.0f, 1.0f ];
+        GL.Uniform4(m_uniTint, 1, f);
+
+        GL.Uniform1(m_uniIs3D, 0);
+        GL.UniformMatrix4(m_uniMVP, 1, false, matProjection);
+        GL.Disable(EnableCap.CullFace);
+        GL.DepthFunc(DepthFunction.Less);
     }
 
     public void ReadTexture(uint id, Sprite spr)
@@ -320,5 +365,104 @@ public class Renderer_OGL33 : IRenderer
     {
         //logger.LogDebug("Updating viewport [pos.x,pos.y:{posX},{posY}] [size.x,size.y:{sizeX},{sizeY}]", pos.x, pos.y, size.x, size.y);
         GL.Viewport(pos.x, pos.y, size.x, size.y);
+    }
+
+    public void Set3DProjection(float[] mat)
+    {
+        if (mat.Length != 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(mat), "Projection matrix must be an array of 16 floats");
+        }
+
+        matProjection = mat;
+    }
+
+    public void DoGPUTask(GPUTask task)
+    {
+        DecalMode = task.mode;
+        if (task.decal == null)
+        {
+            GL.BindTexture(TextureTarget.Texture2D, rendBlankQuad.Decal.Id);
+        }
+        else
+        {
+            GL.BindTexture(TextureTarget.Texture2D, task.decal.Id);
+        }
+
+        GL.BindBuffer(BufferTarget.ArrayBuffer, m_vbQuad);
+
+        GL.BufferData(BufferTarget.ArrayBuffer, GPUTask.Vertex.VertexSize * task.vb.Length, task.vb, BufferUsageHint.StreamDraw);
+
+        // Use 3D shader
+        GL.Uniform1(m_uniIs3D, 1);
+
+        // Use MVP Matrix
+        float[] matMVP = new float[16];
+        for (int c = 0; c < 4; c++)
+        {
+            for (int r = 0; r < 4; r++)
+            {
+                matMVP[c * 4 + r] = matProjection[0 * 4 + r] * task.mvp[c * 4 + 0] +
+                                    matProjection[1 * 4 + r] * task.mvp[c * 4 + 1] +
+                                    matProjection[2 * 4 + r] * task.mvp[c * 4 + 2] +
+                                    matProjection[3 * 4 + r] * task.mvp[c * 4 + 3];
+            }
+        }
+        GL.UniformMatrix4(m_uniMVP, 1, false, matMVP);
+
+        float[] f = [ task.tint.r / 255, task.tint.g / 255, task.tint.b / 255, task.tint.a / 255 ];
+        GL.Uniform4(m_uniTint, 1, f);
+
+        if (task.cull == CullMode.NONE)
+        {
+            GL.CullFace(TriangleFace.Front);
+            GL.Disable(EnableCap.CullFace);
+        }
+        else if (task.cull == CullMode.CW)
+        {
+            GL.CullFace(TriangleFace.Front);
+            GL.Enable(EnableCap.CullFace);
+        }
+        else if (task.cull == CullMode.CCW)
+        {
+            GL.CullFace(TriangleFace.Back);
+            GL.Enable(EnableCap.CullFace);
+        }
+
+        if (task.depth)
+        {
+            GL.Enable(EnableCap.DepthTest);
+        }
+
+        if (DecalMode == DecalMode.WIREFRAME)
+        {
+            GL.DrawArrays(PrimitiveType.LineLoop, 0, task.vb.Length);
+        }
+        else
+        {
+            switch (task.structure)
+            {
+                case DecalStructure.FAN:
+                    GL.DrawArrays(PrimitiveType.TriangleFan, 0, task.vb.Length);
+                    break;
+
+                case DecalStructure.STRIP:
+                    GL.DrawArrays(PrimitiveType.TriangleStrip, 0, task.vb.Length);
+                    break;
+
+                case DecalStructure.LIST:
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, task.vb.Length);
+                    break;
+
+                case DecalStructure.LINE:
+                    GL.DrawArrays(PrimitiveType.Lines, 0, task.vb.Length);
+                    break;
+            }
+        }
+
+        if (task.depth)
+        {
+            GL.Disable(EnableCap.DepthTest);
+        }
     }
 }
