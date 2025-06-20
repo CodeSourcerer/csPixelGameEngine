@@ -2720,6 +2720,14 @@ public class PixelGameEngine
 
     #endregion // Layer Methods
 
+    public void adv_FlushLayerGPUTasks(uint layerID)
+    {
+        var layer = Layers[(int)layerID];
+
+        layer.GPUTasks.ForEach(renderer.DoGPUTask);
+        layer.GPUTasks.Clear();
+    }
+
     // More functions for compatibility
     public void SetPixelMode(Pixel.Mode m) => PixelMode = m;
     public Pixel.Mode GetPixelMode() => PixelMode;
