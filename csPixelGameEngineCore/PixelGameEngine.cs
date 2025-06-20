@@ -668,6 +668,10 @@ public class PixelGameEngine
 
                     renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
 
+                    // Do GPU Tasks - 2D/3D Objects
+                    layer.GPUTasks.ForEach(renderer.DoGPUTask);
+                    layer.GPUTasks.Clear();
+
                     // Display decals in order for this layer
                     foreach (var decal in layer.DecalInstance)
                     {
