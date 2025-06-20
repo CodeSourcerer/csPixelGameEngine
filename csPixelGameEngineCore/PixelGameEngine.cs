@@ -2151,7 +2151,19 @@ public class PixelGameEngine
             di.pos[i].y *= -1.0f;
         }
 
-        Layers[(int)TargetLayer].DecalInstance.Add(di);
+        GPUTask task = new()
+        {
+            decal = decal,
+            mode = this.DecalMode,
+            structure = DecalStructure,
+            depth = false,
+            vb = [ new() { x = di.pos[0].x, y = di.pos[0].y, z = 0.0f, w = 1.0f, u = 0.0f, v = 0.0f, c = tint },
+                   new() { x = di.pos[1].x, y = di.pos[1].y, z = 0.0f, w = 1.0f, u = 0.0f, v = 1.0f, c = tint },
+                   new() { x = di.pos[2].x, y = di.pos[2].y, z = 0.0f, w = 1.0f, u = 1.0f, v = 1.0f, c = tint },
+                   new() { x = di.pos[3].x, y = di.pos[3].y, z = 0.0f, w = 1.0f, u = 1.0f, v = 0.0f, c = tint } ]
+        };
+
+        Layers[(int)TargetLayer].GPUTasks.Add(task);
     }
 
     public void DrawPartialRotatedDecal(vf2d pos, Decal decal, float angle, vf2d center, vf2d source_pos, vf2d source_size, vf2d scale, Pixel tint)
