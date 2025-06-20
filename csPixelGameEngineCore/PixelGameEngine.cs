@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -7,11 +8,12 @@ using System.Threading.Tasks;
 using csPixelGameEngineCore.Enums;
 using csPixelGameEngineCore.Extensions;
 using Microsoft.Extensions.Logging;
+using OpenTK.Graphics.OpenGL;
 using static csPixelGameEngineCore.Sprite;
 
 /*
 	+-------------------------------------------------------------+
-	|           OneLoneCoder Pixel Game Engine v2.28              |
+	|           OneLoneCoder Pixel Game Engine v2.29              |
 	|  "What do you need? Pixels... Lots of Pixels..." - javidx9  |
 	+-------------------------------------------------------------+
 
@@ -108,6 +110,7 @@ public class PixelGameEngine
     public int      MouseWheelDelta      { get; private set; } = 0;
     public int      MouseWheelDeltaCache { get; private set; } = 0;
     public bool     HasMouseFocus        { get; private set; }
+    public bool     HW3DDepthTest        { get; private set; } = true;
     public vi2d     PixelSize            { get; private set; } = new (4, 4);
     public vi2d     ScreenPixelSize      { get; private set; } = new (4, 4);
     public vi2d     ScreenSize           { get; private set; } = new (256, 240);
@@ -118,8 +121,10 @@ public class PixelGameEngine
     public uint     FrameCount           { get; private set; } = 0;
     public uint     LastFPS              { get; private set; } = 0;
     public uint     FPS                  { get; private set; }
-    public DecalMode DecalMode           { get; set; } = DecalMode.NORMAL;
+    
+    public DecalMode      DecalMode      { get; set; } = DecalMode.NORMAL;
     public DecalStructure DecalStructure { get; set; } = DecalStructure.FAN;
+    public CullMode       HW3DCullMode   { get; set; } = CullMode.NONE;
 
     /// <summary>
     /// Pixel aspect ratio
@@ -327,6 +332,7 @@ public class PixelGameEngine
     public double GetElapsedTime() => LastElapsed;
 
     public HWButton GetKey(Key k) => keyboardState[(byte)k];
+    public ReadOnlyDictionary<int, Key> GetKeyMap() => Platform.KeyMap.AsReadOnly();
 
     #region Screen / Window attributes
 
@@ -472,6 +478,8 @@ public class PixelGameEngine
     }
 
     // Externalized API
+
+    #region olc_Functions
 
     /// <summary>
     /// Looking at what this is used for in the C++ code, this is completely unnecessary in C#.
@@ -660,6 +668,10 @@ public class PixelGameEngine
 
                     renderer.DrawLayerQuad(layer.vOffset, layer.vScale, layer.Tint);
 
+                    // Do GPU Tasks - 2D/3D Objects
+                    layer.GPUTasks.ForEach(renderer.DoGPUTask);
+                    layer.GPUTasks.Clear();
+
                     // Display decals in order for this layer
                     foreach (var decal in layer.DecalInstance)
                     {
@@ -753,6 +765,8 @@ public class PixelGameEngine
         ViewPos = new vi2d((WindowSize - ViewSize) / 2);
     }
 
+    #endregion // olc_Functions
+
     /// <summary>
     /// Get the state of a specific mouse button
     /// </summary>
@@ -768,6 +782,8 @@ public class PixelGameEngine
     public vi2d GetWindowMouse() => MouseWindowPos;
 
     #region Drawing Methods
+
+    #region Software Rendering
 
     public bool Draw(vi2d pos, Pixel p)
     {
@@ -1684,11 +1700,15 @@ public class PixelGameEngine
         //    DrawTarget.ColorData[i] = p;
     }
 
+    #endregion // Software Rendering
+
     public void ClearBuffer(Pixel p, bool bDepth) => renderer.ClearBuffer(p, bDepth);
 
     //=====================================================================
     // String Functions
     //=====================================================================
+
+    #region String Functions
 
     public void DrawString(vi2d pos, string sText, Pixel col, uint scale = 1) => DrawString(pos.x, pos.y, sText, col, scale);
 
@@ -1970,9 +1990,13 @@ public class PixelGameEngine
         return size;
     }
 
+    #endregion // String Functions
+
     //=====================================================================
     // Decal Drawing
     //=====================================================================
+
+    #region Decal drawing
 
     /// <summary>
     /// Draws a whole decal, with optional scale and tinting
@@ -2131,7 +2155,19 @@ public class PixelGameEngine
             di.pos[i].y *= -1.0f;
         }
 
-        Layers[(int)TargetLayer].DecalInstance.Add(di);
+        GPUTask task = new()
+        {
+            decal = decal,
+            mode = this.DecalMode,
+            structure = DecalStructure,
+            depth = false,
+            vb = [ new() { x = di.pos[0].x, y = di.pos[0].y, z = 0.0f, w = 1.0f, u = 0.0f, v = 0.0f, c = tint },
+                   new() { x = di.pos[1].x, y = di.pos[1].y, z = 0.0f, w = 1.0f, u = 0.0f, v = 1.0f, c = tint },
+                   new() { x = di.pos[2].x, y = di.pos[2].y, z = 0.0f, w = 1.0f, u = 1.0f, v = 1.0f, c = tint },
+                   new() { x = di.pos[3].x, y = di.pos[3].y, z = 0.0f, w = 1.0f, u = 1.0f, v = 0.0f, c = tint } ]
+        };
+
+        Layers[(int)TargetLayer].GPUTasks.Add(task);
     }
 
     public void DrawPartialRotatedDecal(vf2d pos, Decal decal, float angle, vf2d center, vf2d source_pos, vf2d source_size, vf2d scale, Pixel tint)
@@ -2427,6 +2463,169 @@ public class PixelGameEngine
     public void SetDecalMode(DecalMode mode) => DecalMode = mode;
     public void SetDecalStructure(DecalStructure structure) => DecalStructure = structure;
 
+    #endregion // Decal drawing
+
+    #region Lightweight 3D rendering
+
+    public void HW3D_Projection(float[] m) => renderer.Set3DProjection(m);
+
+    public void HW3D_EnableDepthTest(bool enableDepth) => HW3DDepthTest = enableDepth;
+
+    public void HW3D_SetCullMode(CullMode mode) => HW3DCullMode = mode;
+
+    /// <summary>
+    /// Draws a 3D Mesh structure (as defined by DecalStructure)
+    /// </summary>
+    /// <param name="matModelView">Should be an array of 16</param>
+    /// <param name="decal"></param>
+    /// <param name="layout"></param>
+    /// <param name="pos">Each "pos" should be an array of 4</param>
+    /// <param name="uv"></param>
+    /// <param name="col"></param>
+    /// <param name="tint"></param>
+    public void HW3D_DrawObject(float[] matModelView, Decal decal, DecalStructure layout, List<float[]> pos, List<vf2d> uv, List<Pixel> col, Pixel tint = default)
+    {
+        if (matModelView.Length != 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(matModelView), "Must be array of 16");
+        }
+
+        if (tint == default)
+        {
+            tint = csPixelGameEngineCore.Pixel.WHITE;
+        }
+
+        GPUTask task = new()
+        {
+            decal = decal,
+            mode = this.DecalMode,
+            structure = layout,
+            depth = HW3DDepthTest,
+            cull = HW3DCullMode,
+            mvp = matModelView,
+            tint = tint,
+            vb = new GPUTask.Vertex[pos.Count]
+        };
+
+        for (int i = 0; i < pos.Count; i++)
+        {
+            task.vb[i] = new() { x = pos[i][0], y = pos[i][1], z = pos[i][2], w = 1.0f, u = uv[i].x, v = uv[i].y, c = col[i] };
+        }
+
+        Layers[(int)TargetLayer].GPUTasks.Add(task);
+    }
+
+    /// <summary>
+    /// Draws a 3D line from pos1 to pos2
+    /// </summary>
+    /// <param name="matModelView"></param>
+    /// <param name="pos1"></param>
+    /// <param name="pos2"></param>
+    /// <param name="col"></param>
+    public void HW3D_DrawLine(float[] matModelView, float[] pos1, float[] pos2, Pixel col = default)
+    {
+        if (matModelView.Length != 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(matModelView), "Must be array of 16");
+        }
+
+        if (col == default)
+        {
+            col = csPixelGameEngineCore.Pixel.WHITE;
+        }
+
+        GPUTask task = new()
+        {
+            decal = null,
+            mode = DecalMode.WIREFRAME,
+            structure = DecalStructure.LINE,
+            depth = HW3DDepthTest,
+            cull = HW3DCullMode,
+            mvp = matModelView,
+            tint = csPixelGameEngineCore.Pixel.WHITE,
+            vb = [ new() { x = pos1[0], y = pos1[1], z = pos1[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = pos2[0], y = pos2[1], z = pos2[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col }]
+        };
+
+        Layers[(int)TargetLayer].GPUTasks.Add(task);
+    }
+
+    /// <summary>
+    /// Draws a 3D line box at pos, and dimensions `size`.
+    /// </summary>
+    /// <param name="matModelView"></param>
+    /// <param name="pos"></param>
+    /// <param name="size"></param>
+    /// <param name="col"></param>
+    public void HW3D_DrawLineBox(float[] matModelView, float[] pos, float[] size, Pixel col = default)
+    {
+        if (matModelView.Length != 16)
+        {
+            throw new ArgumentOutOfRangeException(nameof(matModelView), "Must be array of 16");
+        }
+
+        if (col == default)
+        {
+            col = csPixelGameEngineCore.Pixel.WHITE;
+        }
+
+        float ox = pos[0];
+        float oy = pos[1];
+        float oz = pos[2];
+        float sx = size[0];
+        float sy = size[1];
+        float sz = size[2];
+
+        float[] p0 = [ ox, oy, oz ];
+        float[] p1 = [ ox+sx, oy, oz ];
+        float[] p2 = [ ox+sx, oy+sy, oz ];
+        float[] p3 = [ ox, oy+sy, oz ];
+
+        float[] p4 = [ ox, oy, oz+sz ];
+        float[] p5 = [ ox+sx, oy, oz+sz ];
+        float[] p6 = [ ox+sx, oy+sy, oz+sz ];
+        float[] p7 = [ ox, oy+sy, oz+sz ];
+
+        GPUTask task = new()
+        {
+            decal = null,
+            mode = DecalMode.WIREFRAME,
+            structure = DecalStructure.LINE,
+            depth = HW3DDepthTest,
+            cull = HW3DCullMode,
+            mvp = matModelView,
+            tint = csPixelGameEngineCore.Pixel.WHITE,
+            vb = [ new() { x = p0[0], y = p0[1], z = p0[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p1[0], y = p1[1], z = p1[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p1[0], y = p1[1], z = p1[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p2[0], y = p2[1], z = p2[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p2[0], y = p2[1], z = p2[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p3[0], y = p3[1], z = p3[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p3[0], y = p3[1], z = p3[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p0[0], y = p0[1], z = p0[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p4[0], y = p4[1], z = p4[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p5[0], y = p5[1], z = p5[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p5[0], y = p5[1], z = p5[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p6[0], y = p6[1], z = p6[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p6[0], y = p6[1], z = p6[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p7[0], y = p7[1], z = p7[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p7[0], y = p7[1], z = p7[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p4[0], y = p4[1], z = p4[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p0[0], y = p0[1], z = p0[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p4[0], y = p4[1], z = p4[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p1[0], y = p1[1], z = p1[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p5[0], y = p5[1], z = p5[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p2[0], y = p2[1], z = p2[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p6[0], y = p6[1], z = p6[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p3[0], y = p3[1], z = p3[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col },
+                   new() { x = p7[0], y = p7[1], z = p7[2], w = 1.0f, u = 0.0f, v = 0.0f, c = col } ]
+        };
+
+        Layers[(int)TargetLayer].GPUTasks.Add(task);
+    }
+
+    #endregion Lightweight 3D rendering
+
     #endregion // Drawing Methods
 
     #region Layer Methods
@@ -2524,6 +2723,14 @@ public class PixelGameEngine
     public LayerDesc[] GetLayers() => [.. Layers];
 
     #endregion // Layer Methods
+
+    public void adv_FlushLayerGPUTasks(uint layerID)
+    {
+        var layer = Layers[(int)layerID];
+
+        layer.GPUTasks.ForEach(renderer.DoGPUTask);
+        layer.GPUTasks.Clear();
+    }
 
     // More functions for compatibility
     public void SetPixelMode(Pixel.Mode m) => PixelMode = m;

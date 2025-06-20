@@ -21,6 +21,8 @@ public interface IRenderer
     void PrepareDrawing();
     void DrawLayerQuad(vf2d offset, vf2d scale, Pixel tint);
     void DrawDecal(DecalInstance decal);
+    void DoGPUTask(GPUTask task);
+    void Set3DProjection(float[] mat);
     uint CreateTexture(int width, int height, bool filtered = false, bool clamp = true);
     void UpdateTexture(uint id, Sprite spr);
     void ReadTexture(uint id, Sprite spr);
@@ -28,9 +30,7 @@ public interface IRenderer
     void ApplyTexture(uint id);
     void UpdateViewport(vi2d pos, vi2d size);
     void ClearBuffer(Pixel p, bool bDepth);
-
-    // TODO:
-    // void SetDecalMode(DecalMode mode);
+    void SetDecalMode(DecalMode mode);
 
     DecalMode DecalMode { get; set; }
 
