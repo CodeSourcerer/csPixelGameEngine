@@ -1,6 +1,6 @@
 ﻿# csPixelGameEngine
 This is a C# port of the [olcPixelGameEngine](https://github.com/OneLoneCoder/olcPixelGameEngine). It is currently roughly up to date
-with v2.28 of the olcPixelGameEngine.
+with v2.29 of the olcPixelGameEngine.
 
 # Introduction / Background
 I started this port for myself while following a set of video tutorials by [javidx9](https://www.youtube.com/c/javidx9) for creating a NES 
@@ -69,3 +69,12 @@ This is a demo project meant to test / demonstrate the capabilities of the engin
 This is a unit test project that is sadly too neglected.
 
 *Note*: Other projects are temporary and will probably be removed at a later date.
+
+# Features Not Yet Implemented
+
+* Console functions
+* "Dropped Files" stuff. 
+* ImageLoader interface - I somehow missed this when updating v1 to v2. Will be done soon!
+* Key caching stuff added in v2.29
+* Other misc keyboard related functions added to v2.29
+  * Honestly most of this stuff added can be accomplished today, but in slightly different ways.

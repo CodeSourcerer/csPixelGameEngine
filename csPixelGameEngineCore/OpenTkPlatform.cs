@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.Tracing;
+using System.Linq;
 using csPixelGameEngineCore.Enums;
 using Microsoft.Extensions.Logging;
 using OpenTK.Mathematics;
@@ -28,6 +29,7 @@ public class OpenTkPlatform : IPlatform
     public vi2d WindowPosition { get => new (glWindow.Location.X, glWindow.Location.Y); }
     public int WindowPosX { get => WindowPosition.x; }
     public int WindowPosY { get => WindowPosition.y; }
+    public Dictionary<int, Key> KeyMap { get => mapKeys.Cast<KeyValuePair<int, Key>>().ToDictionary(); }
 
     public event EventHandler<EventArgs> Closed;
     public event EventHandler<CancelEventArgs> Closing;

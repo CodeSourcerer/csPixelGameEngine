@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using csPixelGameEngineCore.Enums;
 
@@ -24,9 +25,11 @@ public interface IPlatform
 
     int WindowWidth  { get; }
     int WindowHeight { get; }
-    public vi2d WindowPosition { get; }
-    public int WindowPosX { get; }
-    public int WindowPosY { get; }
+    vi2d WindowPosition { get; }
+    int WindowPosX { get; }
+    int WindowPosY { get; }
+
+    Dictionary<int, Key> KeyMap { get; }
 
     // The C++ version does not have these, but we need them for C#
     event EventHandler<EventArgs> Closed;
