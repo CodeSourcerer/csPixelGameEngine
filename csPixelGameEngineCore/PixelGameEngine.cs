@@ -388,8 +388,7 @@ public class PixelGameEngine
     /// <summary>
     /// This starts the engine and the rendering loop.
     /// </summary>
-    /// <param name="maxUpdateRate"></param>
-    /// <returns></returns>
+    /// <returns>RCode.OK on success, RCode.FAIL on failure</returns>
     public RCode Start()
     {
         logger.LogDebug("PixelGameEngine.Start()");
@@ -404,11 +403,11 @@ public class PixelGameEngine
         olc_PrepareEngine();
 
         _extensions.ForEach(ext => ext.OnBeforeUserCreate());
-        if (!OnUserCreate()) return RCode.FAIL;
-        _extensions.ForEach(ext => ext.OnAfterUserCreate());
 
-        // This simulates "OnUserCreate()"
-        OnCreate?.Invoke(this, new EventArgs());
+        if (!OnUserCreate()) return RCode.FAIL;
+        OnCreate?.Invoke(this, new EventArgs()); // This simulates "OnUserCreate()"
+
+        _extensions.ForEach(ext => ext.OnAfterUserCreate());
 
         Platform.Closing += (sender, eventArgs) =>
         {
